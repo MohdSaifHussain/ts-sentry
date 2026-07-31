@@ -106,6 +106,22 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 - `ts_sentry.provenance` - `git_sha()` and `sha256_file()`, shared by the
   build manifest and the session manifest so both stamp provenance the same
   way.
+- STEP-03 D2: `ts_sentry.orchestrator.firewall` - the input firewall (OWASP
+  LLM01). Case content enters model context as fenced, JSON-encoded data and
+  never as an instruction. The fence nonce is a digest of the content it
+  fences, so closing the fence from inside the data is a preimage problem
+  rather than a guess. Two copies are kept, which is how D2's
+  instruction-stripping pass and 3.2's verbatim-preservation requirement are
+  both satisfied: the verbatim block is what artifacts store, and a redacted
+  copy with markers naming each detected pattern is what reaches a model.
+  `SystemPrompt` is a hash-identified type the adapter takes instead of a
+  bare string, so case content cannot reach the system role by concatenation.
+  Detection runs a versioned, hashed pattern set across seven families and
+  emits `InjectionSignal` records for ledgering.
+- STEP-03 3.2: the injection fixture corpus (`tests/test_firewall.py`), split
+  into fixtures the pattern set catches and fixtures it does not. The second
+  group is asserted as undetected, so the module's honest limit (pattern
+  matching cannot be complete) is tested rather than only written down.
 
 ### Changed
 
@@ -115,8 +131,23 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   `orchestrator` must not import from `cli` to get it. `Ledger.head` now
   answers from the cached tail without rescanning the chain.
 
+### Fixed
+
+- Input firewall: case content containing U+2028, U+2029, NEL, VT, FF, FS, GS
+  or RS could forge an extra record inside a fenced block. `json.dumps`
+  escapes newline and carriage return, but not those, and `str.splitlines`
+  breaks on all of them, so a one-object-per-line encoding was not in fact one
+  object per line. Found by a hypothesis property during D2, not by
+  inspection. Those characters are now escaped in the encoded record.
+
 ### Known limitations
 
+- Firewall instruction detection is pattern-based and cannot be complete. The
+  load-bearing controls are structural: case content is fenced JSON data, the
+  system role is a hash-identified constant no case text can reach, and agent
+  output is checked by the symbolic verifier rather than trusted. The pattern
+  pass is defense in depth, and its product is a ledgered signal that an
+  attempt happened, whether or not it would have worked.
 - Ledger chain verification still cannot detect entries removed from the *end*
   of a chain: what remains is a shorter chain whose every link still
   recomputes. The STEP-03 session manifest now stores the anchor that catches
