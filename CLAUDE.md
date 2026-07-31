@@ -46,6 +46,9 @@
 - Saif's verification artifacts in the repo root (build_*, session_*) are his;
   never delete, overwrite, or reuse those paths. All session-generated builds
   and test artifacts go in the scratchpad or temp dirs.
+- New material design decisions get an entry in docs/DECISIONS.md: the
+  decision, the alternatives not taken, the reason, and a citation. Harvest
+  from what was actually recorded; never invent rationale after the fact.
 
 ## Documentation style
 - No em-dashes anywhere in docs or docstrings. Verified metrics only. No

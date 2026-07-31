@@ -42,12 +42,9 @@ closes with an intact chain.
 
 ## 5. Exit Checklist
 - [x] Full session on seed-42 dataset produces intact ledger (verify-ledger 0)
-      - `build-dataset --seed 42 --scale 1 --out build_p3` then `run-session
-        --agent triage --seed-dataset build_p3`: 23 cases ranked, 23 rationales
-        accepted, closed `completed`; `verify-ledger` exit 0 on both the JSONL
-        export and the DuckDB store. The case count is 23 rather than the 25
-        Saif saw, because his verification predates the finding-1 fix: the
-        queue no longer flags on undisclosed synthetic media alone.
+      - Verified personally by Saif against the fixed build: 23 cases ranked,
+        23 rationales accepted, closed `completed`, intact chain, head
+        `8:75474aad...`. See "Phase close, verified".
 - [x] Injection fixture corpus: 0 behavioral deviations
       - True and narrow. See "What the 3.2 result does and does not say".
 - [x] Ranked queue demonstrably discriminates (added at phase close)
@@ -84,40 +81,42 @@ suite.
 | Scenario | Expected | Observed |
 |---|---|---|
 | `build-dataset --seed 42 --scale 1` | succeeds | succeeded |
-| `run-session --agent triage` | exit 0, intact chain | exit 0, 25 ranked, 25 accepted, head `8:1b0f...` |
-| `verify-ledger` on the JSONL export | exit 0 | exit 0 |
-| `verify-ledger` on the DuckDB store | exit 0 | exit 0 |
-| `verify-ledger --expect-head-from` the manifest | exit 0, head matches | exit 0 |
+| `run-session --agent triage` | exit 0, intact chain | exit 0, 23 cases, 23 rationales, intact |
+| `verify-ledger --expect-head-from` the manifest | exit 0, head matches | exit 0, head matches |
 | Truncated copy, bare | exit 0 (the limitation) | exit 0 |
 | Truncated copy, `--expect-head-from` | exit 6, both heads printed | exit 6 |
 
-The sixth row is the one worth keeping in view, as it was in STEP-02: a
+Session `session-2486b1224b54`, head
+`8:75474aad1d0e23480f518b9cccff5456c489c8c505df3ce196a50ace3140f286`.
+
+Run twice in total. The first pass was against the pre-fix build and produced
+the two product findings below; this record is the re-run against the fixed
+build, which is the one that stands.
+
+The fourth row is the one worth keeping in view, as it was in STEP-02: a
 *passing* result that confirms a real limitation. Chain verification alone
 accepted a truncated export, and only the stored anchor caught it.
 
-**This verification was run against the pre-fix build, and that is worth being
-exact about.** The two product findings below were raised from the same run and
-fixed afterwards, so the artifacts Saif verified no longer match the current
-code: the queue is now 23 cases rather than 25, with different component values
-and therefore a different chain head. Nothing about the *mechanism* he verified
-changed - session lifecycle, chain integrity, the anchor, and every exit code
-are untouched by what the queue contains, and the current build reproduces
-every row of the table. But the specific head digest and case count in his
-notes are from the earlier build, and a re-run is the honest way to close that
-gap if he wants the record to match byte for byte.
+**The session id and chain head are not reproducible across rebuilds, and that
+is a narrower guarantee than the code claimed.** Saif's head and session id
+differ from every locally observed pair, which prompted a check rather than an
+assumption. Measured: two `--seed 42 --scale 1` builds produce byte-identical
+Parquet exports for all six tables, which is exactly what STEP-01 verified, but
+*different* `build.duckdb` files. The store's internal layout is not
+byte-stable even when its contents are.
 
-### Boundary observation: a fix-cycle command removed a verification artifact
+`dataset_digest` is the SHA-256 of `build.duckdb`, and `session_id` is derived
+from it, so a rebuild changes both, and the chain head changes with the
+timestamps regardless. `derive_session_id`'s docstring claims the derivation
+"makes two runs of the same inputs comparable"; that holds for two runs against
+one build directory and not for two rebuilds, so the claim is wider than the
+behavior.
 
-During the finding-1/finding-2 fix cycle, `rm -rf build_p3` and
-`rm -rf session_p3` were run in the repository root to rebuild measurement
-inputs and to clean up before the commit. Those are the same paths the
-phase-close instructions told Saif to use, so the commands removed a
-verification artifact outside the assistant's scratchpad, without asking.
-Nothing was lost: the dataset is seed-42 reproducible and the session is
-deterministic given it, and the files were untracked so nothing left git's
-history. Recorded because "recoverable" is not "in scope" - the artifacts
-belonged to the reviewer, and disposable working files belong in the
-scratchpad rather than in the repository root.
+Deliberately not fixed in this phase. Deriving the digest from the Parquet
+exports or the build manifest's `table_hashes`, both of which are byte-stable,
+would make session ids reproducible across rebuilds, but it would change every
+manifest and invalidate the verification Saif has just completed twice.
+Recorded as a gap and carried to STEP-04 rather than churned now.
 
 ### Two product findings from Saif's human review of `ranked_queue.json`
 
@@ -347,3 +346,6 @@ variables exported, and again with the socket layer patched to raise.
   data to fit against.
 - **The 3.12 gap persists.** Local Python is 3.14 and CI pins 3.12, so every
   green result here is a 3.14 result, as in STEP-02.
+- **Session ids are not reproducible across dataset rebuilds**, because
+  `build.duckdb` is not byte-stable even though the Parquet exports are. See
+  the note under "Phase close, verified". Carried to STEP-04.
