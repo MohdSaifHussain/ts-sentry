@@ -1,0 +1,68 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ts-sentry"
+version = "0.1.0"
+description = "Trust & Safety Sentry: a governed agentic workbench for scaled-abuse analysis"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+authors = [{ name = "Mohd Saif Hussain" }]
+
+dependencies = [
+    "duckdb>=1.5",
+    "numpy>=2.0",
+    # Used only for the DuckDB bulk-load path (register + INSERT SELECT),
+    # which is ~2 orders of magnitude faster than executemany for the
+    # tens-of-thousands-of-rows tables this generator produces.
+    "pandas>=2.0",
+    # Pin is a real minimum-version requirement, not just reproducibility
+    # hygiene: v2.1.0 is the first AnalystKit release with Parquet support,
+    # which the D6 quality gate (profile/validate/reconcile against Parquet
+    # exports) depends on. See docs/decisions/STEP-01-data-foundation.md
+    # Outcome section for the accuracy-via-reconcile rationale.
+    "analystkit @ git+https://github.com/MohdSaifHussain/analystkit@v2.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "hypothesis>=6.100",
+    "mypy>=1.13",
+    "ruff>=0.8",
+    "pytest-cov>=5.0",
+    "pandas-stubs>=2.0",
+]
+
+[project.scripts]
+ts-sentry = "ts_sentry.cli.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ts_sentry"]
+
+[tool.hatch.metadata]
+# Required by hatchling to allow the analystkit git dependency above.
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/ts_sentry"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

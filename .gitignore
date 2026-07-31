@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Virtual environment
+.venv/
+
+# Test / lint / type-check caches and artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Build outputs (ts-sentry build-dataset --out; default is `build/`, but
+# manual verification runs commonly use build_a/, build_b/, etc.)
+/build/
+/build_*/
