@@ -188,6 +188,28 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   of a session manifest, mutually exclusive with `--expect-head`. This joins
   the comparison verb STEP-02 shipped to the storage STEP-03 D1 built; without
   it the anchor would exist but nothing would read it.
+- STEP-04 D1: `ts_sentry.orchestrator.pivots` - the pivot vocabulary and its
+  five reviewed, parameterized DuckDB templates (`SHARED_METADATA`,
+  `TEMPORAL_CORRELATION`, `ENGAGEMENT_EDGE`, `INFRA_OVERLAP`, `ACCOUNT_LINK`).
+  Zero dynamic SQL: table names come from `resolve_table`, every runtime value
+  is bound with `?`, and no parameter ever selects a column or a table. Where a
+  pivot spans two metadata fields or filters a category, the template covers
+  every case in its own fixed text and the parameter is a value compared
+  against an `'any'` sentinel. Parameters are typed and bounds-checked, and
+  entity-id parameters must resolve to a node already in the pack, so a pivot
+  expands from the analyst-selected seed rather than naming arbitrary entities.
+  No template selects a free-text column: user-authored text reaches a model
+  through the input firewall or not at all.
+- STEP-04 D3: `ts_sentry.agents.evidence.pack` - the Evidence Pack (entity
+  graph, timeline, per-record provenance). Referential integrity and provenance
+  completeness are enforced in `__post_init__`, so a dangling edge or an
+  untraceable record cannot be constructed at all; the D4 gate judges
+  well-formed packs rather than malformed ones. A pivot returning zero rows
+  keeps its provenance record, because a question asked and answered in the
+  negative is an investigative step and a pack that forgot it could not be told
+  apart from one where nobody ran the pivot. Carries a documented W3C PROV
+  mapping (records as `Entity`, one pivot execution as `Activity`, agency left
+  to the ledger) without claiming PROV conformance.
 
 ### Changed
 
