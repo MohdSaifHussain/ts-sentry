@@ -58,9 +58,41 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   concatenation, which is ambiguous (distinct field splits collide on one
   digest); recorded as an ARCHITECTURE erratum. Structured objects keep a
   separate canonical-JSON convention: `mandate_hash` is its only user today.
+- STEP-02 D3: `ts_sentry.governance.ledger` - the append-only, hash-chained
+  trajectory ledger (DuckDB `governance` schema plus JSONL export) with the
+  eleven ARCHITECTURE 3.2 event types, an `OrchestratorToken` required for
+  every write, and `verify_chain` as the single verification core both D6
+  readers use. Appends are O(1) in lookups (cached tail, no rescan on write).
+  The hashed timestamp is a canonical IST ISO 8601 string in its own column,
+  not a `TIMESTAMPTZ`: DuckDB renders `TIMESTAMPTZ` in the reader's session
+  time zone, which would have made an intact ledger verify locally and report
+  a false broken chain in CI.
+- STEP-02 D4: `ts_sentry.governance.gates` - the consequence-gate pipeline.
+  OBSERVE auto-approves; ASSEMBLE and RECOMMEND run injected checkers
+  (`ArtifactCheck` protocol, no defaults, so an unconfigured gate cannot
+  auto-approve); ENFORCE opens only for an approving `HumanSignature`.
+  Failures are returned, never raised, and are ledgered as
+  `VERIFICATION_FAIL` + `GATE_REJECTION`. `guard_scope_request` completes
+  STEP-02 3.5: a sealed-scope request is refused and ledgered as
+  `MANDATE_VIOLATION_ATTEMPT`.
+- STEP-02 D5: `ts_sentry.governance.verifier` - the claim-to-evidence
+  symbolic verifier. Per-claim reason codes, zero tolerance (one failing
+  claim fails the report), and an adapter plugging it into the RECOMMEND
+  gate. Deliberately generic so STEP-03 can reuse it for triage rationales.
+- STEP-02 D6: `ts-sentry verify-ledger PATH [--expect-head COUNT:HASH]`.
+  Dispatches by extension (`.jsonl`, `.duckdb`) onto one shared verification
+  core, always reports the chain head, and exits 0 intact / 4 broken chain
+  (first broken seq printed) / 5 input error / 6 head mismatch.
 - PEP 561 `py.typed` marker for `ts_sentry`. The package was previously
   installed untyped, so mypy runs outside the repo's own config could not see
   its annotations at all.
+
+### Known limitations
+
+- Ledger chain verification cannot detect entries removed from the *end* of a
+  chain: what remains is a shorter chain whose every link still recomputes.
+  `verify-ledger --expect-head` compares against an expectation the caller
+  supplies; storing that anchor is a STEP-03 session-manifest concern.
 - STEP-01 D7: `ts-sentry build-dataset` CLI
   (`ts_sentry.cli.main`), wiring D1-D6 together plus a build manifest
   (seed, generator version, git SHA, row counts, per-table SHA-256) and a

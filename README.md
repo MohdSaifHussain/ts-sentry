@@ -4,8 +4,8 @@ Governed agentic workbench for Trust & Safety scaled-abuse analysis. See
 [ARCHITECTURE.md](ARCHITECTURE.md) for the full design and
 [docs/decisions/](docs/decisions/) for the per-phase build log.
 
-Status: Phase 1 (data foundation) in progress. See
-[docs/decisions/STEP-01-data-foundation.md](docs/decisions/STEP-01-data-foundation.md).
+Status: Phase 1 (data foundation) closed; Phase 2 (governance core) complete.
+See [docs/decisions/](docs/decisions/) for the per-phase build log.
 
 ## Install
 
@@ -46,7 +46,50 @@ Exit codes:
 | `2` | AnalystKit quality gate failed: a profile dimension (completeness/uniqueness/validity/consistency) is below its declared threshold, a `validate` rule found exceptions, or a `reconcile` check against `sealed._labels` found orphans (the accuracy dimension). |
 | `3` | Sealed-label leakage check failed (build-time defense-in-depth; the primary guarantee is the `DataScope` allowlist, tested in `tests/test_scope_leakage.py`). |
 
-### Quality gate (D6)
+### `ts-sentry verify-ledger`
+
+Recomputes a trajectory-ledger hash chain and reports the first broken link,
+plus the chain head.
+
+```bash
+ts-sentry verify-ledger PATH [--expect-head COUNT:HASH]
+```
+
+| Flag | Required | Meaning |
+|---|---|---|
+| `PATH` | yes | `.jsonl` verifies an exported session chain; `.duckdb` verifies the stored `governance.ledger` table. Both readers feed one shared verification function, so an export and the store it came from cannot disagree. |
+| `--expect-head COUNT:HASH` | no | Compare the chain head against an expectation you already hold. See the note below on what this is and is not. |
+
+Output always reports `entries` (chain length) and `head` (final
+`entry_hash`), whether the chain verifies or not.
+
+Exit codes:
+
+| Code | Meaning |
+|---|---|
+| `0` | Chain intact. If `--expect-head` was given, the head matched too. |
+| `4` | Broken chain. The first broken sequence number is printed to stdout and summarized on stderr. |
+| `5` | Input error: no such file, unsupported extension, unreadable or malformed content, or a malformed `--expect-head` value. Deliberately distinct from `4`, so "wrong file" is never mistaken for "tampered file". |
+| `6` | Chain links are intact but the head does not match `--expect-head`. |
+
+Precedence: chain integrity is checked before the head comparison, because a
+broken chain makes any head claim meaningless.
+
+#### What `--expect-head` is, and what it is not
+
+Hash-chain verification detects modification, reordering, and interior
+deletion. It **cannot** detect entries removed from the *end*: what remains
+is a shorter chain whose every link still recomputes, indistinguishable from
+a session that ended earlier. This limitation is asserted by a test
+(`test_truncating_the_tail_is_undetectable`) rather than only documented.
+
+`--expect-head` is a comparison verb, not an anchor system. It compares
+against an expectation the caller already holds; it does not store, derive,
+or manage one. Anchor storage belongs to the STEP-03 session manifest, so
+until that lands you supply the expected `COUNT:HASH` yourself from a record
+you trust.
+
+### Quality gate (STEP-01 D6)
 
 Wraps [AnalystKit](https://github.com/MohdSaifHussain/analystkit) rather
 than reimplementing DAMA checks. Two dimensions are deliberately not

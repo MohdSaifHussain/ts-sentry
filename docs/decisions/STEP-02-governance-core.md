@@ -44,8 +44,195 @@ tests; ledger hash chain property-tested; a tampered ledger is detected.
 - Any model call; dispatch loop (STEP-03); UI.
 
 ## 5. Exit Checklist
-- [ ] ENFORCE unreachability: type-check test + runtime factory test green
-- [ ] hypothesis ledger properties green; tamper test detects mutation
-- [ ] verify-ledger CLI detects a fixture with a broken link at correct seq
-- [ ] Gate rejection paths ledgered and structurally returned
-- [ ] mypy --strict, ruff, coverage floor green; CHANGELOG updated
+- [x] ENFORCE unreachability: type-check test + runtime factory test green
+- [x] hypothesis ledger properties green; tamper test detects mutation
+- [x] verify-ledger CLI detects a fixture with a broken link at correct seq
+- [x] Gate rejection paths ledgered and structurally returned
+- [x] mypy --strict, ruff, coverage floor green; CHANGELOG updated
+- [ ] Saif's personal phase-close verification (see Outcome, "Open at
+      hand-off"): verify-ledger against an intact export, a corrupted
+      fixture at a known seq, and a truncated export with and without
+      `--expect-head`
+
+## 6. Outcome
+
+Shipped: D1-D6, in `src/ts_sentry/governance/` plus the `verify-ledger`
+subcommand in `src/ts_sentry/cli/main.py`. Review stop after D1/D2 was
+observed and passed on source, with two documentation corrections applied
+before commit.
+
+### D1/D2 review-stop corrections (Saif)
+
+1. `canonical.py` claimed to be "shared by every hash this package computes"
+   and that signature and ledger "both speak one hashing convention". False:
+   `mandate_hash` uses canonical JSON and does not go through that module.
+   The docstring now states both conventions accurately (structured objects
+   via canonical JSON, flat field sequences via the separator-joined
+   encoding) and names `mandate_hash` as the JSON convention's only user.
+   The same overclaim had leaked into the CHANGELOG and was corrected there.
+2. Typo `reden` -> `redden`.
+
+### The ENFORCE guarantee, stated at its true width
+
+Deliberately narrower than the convenient claim, because the tests only
+support the narrow version:
+
+- No `Mandate` can carry ENFORCE. Type-level via the `AgentConsequence`
+  PEP 695 alias, and again at runtime in `__post_init__`.
+- `validate` refuses every ENFORCE action under every mandate,
+  unconditionally, and before any other refusal check, so the invariant can
+  never be shadowed by an incidental refusal.
+- The D4 gate refuses ENFORCE without an approving `HumanSignature`.
+- A valid `HumanSignature` is unconstructible without an analyst identity
+  and an explicit decision.
+
+Not claimed: that `Consequence.ENFORCE` is unmentionable. Any module
+importing the enum can name the member and Python offers no way to prevent
+that. The documented claim is "no agent action can reach the ENFORCE gate".
+
+Signature integrity is *binding*, not authentication: it proves the five
+fields belong together and have not drifted apart. Real analyst
+authentication is out of scope and named in Honest Limits rather than
+implied by the word "signature".
+
+### Dual-mechanism design for the type-level proof (D2)
+
+Two complementary guards, neither subsuming the other. The subprocess test
+exists because the in-place ignore *suppresses* the error, so running mypy
+on the unmodified fixture would prove nothing (correction supplied by Saif
+mid-implementation; the plan as approved had this wrong).
+
+| Mechanism | Catches |
+|---|---|
+| In-place `# type: ignore[arg-type]` + `warn_unused_ignores` in the CI mypy step | ENFORCE construction silently *becoming legal*: the ignore goes unused and CI reddens |
+| `test_enforce_unreachable.py`, which strips the ignore into a temp copy and asserts the `arg-type` error | The fixture being deleted, gutted, or made vacuous |
+
+### Deviations from ARCHITECTURE, recorded
+
+1. **`Mandate.version` (3.1).** 3.1's prose requires mandates be versioned;
+   its dataclass sketch has no version field. Added as an explicit SemVer
+   2.0.0 field, validated in `__post_init__` and inside the canonical hash
+   form, with a test proving two mandates differing only in version hash
+   differently. Per Saif's direction.
+2. **`agent_id` is nullable (3.2).** 3.2's entry tuple does not contemplate
+   `SESSION_OPEN` / `SESSION_CLOSE`, which are orchestrator events with no
+   agent behind them.
+3. **`output_schema: type[object]` rather than bare `type` (3.1).**
+   Mechanical: `mypy --strict` rejects unparameterized generics. Same
+   accepted value set.
+4. **ARCHITECTURE 3.2 `||` erratum.** 3.2 specifies the entry hash as
+   `SHA256(a || b || ...)`. Read literally, `||` is bare concatenation,
+   which is ambiguous: distinct field splits produce identical byte strings,
+   so two materially different entries can collide on one digest, in the one
+   structure whose whole job is telling entries apart. Replaced with a
+   `\x1f`-separated encoding that rejects any field containing the
+   separator. `tests/test_canonical.py` makes the collision concrete:
+   `("ab", "c")` and `("a", "bc")` concatenate identically and hash
+   differently under this encoding. Recorded as an erratum against the
+   specification, not as an implementation preference, per Saif.
+5. **Unsigned ENFORCE ledgers `MANDATE_VIOLATION_ATTEMPT` + `GATE_REJECTION`
+   rather than `VERIFICATION_FAIL` + `GATE_REJECTION`.** 3.3 specifies the
+   latter pair for gate failures but does not enumerate the ENFORCE case.
+   Nothing was verified and failed there; something reached for a level it
+   may never reach, and the event type should say which of those happened.
+   An ENFORCE carrying a *declining* signature does use the 3.3 pair, since
+   a decision genuinely was evaluated.
+
+### DuckDB TIMESTAMPTZ: a defect avoided at design time (D3)
+
+The first application of CLAUDE.md's official-sources rule, and it changed
+the design. Consulted:
+
+- https://duckdb.org/docs/current/sql/data_types/timestamp.html
+- https://duckdb.org/docs/current/sql/statements/create_schema.html
+
+A `TIMESTAMPTZ` "only stores the `INT64` number of non-leap microseconds
+since the Unix epoch", and "string formatting for this type [is] performed
+in a configured time zone, which defaults to the system time zone". So it
+does not preserve the offset it was written with, and its rendered string
+depends on who reads it. Verified against DuckDB 1.5.5: one instant written
+as `2026-07-31T14:30:00+05:30` renders three ways.
+
+| Session TZ | Rendered |
+|---|---|
+| Asia/Kolkata | `2026-07-31 14:30:00+05:30` |
+| UTC | `2026-07-31 09:00:00+00` |
+| America/New_York | `2026-07-31 05:00:00-04` |
+
+Had `entry_hash` covered a DuckDB-rendered timestamp, an intact ledger would
+have verified on Saif's machine (IST) and reported a **false broken chain**
+in CI (UTC). STEP-01 never hit this because it stores timestamps but never
+hashes them.
+
+Resolution: the hash covers a canonical IST ISO 8601 string in its own
+`VARCHAR` column, with `TIMESTAMPTZ` retained for SQL-side querying. Tests
+assert the two columns never drift and that the same chain verifies under
+three reader time zones. It also removed a would-be dependency:
+materializing a `TIMESTAMPTZ` through the DuckDB Python client requires
+`pytz`, which this project does not have.
+
+### Honest limit: tail truncation is undetectable
+
+Surfaced by a hypothesis property, not by inspection. Chain verification
+detects modification, reordering, and interior deletion. It cannot detect
+entries removed from the *end*: what remains is a shorter chain whose every
+link still recomputes.
+
+The property was not weakened to hide this.
+`test_truncating_the_tail_is_undetectable` asserts the limitation as a
+passing test, so the day an anchor lands the test fails and forces the
+limitation to be rewritten rather than quietly outliving its own truth.
+
+**Split, per Saif's decision:** comparison in D6, storage in STEP-03. The
+STEP-02 contract was not widened mid-phase. `verify-ledger` reports the
+chain head (count + final `entry_hash`) and accepts `--expect-head
+COUNT:HASH`, which compares against an expectation the caller already holds
+and exits 6 on mismatch. That is a comparison verb; there is no storage, no
+manifest stub, and no anchor derivation. The session manifest that will hold
+a trustworthy anchor is a STEP-03 obligation.
+
+### Findings outside the deliverables
+
+- **`py.typed` was missing.** `ts_sentry` shipped as an untyped
+  distribution, so any mypy run outside the repository's own configuration
+  reported "module is installed, but missing library stubs or py.typed
+  marker" and skipped analysis entirely. Surfaced by D2's compile-check
+  test, which typechecks a fixture from a temporary directory. Added.
+- **Local Python is 3.14.0; CI pins 3.12.** ARCHITECTURE 9 claims container
+  parity on 3.12+. Every local green result in this phase is a 3.14 result.
+  The new code was reviewed for 3.12 compatibility (PEP 695 `type`,
+  `StrEnum`, `assert_never`, `datetime.UTC` are all 3.12-or-earlier
+  features), but CI is the first actual 3.12 execution. Pre-existing; it
+  applies to STEP-01's results equally.
+- **Two branches are unreachable through their public paths, which is the
+  invariant working rather than a coverage gap.**
+  `_consequence_rank(ENFORCE)` never runs via `validate`, which refuses
+  ENFORCE before ranking; `signature.py`'s separator guard never runs via
+  `sign`, where the canonical encoder refuses one layer earlier. Both have
+  direct tests with docstrings explaining why they have no public caller.
+
+### Obligations carried into STEP-03
+
+1. **No orphan `ToolId`s.** A member may only be added in the same commit
+   that lands its corresponding allowlisted-tool-table entry, and from
+   STEP-03 onward a test must assert every `ToolId` has a table entry. Per
+   Saif's direction; recorded at the definition site in `mandate.py`.
+2. **Import-graph test for the signature path.** `ts_sentry.agents.*` must
+   not import `governance.signature`. Not shipped now because `agents/` does
+   not exist and a vacuously green test is worse than an absent one.
+3. **Anchor storage** for chain-head expectations, in the session manifest,
+   per the split above.
+4. **STEP-07's sealed-consumer wording**, carried forward from STEP-01's
+   Outcome and unchanged by this phase: "measurement code is the only
+   consumer of `sealed._labels`" must be read as "the only agent- or
+   orchestrator-side consumer" before STEP-07's import-graph test is
+   written. Phase 2 added no sealed consumer.
+
+### Open at hand-off
+
+Commits are local and **unpushed** by Saif's instruction, pending his
+personal phase-close verification: `verify-ledger` against an intact export,
+a corrupted fixture (expecting the exact broken seq), and a truncated export
+with and without `--expect-head`. Phase 2 is not closed until that passes,
+mirroring the STEP-01 pattern where Saif's own red-team pass was the closing
+step.
