@@ -417,6 +417,21 @@ class _RaisingParser(argparse.ArgumentParser):
 
 
 VERIFY_LEDGER = "verify-ledger"
+RUN_SESSION = "run-session"
+
+TRANSLATES_USAGE_ERRORS = frozenset({VERIFY_LEDGER, RUN_SESSION})
+"""Subcommands whose argparse usage errors become ``EXIT_INPUT_ERROR``.
+
+Argparse exits 2 on a usage error, and 2 is ``EXIT_QUALITY_GATE_FAIL`` in this
+CLI, so a mistyped flag would be indistinguishable from a failed data-quality
+gate. STEP-02 removed that collision for ``verify-ledger``; ``run-session``
+reintroduced it by arriving in STEP-03 without the translation, which is a
+defect in a documented contract rather than a stylistic gap.
+
+``build-dataset`` is deliberately absent. It has exited 2 on usage errors since
+STEP-01, that is its published contract, and changing it here would alter a
+closed phase's behavior for tidiness.
+"""
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -459,7 +474,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
 
-    session_parser = subparsers.add_parser("run-session")
+    session_parser = subparsers.add_parser(RUN_SESSION)
     session_parser.add_argument("--agent", choices=[TRIAGE_AGENT], required=True)
     session_parser.add_argument("--seed-dataset", type=Path, required=True)
     session_parser.add_argument("--out", type=Path, default=Path("session"))
@@ -480,27 +495,43 @@ def main(argv: list[str] | None = None) -> int:
     # The root parser has no options of its own, so the first token is the
     # subcommand. Needed because a root-parser error carries no parsed
     # namespace to read the command from.
-    targets_verify_ledger = bool(argv_list) and argv_list[0] == VERIFY_LEDGER
+    # The root parser has no options of its own, so the first token is the
+    # subcommand. Needed because a root-parser error carries no parsed
+    # namespace to read the command from.
+    named = argv_list[0] if argv_list else None
+    parsers: dict[argparse.ArgumentParser, str] = {
+        verify_parser: VERIFY_LEDGER,
+        session_parser: RUN_SESSION,
+    }
 
     try:
         args = parser.parse_args(argv_list)
     except _UsageError as exc:
-        if exc.parser is verify_parser or targets_verify_ledger:
-            # Every malformed verify-ledger invocation exits 5, on every
-            # supported interpreter. Caught by CI on 3.12: argparse resolves
-            # a dash-prefixed option *value* like "-1:<hash>" differently
-            # across versions, because "positional arguments may only begin
-            # with - if they look like negative numbers"
+        # Either the failing subparser is one that translates, or the root
+        # parser failed on an invocation that named one. The second case is
+        # not hypothetical: unrecognized arguments are reported by the *root*
+        # parser even when a subcommand was named, because parse_args()
+        # collects leftovers from parse_known_args() and errors on them
+        # itself.
+        subcommand = parsers.get(exc.parser)
+        if subcommand is None and named in TRANSLATES_USAGE_ERRORS:
+            subcommand = named
+        if subcommand is not None:
+            # Every malformed invocation of these subcommands exits 5, on
+            # every supported interpreter. Caught by CI on 3.12: argparse
+            # resolves a dash-prefixed option *value* like "-1:<hash>"
+            # differently across versions, because "positional arguments may
+            # only begin with - if they look like negative numbers"
             # (https://docs.python.org/3/library/argparse.html), and
             # "-1:<hash>" does not. 3.12 classifies it as an option token and
             # errors with its own status 2 before our validation runs; 3.14
             # consumes it as a value and reaches parse_expect_head.
             # Translating argparse's exit makes the contract independent of
             # which reading the interpreter takes.
-            print(f"{VERIFY_LEDGER}: {exc.message}", file=sys.stderr)
+            print(f"{subcommand}: {exc.message}", file=sys.stderr)
             return EXIT_INPUT_ERROR
-        # Every other invocation keeps argparse's stock behaviour verbatim,
-        # so this cannot silently alter the STEP-01 build-dataset contract.
+        # build-dataset keeps argparse's stock behaviour verbatim, so this
+        # cannot silently alter the STEP-01 contract.
         exc.parser.print_usage(sys.stderr)
         exc.parser.exit(2, f"{exc.parser.prog}: error: {exc.message}\n")
 
@@ -508,10 +539,10 @@ def main(argv: list[str] | None = None) -> int:
         thresholds = _load_thresholds(args.quality_thresholds)
         return run_build_dataset(args.seed, args.scale, args.out, thresholds)
 
-    if args.command == "verify-ledger":
+    if args.command == VERIFY_LEDGER:
         return run_verify_ledger(args.path, args.expect_head, args.expect_head_from)
 
-    if args.command == "run-session":
+    if args.command == RUN_SESSION:
         return run_run_session(
             args.seed_dataset,
             args.out,

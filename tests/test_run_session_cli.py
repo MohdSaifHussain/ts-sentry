@@ -26,6 +26,7 @@ from ts_sentry.cli.main import (
     EXIT_HEAD_MISMATCH,
     EXIT_INPUT_ERROR,
     EXIT_OK,
+    EXIT_QUALITY_GATE_FAIL,
     main,
 )
 from ts_sentry.data.store import persist_dataset
@@ -329,8 +330,14 @@ def test_the_limit_bounds_the_queue(dataset_dir: Path, tmp_path: Path) -> None:
 
 def test_run_session_rejects_an_unknown_agent(dataset_dir: Path, tmp_path: Path) -> None:
     """Only the agent this build has. ARCHITECTURE names four; three of them
-    do not exist yet, and offering them would be offering nothing."""
-    with pytest.raises(SystemExit):
+    do not exist yet, and offering them would be offering nothing.
+
+    Asserted as exit 5 rather than a raised ``SystemExit``: naming an agent
+    that does not exist is an input error, and since the STEP-03 follow-up
+    every malformed ``run-session`` invocation returns that code instead of
+    letting argparse exit 2.
+    """
+    assert (
         main(
             [
                 "run-session",
@@ -342,3 +349,80 @@ def test_run_session_rejects_an_unknown_agent(dataset_dir: Path, tmp_path: Path)
                 str(tmp_path / "session"),
             ]
         )
+        == EXIT_INPUT_ERROR
+    )
+
+
+# --------------------------------------------------------------------------
+# The exit-code contract (STEP-03 follow-up)
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        pytest.param(["run-session"], id="no-arguments"),
+        pytest.param(["run-session", "--agent", "triage"], id="missing-seed-dataset"),
+        pytest.param(["run-session", "--seed-dataset", "x"], id="missing-agent"),
+        pytest.param(["run-session", "--agent", "memo", "--seed-dataset", "x"], id="unknown-agent"),
+        pytest.param(
+            ["run-session", "--agent", "triage", "--seed-dataset", "x", "--not-a-flag"],
+            id="unrecognized-flag",
+        ),
+        pytest.param(
+            ["run-session", "--agent", "triage", "--seed-dataset", "x", "--limit", "nope"],
+            id="non-integer-limit",
+        ),
+    ],
+)
+def test_a_malformed_run_session_invocation_exits_five(argv: list[str]) -> None:
+    """Argparse exits 2 on a usage error, and 2 is EXIT_QUALITY_GATE_FAIL in
+    this CLI, so a mistyped flag would be indistinguishable from a failed
+    data-quality gate.
+
+    STEP-02 removed that collision for verify-ledger. ``run-session`` arrived
+    in STEP-03 without the translation and reintroduced it, which is a defect
+    in a documented contract rather than a stylistic gap: the README listed
+    run-session as exiting 0, 4 or 5, and it exited 2.
+
+    The unrecognized-flag case is the one that needs the root-parser branch:
+    leftovers are reported by the *root* parser even when a subcommand was
+    named, because ``parse_args`` collects them from ``parse_known_args`` and
+    errors on them itself.
+    """
+    assert main(argv) == EXIT_INPUT_ERROR
+
+
+def test_no_run_session_invocation_returns_exit_two() -> None:
+    """The never-exits-2 invariant, extended from verify-ledger to
+    run-session.
+
+    Stated as "never 2" rather than "5 for these inputs" on purpose: the point
+    is that this subcommand can never collide with the quality-gate code, for
+    any input, not that a particular list of inputs happens to map correctly.
+    """
+    invocations = [
+        ["run-session"],
+        ["run-session", "--agent"],
+        ["run-session", "--agent", "triage"],
+        ["run-session", "--agent", "nonsense"],
+        ["run-session", "--seed-dataset"],
+        ["run-session", "--llm-mode", "telepathy"],
+        ["run-session", "--agent", "triage", "--seed-dataset", "x", "--seed", "not-a-number"],
+        ["run-session", "--agent", "triage", "--seed-dataset", "x", "-1"],
+    ]
+    for argv in invocations:
+        assert main(argv) != EXIT_QUALITY_GATE_FAIL, argv
+
+
+def test_build_dataset_keeps_argparse_exit_two() -> None:
+    """The STEP-01 contract is untouched.
+
+    ``build-dataset`` has exited 2 on usage errors since STEP-01 and that is
+    its published behavior. Translating it here would alter a closed phase for
+    tidiness, so it is deliberately absent from the translating set.
+    """
+    with pytest.raises(SystemExit) as excinfo:
+        main(["build-dataset", "--seed", "42", "--not-a-flag"])
+
+    assert excinfo.value.code == 2

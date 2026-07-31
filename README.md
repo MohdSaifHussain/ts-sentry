@@ -128,8 +128,20 @@ ts-sentry run-session --agent triage --seed-dataset PATH [--out DIR]
 Artifacts: `ledger.jsonl`, `ledger.duckdb`, `ranked_queue.json`,
 `session_events.json`, `session_manifest.json`.
 
-Exit codes: `0` session closed with an intact chain, `4` the session produced
-a broken chain, `5` input error.
+Exit codes:
+
+| Code | Meaning |
+|---|---|
+| `0` | Session closed with an intact chain. |
+| `4` | The session produced a broken chain. Self-verified before the run reports success, so this is caught at the end of the run rather than weeks later. |
+| `5` | Input error: no such dataset, an unreadable store, a missing or unknown argument, an unrecognized flag, or `--llm-mode live` without the environment to match. |
+
+Like `verify-ledger`, `run-session` **never exits `2`**. Argparse's own usage
+errors would exit `2`, which means "quality gate failed" for `build-dataset`;
+they are translated to `5` so no exit code carries two meanings. This was a
+STEP-03 follow-up: `run-session` originally let argparse exit `2` while this
+table already claimed otherwise. `build-dataset` keeps argparse's stock exit
+`2`, unchanged since STEP-01.
 
 #### It runs offline and costs nothing
 

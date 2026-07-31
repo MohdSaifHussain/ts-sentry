@@ -182,4 +182,5 @@ teaches nothing about how they were reached.
 | The detection stub's flag criterion | undisclosed synthetic media triggers | coordination artifacts trigger; undisclosed media aggravates | Saif reading a real ranked queue (3.13) |
 | Redaction markers | plain text | nonce-bound | Saif's adversarial fixture (3.5) |
 | `verify-ledger`'s usage-error exit code | argparse's 2 | 5 | CI on the pinned 3.12 (2.12) |
+| `run-session`'s usage-error exit code | argparse's 2, contradicting its own documented table | 5, matching `verify-ledger` | Re-reading the exit-code contract after the phase closed; the collision STEP-02 removed had been reintroduced on a new subcommand |
 | Session id reproducibility claim | "two runs of the same inputs comparable" | true within one build directory; **not** across rebuilds | Saif's re-run producing a different id, then measuring that `build.duckdb` is not byte-stable while the Parquet exports are (STEP-03 Honest Limits) |

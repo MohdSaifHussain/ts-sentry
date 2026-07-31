@@ -199,6 +199,14 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ### Fixed
 
+- `run-session` exited `2` on argparse usage errors, colliding with
+  `EXIT_QUALITY_GATE_FAIL`, so a mistyped flag was indistinguishable from a
+  failed data-quality gate. STEP-02 removed that collision for
+  `verify-ledger`; `run-session` reintroduced it by arriving in STEP-03
+  without the translation, while the README already documented it as exiting
+  0, 4 or 5. Its usage errors now route through the same `_UsageError`
+  translation and exit `5`. `build-dataset` keeps argparse's stock exit `2`,
+  which is its published STEP-01 contract.
 - Detection stub: the flagged queue did not discriminate. Undisclosed synthetic
   media was a flag trigger and holds for 64 of 66 channels on the seed-42
   build, so every case scored an identical severity and the ranking collapsed
