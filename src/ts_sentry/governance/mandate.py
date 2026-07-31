@@ -247,11 +247,20 @@ class RefusalCode(StrEnum):
 
     Every refusal carries exactly one of these, so ledger entries and gate
     rejections are countable by cause rather than by free text.
+
+    ``TOOL_NOT_ALLOWED`` and ``TOOL_HANDLER_NOT_IN_BUILD`` are deliberately
+    distinct and must not be conflated in any count. The first is a
+    governance fact about this agent: the tool exists and works, and this
+    mandate does not grant it. The second is a fact about this *build*: the
+    tool is declared in the allowlisted tool table but its handler arrives in
+    a later phase. Reading a build limitation as a mandate violation would
+    inflate exactly the metric this system showcases.
     """
 
     AGENT_MISMATCH = "agent_mismatch"
     ENFORCE_IS_HUMAN_ONLY = "enforce_is_human_only"
     TOOL_NOT_ALLOWED = "tool_not_allowed"
+    TOOL_HANDLER_NOT_IN_BUILD = "tool_handler_not_in_build"
     SCOPE_NOT_ALLOWED = "scope_not_allowed"
     CONSEQUENCE_EXCEEDS_CEILING = "consequence_exceeds_ceiling"
 

@@ -122,6 +122,22 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   into fixtures the pattern set catches and fixtures it does not. The second
   group is asserted as undetected, so the module's honest limit (pattern
   matching cannot be complete) is tested rather than only written down.
+- STEP-03 D3: `ts_sentry.orchestrator.tools` and `ts_sentry.orchestrator.dispatch`
+  - the allowlisted tool table and the dispatch pipeline (mandate check ->
+  tool table -> execute -> schema check -> consequence gate -> ledger). A
+  proposal carries a tool *name* and scope *names*, resolved through
+  allowlists where absence is denial, because that is the real shape of the
+  agent boundary. Consequence comes from the table, never from the proposal,
+  so an agent cannot understate what an action costs to fit under its ceiling.
+  `validate` stays pure; dispatch is the caller that ledgers every refusal,
+  and scope refusals reuse `gates.guard_scope_request` rather than
+  reimplementing it.
+- STEP-03 D3: `RefusalCode.TOOL_HANDLER_NOT_IN_BUILD`, distinct from
+  `TOOL_NOT_ALLOWED`. A tool declared in the table whose handler lands in a
+  later phase is refused as a build limitation and ledgered as
+  `GATE_REJECTION`, never as `MANDATE_VIOLATION_ATTEMPT`: counting a build
+  limitation as a governance violation would inflate the exact metric this
+  system showcases.
 
 ### Changed
 

@@ -39,6 +39,7 @@ naming the checks it runs, so an unconfigured gate cannot silently
 auto-approve.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
@@ -116,17 +117,28 @@ class GateChecks:
 
 @dataclass(frozen=True, slots=True)
 class GateOutcome:
-    """Structured result. Never an exception, never a bare bool."""
+    """Structured result. Never an exception, never a bare bool.
+
+    ``ledgered_payloads`` carries the bodies that were digested into
+    ``ledgered``, positionally. Added in STEP-03 for the same reason
+    ``ScopeGuardResult.payload`` was: the chain stores digests, and a session
+    artifact that cannot show the body behind a ``GATE_REJECTION`` is an
+    artifact that cannot evidence the rejection it is reporting. Optional, so
+    a caller constructing an outcome directly is not forced to invent them.
+    """
 
     decision: GateDecision
     consequence: Consequence
     failures: tuple[GateFailure, ...]
     ledgered: tuple[LedgerEntry, ...]
+    ledgered_payloads: tuple[Mapping[str, object], ...] = ()
 
     def __post_init__(self) -> None:
         accepted = self.decision is GateDecision.ACCEPTED
         if accepted is bool(self.failures):
             raise ValueError("an ACCEPTED outcome carries no failures; a REJECTED one carries some")
+        if self.ledgered_payloads and len(self.ledgered_payloads) != len(self.ledgered):
+            raise ValueError("ledgered_payloads, when present, is one body per ledgered entry")
 
     @property
     def accepted(self) -> bool:
@@ -256,6 +268,7 @@ def run_gate(
         payload = {"consequence": consequence.value, "failures": []}
         decision = GateDecision.ACCEPTED
 
+    payloads = tuple({**payload, "event": event_type.value} for event_type in events)
     ledgered = tuple(
         ledger.append(
             token,
@@ -263,9 +276,9 @@ def run_gate(
             agent_id=agent_id,
             mandate_hash=mandate_hash,
             event_type=event_type,
-            payload_digest=digest_payload({**payload, "event": event_type.value}),
+            payload_digest=digest_payload(body),
         )
-        for event_type in events
+        for event_type, body in zip(events, payloads, strict=True)
     )
 
     return GateOutcome(
@@ -273,6 +286,7 @@ def run_gate(
         consequence=consequence,
         failures=failures,
         ledgered=ledgered,
+        ledgered_payloads=payloads,
     )
 
 
@@ -283,17 +297,27 @@ def run_gate(
 
 @dataclass(frozen=True, slots=True)
 class ScopeGuardResult:
-    """Outcome of a scope request. ``scope`` is populated only when granted."""
+    """Outcome of a scope request. ``scope`` is populated only when granted.
+
+    ``payload`` is the body that was digested into ``ledgered``. It is carried
+    out rather than left behind because the chain stores only digests, so a
+    caller assembling a session artifact would otherwise have to reconstruct
+    this dict by hand and hope it still matched. Added in STEP-03, when the
+    orchestrator became that caller.
+    """
 
     granted: bool
     scope: DataScope | None
     code: RefusalCode | None
     detail: str
     ledgered: LedgerEntry | None
+    payload: Mapping[str, object] | None = None
 
     def __post_init__(self) -> None:
         if self.granted is (self.scope is None):
             raise ValueError("a granted result carries a scope; a refused one carries none")
+        if (self.ledgered is None) is not (self.payload is None):
+            raise ValueError("a ledgered result carries the payload that was digested into it")
 
 
 def guard_scope_request(
@@ -324,21 +348,27 @@ def guard_scope_request(
     """
 
     def _refuse(code: RefusalCode, detail: str) -> ScopeGuardResult:
+        payload: dict[str, object] = {
+            "requested_scope": requested_name,
+            "refusal_code": code.value,
+            "agent_id": agent_id.value,
+        }
         entry = ledger.append(
             token,
             timestamp_ist=timestamp_ist,
             agent_id=agent_id,
             mandate_hash=mandate_hash,
             event_type=EventType.MANDATE_VIOLATION_ATTEMPT,
-            payload_digest=digest_payload(
-                {
-                    "requested_scope": requested_name,
-                    "refusal_code": code.value,
-                    "agent_id": agent_id.value,
-                }
-            ),
+            payload_digest=digest_payload(payload),
         )
-        return ScopeGuardResult(granted=False, scope=None, code=code, detail=detail, ledgered=entry)
+        return ScopeGuardResult(
+            granted=False,
+            scope=None,
+            code=code,
+            detail=detail,
+            ledgered=entry,
+            payload=payload,
+        )
 
     try:
         scope = resolve_scope_by_name(requested_name)

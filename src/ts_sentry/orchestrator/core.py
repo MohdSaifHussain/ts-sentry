@@ -503,6 +503,16 @@ class Session:
     def closed_ts(self) -> datetime | None:
         return self._closed_ts
 
+    def now(self) -> datetime:
+        """The session's clock, for helpers that timestamp their own writes.
+
+        ``guard_scope_request`` and ``run_gate`` take a timestamp because
+        STEP-02 refused to let anything read the wall clock behind its
+        caller's back. Dispatch gets it from here, so a session's entries all
+        come from one clock rather than from whichever one each helper found.
+        """
+        return self._clock.now()
+
     def binding(self, agent_id: AgentId) -> MandateBinding:
         try:
             return self._mandates[agent_id]
@@ -564,6 +574,29 @@ class Session:
             event_type=event_type,
             payload_digest=digest_payload(payload),
         )
+        recorded = RecordedEvent(entry=entry, payload=dict(payload))
+        self._events.append(recorded)
+        return recorded
+
+    def attach_event(self, entry: LedgerEntry, payload: Mapping[str, object]) -> RecordedEvent:
+        """Record an entry a governance helper appended on this session's behalf.
+
+        ``gates.guard_scope_request`` writes its own
+        ``MANDATE_VIOLATION_ATTEMPT`` rather than handing one back, which is
+        correct: a refusal that depends on its caller remembering to ledger it
+        is not a refusal. But it means the session did not see the payload, and
+        an entry whose body is lost is an entry nobody can check.
+
+        So the body comes back through here, and the session verifies it
+        against the digest already in the chain before filing it. A body that
+        has drifted from what was actually digested is refused rather than
+        recorded, which makes this bridge self-checking instead of trusting.
+        """
+        if digest_payload(payload) != entry.payload_digest:
+            raise ValueError(
+                f"payload does not digest to entry {entry.seq}'s payload_digest; "
+                "the body and the chain disagree"
+            )
         recorded = RecordedEvent(entry=entry, payload=dict(payload))
         self._events.append(recorded)
         return recorded
