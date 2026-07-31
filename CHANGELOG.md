@@ -133,6 +133,14 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ### Fixed
 
+- Input firewall: redaction markers were forgeable. Case content containing
+  the literal string `[ts-sentry: instruction-shaped text removed: ...]`
+  produced a model-facing block in which an attacker-planted marker was byte
+  identical to one the firewall wrote, so a reader could not tell which
+  annotations were the orchestrator's, and a payload could claim to have
+  already been neutralized. Found by an adversarial fixture Saif constructed
+  for exactly this. Markers now carry the block's nonce, which content cannot
+  hold without a preimage, so genuine markers are decidable.
 - Input firewall: case content containing U+2028, U+2029, NEL, VT, FF, FS, GS
   or RS could forge an extra record inside a fenced block. `json.dumps`
   escapes newline and carriage return, but not those, and `str.splitlines`
@@ -142,6 +150,15 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ### Known limitations
 
+- Firewall detection does not survive zero-width characters inside a keyword
+  (U+200B and similar). They break regex tokens without breaking lines, and
+  matching through them would mean normalizing text the analyst never sees,
+  which is a normalization decision rather than a pattern fix. Exotic
+  *whitespace* is covered, since Python's `\s` is Unicode-aware and matches
+  U+00A0; exotic *invisibles* are not. Asserted as an undetected fixture.
+- Firewall exfiltration detection anchors on `https?://`, so other schemes and
+  UNC paths are not matched. Widening it to any scheme-like token would fire
+  on benign comments discussing links. Asserted as undetected fixtures.
 - Firewall instruction detection is pattern-based and cannot be complete. The
   load-bearing controls are structural: case content is fenced JSON data, the
   system role is a hash-identified constant no case text can reach, and agent
