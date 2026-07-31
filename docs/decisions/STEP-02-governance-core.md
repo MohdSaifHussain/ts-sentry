@@ -49,10 +49,11 @@ tests; ledger hash chain property-tested; a tampered ledger is detected.
 - [x] verify-ledger CLI detects a fixture with a broken link at correct seq
 - [x] Gate rejection paths ledgered and structurally returned
 - [x] mypy --strict, ruff, coverage floor green; CHANGELOG updated
-- [ ] Saif's personal phase-close verification (see Outcome, "Open at
-      hand-off"): verify-ledger against an intact export, a corrupted
-      fixture at a known seq, and a truncated export with and without
-      `--expect-head`
+- [x] Saif's personal phase-close verification: verify-ledger against an
+      intact export, a corrupted fixture at a known seq, and a truncated
+      export with and without `--expect-head`
+      - Run personally by Saif, post-implementation. All four scenarios
+        behaved as specified. See "Phase close, verified" below.
 
 ## 6. Outcome
 
@@ -228,11 +229,28 @@ a trustworthy anchor is a STEP-03 obligation.
    orchestrator-side consumer" before STEP-07's import-graph test is
    written. Phase 2 added no sealed consumer.
 
-### Open at hand-off
+### Phase close, verified
 
-Commits are local and **unpushed** by Saif's instruction, pending his
-personal phase-close verification: `verify-ledger` against an intact export,
-a corrupted fixture (expecting the exact broken seq), and a truncated export
-with and without `--expect-head`. Phase 2 is not closed until that passes,
-mirroring the STEP-01 pattern where Saif's own red-team pass was the closing
-step.
+Saif ran the phase-close verification personally, mirroring the STEP-01
+pattern where his own red-team pass was the closing step rather than a
+green test suite.
+
+| Scenario | Expected | Observed |
+|---|---|---|
+| Intact JSONL export | exit 0, head reported | exit 0, head `6:3650...` |
+| Corrupted fixture | exit 4 at the exact tampered seq | exit 4 at seq 3, `entry_hash_mismatch`, both digests shown |
+| Truncated export, bare | exit 0 (limitation) | exit 0 |
+| Truncated export, `--expect-head` | exit 6, heads reported | exit 6, expected and actual heads reported |
+
+The third row is the one worth keeping in view: it is a *passing* result
+that confirms a real limitation. Chain verification alone accepted a
+truncated export, exactly as the D3 Honest Limit says it must, and only the
+caller-supplied expectation caught it. The limitation was demonstrated on a
+real artifact rather than only asserted in a test.
+
+Pushes are checkpoint-gated (CLAUDE.md Process, added in `2982b77`): commits
+were held locally per deliverable and pushed only after this confirmation.
+
+Remaining arbiter: CI on Python 3.12. Every local result in this phase was
+produced on Python 3.14.0, so the pinned-version run is the first actual
+3.12 execution of this code.
