@@ -39,6 +39,28 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   gated (wall-clock-relative recency has no meaning against a fixed
   historical build window); Accuracy is gated via `reconcile` against
   `sealed._labels` instead of a profile percentage.
+- STEP-02 D1: `ts_sentry.governance.mandate` - the `Mandate` frozen-slots
+  dataclass plus the `AgentId`, `ToolId`, `Consequence`, `VerdictKind`, and
+  `RefusalCode` StrEnums, the `mandate_hash` canonical SHA-256, and
+  `validate(action, mandate) -> Verdict` (pure, total, never raising).
+  `DataScope` is imported from `ts_sentry.governance.scopes`, not redefined.
+  `Mandate` carries an explicit SemVer 2.0.0 `version` field, validated in
+  `__post_init__` and included in the canonical hash form.
+- STEP-02 D2: `ts_sentry.governance.signature` - the human-only ENFORCE
+  construction path. `Consequence.ENFORCE` is excluded from mandate ceilings
+  at type level by the `AgentConsequence` PEP 695 alias and again at runtime
+  in `Mandate.__post_init__`; `enforce_consequence` is the only function
+  producing ENFORCE for use, and requires a `HumanSignature` whose digest
+  recomputes from (analyst_id, decision, subject_hash, signed_ts).
+- STEP-02: `ts_sentry.governance.canonical` - a separator-joined encoding for
+  hashing flat field sequences, used by `governance.signature` and, from D3,
+  by the ledger chain. Replaces ARCHITECTURE 3.2's literal `a || b`
+  concatenation, which is ambiguous (distinct field splits collide on one
+  digest); recorded as an ARCHITECTURE erratum. Structured objects keep a
+  separate canonical-JSON convention: `mandate_hash` is its only user today.
+- PEP 561 `py.typed` marker for `ts_sentry`. The package was previously
+  installed untyped, so mypy runs outside the repo's own config could not see
+  its annotations at all.
 - STEP-01 D7: `ts-sentry build-dataset` CLI
   (`ts_sentry.cli.main`), wiring D1-D6 together plus a build manifest
   (seed, generator version, git SHA, row counts, per-table SHA-256) and a
