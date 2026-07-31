@@ -17,6 +17,13 @@
 - No dynamic SQL anywhere. Parameterized query templates only.
 - Offline-first: all tests pass with the deterministic stub adapter, no
   network. Live LLM mode is env-gated.
+- Official sources only: when a decision depends on a framework's, library's,
+  or standard's current behavior (API signatures, config keys, spec wording,
+  version differences), consult the official documentation or the official
+  repository via fetch before implementing. Never rely on memory or blog-tier
+  sources for such decisions. Cite the consulted URL in the commit message or
+  the decision note. If official docs are unreachable, say so and ask rather
+  than guessing.
 
 ## Governance invariants (test-enforced, never weaken)
 - Consequence.ENFORCE is human-only: no Mandate may carry it; construction
