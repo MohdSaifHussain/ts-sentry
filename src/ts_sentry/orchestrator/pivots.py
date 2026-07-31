@@ -66,6 +66,21 @@ into an artifact that no firewall inspects. So the templates below select
 identifiers, categories, counts and timestamps, and never a free-text column.
 ``FREE_TEXT_COLUMNS`` records the rule and a test enforces it against the SQL.
 
+Every projection is aliased, and no query orders by position
+-----------------------------------------------------------
+From Saif's D1 review note: positional ``ORDER BY`` is safe as reviewed
+literals but brittle if a SELECT list is later edited. The brittleness has a
+silent half. Reordering a projection would make ``ORDER BY 2`` sort by a
+different column *and* leave ``PivotTemplate.columns`` mislabelling every field
+of every evidence record built from it, with the row count unchanged and
+nothing failing.
+
+So every projection carries an alias matching its declared column, ordering is
+by alias, and a test compares ``columns`` against the names DuckDB reports for
+the actual result set. That turns a hand-maintained mapping into a checked one:
+a renamed or reordered projection fails a test rather than silently
+mislabelling evidence.
+
 Timestamps
 ----------
 Selected as ``epoch_ms(...)``, never as ``TIMESTAMPTZ`` and never cast to text.
@@ -361,7 +376,9 @@ _INFRA_HINT = resolve_table(DataScope.INFRA_HINT)
 _VIDEO = resolve_table(DataScope.VIDEO)
 
 _SHARED_METADATA_SQL = f"""
-SELECT peer.account_id, 'signup_ip_bucket', subject.signup_ip_bucket
+SELECT peer.account_id AS peer_account_id,
+       'signup_ip_bucket' AS metadata_field,
+       subject.signup_ip_bucket AS shared_value
 FROM {_ACCOUNT_META} AS subject
 JOIN {_ACCOUNT_META} AS peer
   ON peer.signup_ip_bucket = subject.signup_ip_bucket
@@ -369,7 +386,9 @@ WHERE subject.account_id = ?
   AND peer.account_id <> subject.account_id
   AND (? = 'any' OR ? = 'signup_ip_bucket')
 UNION ALL
-SELECT peer.account_id, 'device_fingerprint_hint', subject.device_fingerprint_hint
+SELECT peer.account_id AS peer_account_id,
+       'device_fingerprint_hint' AS metadata_field,
+       subject.device_fingerprint_hint AS shared_value
 FROM {_ACCOUNT_META} AS subject
 JOIN {_ACCOUNT_META} AS peer
   ON peer.device_fingerprint_hint = subject.device_fingerprint_hint
@@ -377,7 +396,7 @@ WHERE subject.account_id = ?
   AND peer.account_id <> subject.account_id
   AND subject.device_fingerprint_hint IS NOT NULL
   AND (? = 'any' OR ? = 'device_fingerprint_hint')
-ORDER BY 2, 1
+ORDER BY metadata_field, peer_account_id
 LIMIT ?
 """
 """Accounts sharing a registration-time metadata value with one account.
@@ -392,12 +411,16 @@ caller's hands.
 """
 
 _TEMPORAL_CORRELATION_SQL = f"""
-SELECT cm.comment_id, cm.account_id, v.video_id, epoch_ms(cm.posted_ts), cm.template_id
+SELECT cm.comment_id AS comment_id,
+       cm.account_id AS account_id,
+       v.video_id AS video_id,
+       epoch_ms(cm.posted_ts) AS posted_epoch_ms,
+       cm.template_id AS template_id
 FROM {_COMMENT} AS cm
 JOIN {_VIDEO} AS v ON cm.video_id = v.video_id
 WHERE v.channel_id = ?
   AND epoch_ms(cm.posted_ts) BETWEEN ? - (? * 3600000) AND ? + (? * 3600000)
-ORDER BY epoch_ms(cm.posted_ts), cm.comment_id
+ORDER BY posted_epoch_ms, comment_id
 LIMIT ?
 """
 """Comments on one channel's videos inside a window around an anchor instant.
@@ -409,8 +432,13 @@ can see that ``window_hours`` means hours without leaving this file.
 """
 
 _ENGAGEMENT_EDGE_SQL = f"""
-SELECT e.account_id, 'video', v.video_id, e.kind, COUNT(*),
-       MIN(epoch_ms(e.ts_ist)), MAX(epoch_ms(e.ts_ist))
+SELECT e.account_id AS account_id,
+       'video' AS target_kind,
+       v.video_id AS target_id,
+       e.kind AS engagement_kind,
+       COUNT(*) AS event_count,
+       MIN(epoch_ms(e.ts_ist)) AS first_epoch_ms,
+       MAX(epoch_ms(e.ts_ist)) AS last_epoch_ms
 FROM {_ENGAGEMENT_EVENT} AS e
 JOIN {_VIDEO} AS v ON e.video_id = v.video_id
 WHERE v.channel_id = ?
@@ -418,14 +446,19 @@ WHERE v.channel_id = ?
 GROUP BY e.account_id, v.video_id, e.kind
 HAVING COUNT(*) >= ?
 UNION ALL
-SELECT e.account_id, 'channel', e.channel_id, e.kind, COUNT(*),
-       MIN(epoch_ms(e.ts_ist)), MAX(epoch_ms(e.ts_ist))
+SELECT e.account_id AS account_id,
+       'channel' AS target_kind,
+       e.channel_id AS target_id,
+       e.kind AS engagement_kind,
+       COUNT(*) AS event_count,
+       MIN(epoch_ms(e.ts_ist)) AS first_epoch_ms,
+       MAX(epoch_ms(e.ts_ist)) AS last_epoch_ms
 FROM {_ENGAGEMENT_EVENT} AS e
 WHERE e.channel_id = ?
   AND (? = 'any' OR e.kind = ?)
 GROUP BY e.account_id, e.channel_id, e.kind
 HAVING COUNT(*) >= ?
-ORDER BY 5 DESC, 1, 3
+ORDER BY event_count DESC, account_id, target_id
 LIMIT ?
 """
 """Accounts engaging with one channel, by target and kind.
@@ -437,8 +470,13 @@ is the engagement signal a sub-for-sub ring (T-02) is built from.
 """
 
 _INFRA_OVERLAP_SQL = f"""
-SELECT peer.subject_id, peer.subject_kind, peer.signal_type, peer.signal_value,
-       COUNT(*), MIN(epoch_ms(peer.observed_ts)), MAX(epoch_ms(peer.observed_ts))
+SELECT peer.subject_id AS peer_subject_id,
+       peer.subject_kind AS peer_subject_kind,
+       peer.signal_type AS signal_type,
+       peer.signal_value AS signal_value,
+       COUNT(*) AS hint_count,
+       MIN(epoch_ms(peer.observed_ts)) AS first_epoch_ms,
+       MAX(epoch_ms(peer.observed_ts)) AS last_epoch_ms
 FROM {_INFRA_HINT} AS subject
 JOIN {_INFRA_HINT} AS peer
   ON peer.signal_type = subject.signal_type
@@ -447,7 +485,7 @@ WHERE subject.subject_id = ?
   AND peer.subject_id <> subject.subject_id
   AND (? = 'any' OR subject.signal_type = ?)
 GROUP BY peer.subject_id, peer.subject_kind, peer.signal_type, peer.signal_value
-ORDER BY 3, 1
+ORDER BY signal_type, peer_subject_id
 LIMIT ?
 """
 """Other subjects carrying an infrastructure signal value this subject carries.
@@ -458,17 +496,17 @@ the analyst is being shown, not an inference about it.
 """
 
 _ACCOUNT_LINK_SQL = f"""
-SELECT ch.account_id, 'owner', 1
+SELECT ch.account_id AS account_id, 'owner' AS relation, 1 AS weight
 FROM {_CHANNEL} AS ch
 WHERE ch.channel_id = ?
 UNION ALL
-SELECT cm.account_id, 'commenter', COUNT(*)
+SELECT cm.account_id AS account_id, 'commenter' AS relation, COUNT(*) AS weight
 FROM {_COMMENT} AS cm
 JOIN {_VIDEO} AS v ON cm.video_id = v.video_id
 WHERE v.channel_id = ?
 GROUP BY cm.account_id
 HAVING COUNT(*) >= ?
-ORDER BY 2, 3 DESC, 1
+ORDER BY relation, weight DESC, account_id
 LIMIT ?
 """
 """Accounts linked to one channel: the owner, and the accounts commenting on it.

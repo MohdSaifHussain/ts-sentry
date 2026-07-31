@@ -628,11 +628,62 @@ def test_every_template_executes_and_returns_its_declared_columns(
     result = validate_params(template, params, known_ids={channel, account, subject})
     assert result.ok, result.detail
 
-    rows = connection.execute(template.sql, bind_values(template, result.values)).fetchall()
+    cursor = connection.execute(template.sql, bind_values(template, result.values))
+    rows = cursor.fetchall()
 
     assert rows, f"{template.template_id} returned nothing on the seed-42 build"
     for row in rows:
         assert len(row) == len(template.columns)
+
+
+@pytest.mark.parametrize("kind", list(PivotKind))
+def test_declared_columns_are_the_names_the_query_actually_returns(
+    connection: duckdb.DuckDBPyConnection, kind: PivotKind
+) -> None:
+    """``columns`` is checked against the result, not maintained beside it.
+
+    Saif's review note: positional ``ORDER BY`` is safe as reviewed literals but
+    brittle if a SELECT list is later edited. The brittleness has a silent half
+    that arity checking misses entirely. Reordering a projection would make
+    ``ORDER BY 2`` sort by a different column *and* leave ``columns``
+    mislabelling every field of every evidence record built from it, with the
+    row count unchanged and nothing failing.
+
+    Aliasing every projection and ordering by name removes the first half.
+    This test removes the second: the declared contract is compared against the
+    names DuckDB reports for the actual result set, so a renamed or reordered
+    projection fails here rather than silently mislabelling evidence.
+    """
+    channel, account, subject, anchor = _seed_case(connection)
+    template = PIVOT_TEMPLATES[kind]
+    result = validate_params(
+        template,
+        _params_for(kind, channel, account, subject, anchor),
+        known_ids={channel, account, subject},
+    )
+    assert result.ok, result.detail
+
+    cursor = connection.execute(template.sql, bind_values(template, result.values))
+
+    assert tuple(column[0] for column in cursor.description) == template.columns
+
+
+def test_no_template_orders_by_column_position() -> None:
+    """Positional ``ORDER BY`` is gone, and stays gone.
+
+    Keeping the note's finding as a rule rather than as a one-time cleanup: a
+    future template that sorts by ordinal reintroduces exactly the coupling
+    between projection order and sort order that this pass removed.
+    """
+    for template in PIVOT_TEMPLATES.values():
+        order_by = re.search(r"ORDER BY (.+)", template.sql)
+        assert order_by is not None, f"{template.template_id} has no ORDER BY"
+        for term in order_by.group(1).split(","):
+            leading = term.strip().split()[0]
+            assert not leading.isdigit(), (
+                f"{template.template_id} orders by position ({leading}); order by the column "
+                "alias so the sort survives an edit to the SELECT list"
+            )
 
 
 def test_the_row_limit_is_enforced_by_the_query_not_by_trimming(
