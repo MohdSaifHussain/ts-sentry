@@ -41,6 +41,8 @@
 - On phase completion: append an Outcome section to the STEP file (shipped,
   deviations + rationale, exit-checklist state). Do not tag releases before
   STEP-08.
+- Pushes to origin are checkpoint-gated: commit locally per deliverable;
+  push only after Saif confirms his phase-close verification.
 
 ## Documentation style
 - No em-dashes anywhere in docs or docstrings. Verified metrics only. No
