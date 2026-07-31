@@ -87,13 +87,22 @@ Hash-chain verification detects modification, reordering, and interior
 deletion. It **cannot** detect entries removed from the *end*: what remains
 is a shorter chain whose every link still recomputes, indistinguishable from
 a session that ended earlier. This limitation is asserted by a test
-(`test_truncating_the_tail_is_undetectable`) rather than only documented.
+(`test_tail_truncation_is_invisible_to_chain_verification_alone`) rather than
+only documented.
 
 `--expect-head` is a comparison verb, not an anchor system. It compares
 against an expectation the caller already holds; it does not store, derive,
-or manage one. Anchor storage belongs to the STEP-03 session manifest, so
-until that lands you supply the expected `COUNT:HASH` yourself from a record
-you trust.
+or manage one. Anchor storage is the STEP-03 session manifest, which records
+the expected head at `SESSION_CLOSE`.
+
+What that anchor does and does not buy you: an anchor is only as independent
+as its custody. A manifest sitting next to the ledger it describes can be
+rewritten by anyone who can truncate that ledger, so co-located files catch
+accidents and partial tampering, not a determined editor with write access to
+the whole session directory. The anchor becomes a real control when a copy of
+the manifest is held where the ledger's writer cannot reach it. Both halves
+are asserted in `tests/test_session_manifest.py`, including the one that shows
+a rewritten manifest agreeing with a truncated ledger.
 
 ### Quality gate (STEP-01 D6)
 

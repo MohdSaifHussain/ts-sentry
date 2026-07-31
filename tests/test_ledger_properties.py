@@ -154,8 +154,9 @@ def test_deleting_any_interior_entry_breaks_verification(steps: list[_Step], tar
 
     Scoped to interior entries deliberately. Truncating the tail is not
     detectable by chain verification alone and must not be claimed here; see
-    ``test_truncating_the_tail_is_undetectable`` for the limit, stated
-    explicitly rather than hidden by a strategy that never generates it.
+    ``test_tail_truncation_is_invisible_to_chain_verification_alone`` for the
+    limit, stated explicitly rather than hidden by a strategy that never
+    generates it.
     """
     entries = list(_build(steps))
     index = target % (len(entries) - 1)  # never the last entry
@@ -170,19 +171,27 @@ def test_deleting_any_interior_entry_breaks_verification(steps: list[_Step], tar
 
 @_SETTINGS
 @given(steps=st.lists(_STEP, min_size=2, max_size=15))
-def test_truncating_the_tail_is_undetectable(steps: list[_Step]) -> None:
+def test_tail_truncation_is_invisible_to_chain_verification_alone(
+    steps: list[_Step],
+) -> None:
     """A named, test-enforced limitation of hash chains, not a defect.
 
     Dropping entries from the end leaves a shorter chain whose every link
     still recomputes, so verification alone cannot distinguish it from a
-    session that simply ended earlier. Detecting it requires an independent
-    anchor recording the expected head (length plus final entry_hash), which
-    this phase does not have: the session manifest that would carry one is
-    STEP-03.
+    session that simply ended earlier.
 
-    Asserted rather than merely documented, so the day an anchor lands this
-    test fails and forces the limitation to be rewritten instead of quietly
-    outliving its own truth.
+    Rewritten in STEP-03, when the anchor this test was waiting for landed.
+    Worth being precise about what changed, because the assertion below did
+    not: ``verify_chain`` is untouched and still cannot see a truncated tail,
+    so the property is as true now as it was in STEP-02. What the session
+    manifest falsified was the *previous docstring's* claim about the system,
+    which said detection required an anchor "which this phase does not have".
+    It has one now, so the limitation has been narrowed to a statement about
+    this function rather than left to quietly outlive its own truth.
+
+    The other half is asserted in
+    ``tests/test_session_manifest.py::test_tail_truncation_is_caught_by_the_manifest_anchor``.
+    Neither test states the limit correctly on its own.
     """
     entries = list(_build(steps))
     del entries[-1]

@@ -42,18 +42,25 @@ through the DuckDB client requires ``pytz`` (verified: it raises
 ``InvalidInputException`` without it), which this project does not depend on
 and now does not need to.
 
-Honest limit: tail truncation is not detectable
------------------------------------------------
+Honest limit: this module cannot detect tail truncation
+-------------------------------------------------------
 Chain verification detects modification, reordering, and interior deletion.
 It cannot detect entries dropped from the *end*: what remains is a shorter
 chain whose every link still recomputes, indistinguishable from a session
 that ended earlier. Surfaced by a hypothesis property rather than assumed,
-and pinned by ``test_truncating_the_tail_is_undetectable``.
+and pinned by
+``test_tail_truncation_is_invisible_to_chain_verification_alone``.
 
-Detecting it needs an independent anchor recording the expected head (chain
-length plus final ``entry_hash``) held outside the chain itself. The session
-manifest that would carry one is STEP-03, so no half-anchor is built here.
-Carried into Honest Limits.
+Narrowed in STEP-03, and worth stating precisely. Nothing in this module
+changed: ``verify_chain`` could not see a truncated tail then and cannot now.
+What changed is that the independent anchor it needs, the expected head
+(chain length plus final ``entry_hash``) recorded outside the chain, now
+exists in ``orchestrator.manifest``. So the limitation is a property of chain
+verification rather than of the system, and the system's own limit moved to
+where the anchor is kept: an anchor stored beside the ledger it describes is
+rewritable by anyone who can truncate that ledger, so independence of custody
+is what makes it a control. Both halves are asserted, and the second is
+carried into Honest Limits.
 
 Entries validate their field *shapes* on construction but do not verify
 their own hash. That is deliberate and differs from ``HumanSignature``,
@@ -81,12 +88,14 @@ from ts_sentry.governance.mandate import AgentId
 __all__ = [
     "GENESIS_PREV_HASH",
     "BreakReason",
+    "ChainHead",
     "ChainVerification",
     "EventType",
     "Ledger",
     "LedgerEntry",
     "OrchestratorToken",
     "canonical_timestamp",
+    "chain_head",
     "compute_entry_hash",
     "digest_payload",
     "read_jsonl",
@@ -326,6 +335,34 @@ def _broken(count: int, seq: int, reason: BreakReason, detail: str) -> ChainVeri
     )
 
 
+@dataclass(frozen=True, slots=True)
+class ChainHead:
+    """Where a chain currently ends: its length and its final ``entry_hash``.
+
+    ``entry_hash`` of an empty chain is the genesis value, so a head is always
+    well defined and "nothing has been appended" has a spelling rather than
+    being a null.
+
+    Lives here rather than in ``cli.main``, where it was first written, because
+    two consumers now need the identical spelling and neither may import the
+    other: ``verify-ledger`` compares a head, and the STEP-03 session manifest
+    stores one. A head that renders differently in the store and the comparison
+    is a head that cannot be compared.
+    """
+
+    count: int
+    entry_hash: str
+
+    def render(self) -> str:
+        return f"{self.count}:{self.entry_hash}"
+
+
+def chain_head(entries: tuple[LedgerEntry, ...]) -> ChainHead:
+    if not entries:
+        return ChainHead(count=0, entry_hash=GENESIS_PREV_HASH)
+    return ChainHead(count=len(entries), entry_hash=entries[-1].entry_hash)
+
+
 def verify_chain(entries: Iterable[LedgerEntry]) -> ChainVerification:
     """Recompute the chain and report the first broken link, if any.
 
@@ -472,6 +509,16 @@ class Ledger:
     @property
     def last_hash(self) -> str:
         return self._last_hash
+
+    @property
+    def head(self) -> ChainHead:
+        """The current head, from the cached tail rather than a rescan.
+
+        Equal to ``chain_head(self.read_all())`` by construction, since seq is
+        contiguous from zero; a test asserts the two agree so the O(1) path
+        cannot drift from the reading path.
+        """
+        return ChainHead(count=self._last_seq + 1, entry_hash=self._last_hash)
 
     def append(
         self,

@@ -22,16 +22,19 @@ from ts_sentry.cli.main import (
     EXIT_INPUT_ERROR,
     EXIT_OK,
     InputError,
-    chain_head,
     main,
     parse_expect_head,
 )
 from ts_sentry.data.tz import IST
+
+# chain_head moved to governance.ledger in STEP-03: the session manifest needs
+# the identical spelling of a chain head and must not import from the CLI.
 from ts_sentry.governance.ledger import (
     GENESIS_PREV_HASH,
     EventType,
     Ledger,
     OrchestratorToken,
+    chain_head,
     digest_payload,
     read_jsonl,
     read_store,

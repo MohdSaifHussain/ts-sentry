@@ -90,13 +90,40 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 - PEP 561 `py.typed` marker for `ts_sentry`. The package was previously
   installed untyped, so mypy runs outside the repo's own config could not see
   its annotations at all.
+- STEP-03 D1: `ts_sentry.orchestrator.core` - the synchronous session state
+  machine. `SessionState` transitions come from one exhaustive `match` closed
+  by `assert_never`, and the published `TRANSITIONS` table is derived from it
+  rather than written beside it. Illegal transitions raise (a caller bug);
+  budget exhaustion returns a `CloseReason` and closes the session cleanly
+  with partial results ledgered (STEP-03 3.3). Clocks are injected, so no
+  component reads wall time except through `SystemClock`. `SESSION_OPEN`
+  carries a mandate-set hash binding the entry to the exact fleet
+  configuration the session opened with.
+- STEP-03 D1: `ts_sentry.orchestrator.manifest` - the session manifest, which
+  records the ledger's expected head (entry count plus final `entry_hash`) at
+  `SESSION_CLOSE`. This is the anchor STEP-02 deliberately did not build, and
+  it discharges the third obligation that phase carried forward.
+- `ts_sentry.provenance` - `git_sha()` and `sha256_file()`, shared by the
+  build manifest and the session manifest so both stamp provenance the same
+  way.
+
+### Changed
+
+- `ChainHead` and `chain_head` moved from `ts_sentry.cli.main` to
+  `ts_sentry.governance.ledger`. No behavior change: the session manifest and
+  `verify-ledger` need the identical spelling of a chain head, and
+  `orchestrator` must not import from `cli` to get it. `Ledger.head` now
+  answers from the cached tail without rescanning the chain.
 
 ### Known limitations
 
-- Ledger chain verification cannot detect entries removed from the *end* of a
-  chain: what remains is a shorter chain whose every link still recomputes.
-  `verify-ledger --expect-head` compares against an expectation the caller
-  supplies; storing that anchor is a STEP-03 session-manifest concern.
+- Ledger chain verification still cannot detect entries removed from the *end*
+  of a chain: what remains is a shorter chain whose every link still
+  recomputes. The STEP-03 session manifest now stores the anchor that catches
+  it, but an anchor is only as independent as its custody: a manifest written
+  beside the ledger it describes can be rewritten by anyone able to truncate
+  that ledger. It catches accidents and partial tampering; it becomes a real
+  control once a copy is held where the ledger's writer cannot reach it.
 - STEP-01 D7: `ts-sentry build-dataset` CLI
   (`ts_sentry.cli.main`), wiring D1-D6 together plus a build manifest
   (seed, generator version, git SHA, row counts, per-table SHA-256) and a

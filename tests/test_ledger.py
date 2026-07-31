@@ -208,6 +208,26 @@ def test_altering_an_entry_hash_breaks_the_next_link(con: duckdb.DuckDBPyConnect
     assert result.first_broken_seq == 1
 
 
+def test_a_rewritten_link_is_reported_as_a_link_break(con: duckdb.DuckDBPyConnection) -> None:
+    """The one ``BreakReason`` no test reached before STEP-03.
+
+    Every other tampering shape fires an earlier check: altering a covered
+    field breaks the entry's own recomputation, and altering an ``entry_hash``
+    breaks that entry before the *next* one's link is ever examined. Reaching
+    ``PREV_HASH_MISMATCH`` takes rewriting a ``prev_hash`` specifically, which
+    is what an attacker splicing two chains together would do. Found as a
+    coverage gap while wiring the session ledger, and recorded in the STEP-03
+    Outcome as a finding outside the deliverables.
+    """
+    entries = list(_chain(con, 4).read_all())
+    entries[2] = replace(entries[2], prev_hash="9" * 64)
+
+    result = verify_chain(entries)
+    assert not result.intact
+    assert result.first_broken_seq == 2
+    assert result.reason is BreakReason.PREV_HASH_MISMATCH
+
+
 def test_deleting_an_entry_is_detected(con: duckdb.DuckDBPyConnection) -> None:
     """Append-only means no gaps: a deletion breaks contiguity."""
     entries = list(_chain(con, 5).read_all())

@@ -15,13 +15,10 @@ fail, 4 broken chain, 5 input error, 6 chain-head mismatch.
 """
 
 import argparse
-import hashlib
 import json
-import subprocess
 import sys
 import tempfile
 from collections.abc import Callable
-from dataclasses import dataclass
 from pathlib import Path
 from typing import NoReturn
 
@@ -33,8 +30,9 @@ from ts_sentry.data.quality import QualityGateResult, QualityThresholds, run_qua
 from ts_sentry.data.store import export_dataset, persist_dataset
 from ts_sentry.governance.canonical import require_sha256_hex
 from ts_sentry.governance.ledger import (
-    GENESIS_PREV_HASH,
+    ChainHead,
     LedgerEntry,
+    chain_head,
     read_jsonl,
     read_store,
     verify_chain,
@@ -45,6 +43,7 @@ from ts_sentry.governance.scopes import (
     resolve_export_path,
     resolve_scope_by_name,
 )
+from ts_sentry.provenance import git_sha, sha256_file
 
 GENERATOR_VERSION = "0.1.0"
 
@@ -56,21 +55,6 @@ EXIT_INPUT_ERROR = 5
 EXIT_HEAD_MISMATCH = 6
 
 _SEALED_ONLY_COLUMNS = frozenset({"threat_class", "ring_id", "generator_params_hash", "planted_ts"})
-
-
-def _git_sha() -> str:
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False
-    )
-    return result.stdout.strip() if result.returncode == 0 else "unknown"
-
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _leakage_self_check(out_dir: Path) -> bool:
@@ -161,7 +145,7 @@ def run_build_dataset(
         "seed": seed,
         "scale": scale,
         "generator_version": GENERATOR_VERSION,
-        "git_sha": _git_sha(),
+        "git_sha": git_sha(),
         "row_counts": {
             "account_meta": len(dataset.accounts),
             "channel": len(dataset.channels),
@@ -172,7 +156,7 @@ def run_build_dataset(
             "sealed_labels": len(dataset.sealed_labels),
         },
         "table_hashes": {
-            scope.value: _sha256_file(resolve_export_path(scope, out_dir)) for scope in DataScope
+            scope.value: sha256_file(resolve_export_path(scope, out_dir)) for scope in DataScope
         },
         "quality_gate": _quality_gate_manifest(gate_result),
     }
@@ -189,28 +173,6 @@ def run_build_dataset(
 # --------------------------------------------------------------------------
 # STEP-02 D6: verify-ledger
 # --------------------------------------------------------------------------
-
-
-@dataclass(frozen=True, slots=True)
-class ChainHead:
-    """Where a chain currently ends.
-
-    ``entry_hash`` of an empty chain is the genesis value, so a head is
-    always well defined and "nothing has been appended" has a spelling rather
-    than being a null.
-    """
-
-    count: int
-    entry_hash: str
-
-    def render(self) -> str:
-        return f"{self.count}:{self.entry_hash}"
-
-
-def chain_head(entries: tuple[LedgerEntry, ...]) -> ChainHead:
-    if not entries:
-        return ChainHead(count=0, entry_hash=GENESIS_PREV_HASH)
-    return ChainHead(count=len(entries), entry_hash=entries[-1].entry_hash)
 
 
 class InputError(Exception):
