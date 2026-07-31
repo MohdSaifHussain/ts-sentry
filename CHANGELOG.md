@@ -83,6 +83,10 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   Dispatches by extension (`.jsonl`, `.duckdb`) onto one shared verification
   core, always reports the chain head, and exits 0 intact / 4 broken chain
   (first broken seq printed) / 5 input error / 6 head mismatch.
+  `verify-ledger` never exits 2: argparse's own usage errors are translated
+  to 5, so malformed input behaves identically across supported Python
+  versions and no exit code carries two meanings. `build-dataset` keeps
+  argparse's stock exit 2, unchanged.
 - PEP 561 `py.typed` marker for `ts_sentry`. The package was previously
   installed untyped, so mypy runs outside the repo's own config could not see
   its annotations at all.

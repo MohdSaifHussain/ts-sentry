@@ -251,6 +251,48 @@ real artifact rather than only asserted in a test.
 Pushes are checkpoint-gated (CLAUDE.md Process, added in `2982b77`): commits
 were held locally per deliverable and pushed only after this confirmation.
 
-Remaining arbiter: CI on Python 3.12. Every local result in this phase was
-produced on Python 3.14.0, so the pinned-version run is the first actual
-3.12 execution of this code.
+### CI on Python 3.12: an argparse behavioral divergence
+
+The pinned-version run was the first actual 3.12 execution of this code, and
+it earned its keep. 276 of 277 passed. The DuckDB timezone test passed under
+a genuinely UTC runner, clearing the phase's substantive risk: the
+false-broken-chain defect avoided in D3 stays avoided in the environment
+where it would have appeared.
+
+One failure, and it was a real contract defect rather than a test artifact:
+`test_malformed_expect_head_exits_five[-1:...]`.
+
+Cause, per the official documentation
+(https://docs.python.org/3/library/argparse.html): argparse notes that "some
+situations are inherently ambiguous", and resolves them with the rule that
+"positional arguments may only begin with `-` if they look like negative
+numbers and there are no options in the parser that look like negative
+numbers". The value `-1:<64 hex>` does not look like a negative number, so
+3.12.13 classifies it as an option token, leaving `--expect-head` without a
+value and raising argparse's own error, which "terminates the program with a
+status code of 2" before `parse_expect_head` ever runs. Python 3.14 consumes
+the same token as a value and reaches our validation, exiting 5. Same input,
+two exit codes, decided by the interpreter.
+
+Fixed in the contract rather than in the test, per Saif's direction, and the
+`-1` case stays in the parametrize. `verify-ledger` now translates argparse's
+usage errors into `EXIT_INPUT_ERROR`, so malformed input exits 5 on every
+supported interpreter. This also removes a latent collision that predated the
+divergence: argparse's status 2 is `EXIT_QUALITY_GATE_FAIL` elsewhere in this
+CLI, so a mistyped flag was indistinguishable from a failed data-quality
+gate. `build-dataset` keeps argparse's stock behaviour, so the STEP-01 CLI
+contract is unchanged.
+
+Worth recording: the first fix was incomplete, and a test written for it
+caught the gap. Unrecognized arguments are reported by the *root* parser even
+when a subcommand was named, because `parse_args()` collects leftovers from
+`parse_known_args()` and errors on them itself. Translating only the
+subparser left `verify-ledger FILE --not-a-flag` escaping as exit 2, which is
+precisely the collision the change existed to remove. The root parser raises
+too now.
+
+Local verification cannot cover this class of finding: no 3.12 interpreter is
+installed on the development machine (`py --list` shows 3.14 only). The
+regression is therefore pinned by a test that drives argparse's error path
+with an option value that is absent on every version, plus a test asserting
+no `verify-ledger` invocation returns exit 2 at all.

@@ -69,11 +69,17 @@ Exit codes:
 |---|---|
 | `0` | Chain intact. If `--expect-head` was given, the head matched too. |
 | `4` | Broken chain. The first broken sequence number is printed to stdout and summarized on stderr. |
-| `5` | Input error: no such file, unsupported extension, unreadable or malformed content, or a malformed `--expect-head` value. Deliberately distinct from `4`, so "wrong file" is never mistaken for "tampered file". |
+| `5` | Input error: no such file, unsupported extension, unreadable or malformed content, a malformed `--expect-head` value, a missing argument, or an unrecognized flag. Deliberately distinct from `4`, so "wrong file" is never mistaken for "tampered file". |
 | `6` | Chain links are intact but the head does not match `--expect-head`. |
 
 Precedence: chain integrity is checked before the head comparison, because a
 broken chain makes any head claim meaningless.
+
+`verify-ledger` never exits `2`. Argparse's own usage errors would normally
+exit `2`, which means "quality gate failed" for `build-dataset`; they are
+translated to `5` so no exit code carries two meanings and so malformed
+input behaves identically across supported Python versions. `build-dataset`
+usage errors still exit `2` through argparse, unchanged.
 
 #### What `--expect-head` is, and what it is not
 
