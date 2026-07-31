@@ -176,6 +176,18 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   pending-handler set shrank from four to three when the triage handler
   landed, and a phase that passes its deadline without landing a handler
   reddens the suite.
+- STEP-03 D6: `ts-sentry run-session --agent triage --seed-dataset PATH`, plus
+  `ts_sentry.orchestrator.session_runner` and `ts_sentry.orchestrator.fleet`.
+  Opens a session, runs one agent turn, closes, and writes `ledger.jsonl`,
+  `ledger.duckdb`, `ranked_queue.json`, `session_events.json`, and
+  `session_manifest.json`. The dataset is opened read-only, matching the
+  OBSERVE ceiling. Offline and free by default: live mode needs `--llm-mode
+  live` *and* `TS_SENTRY_LLM_MODE=live`, so the intent is expressed twice.
+  Exit codes 0 intact / 4 broken chain / 5 input error.
+- STEP-03 D6: `verify-ledger --expect-head-from MANIFEST` reads the anchor out
+  of a session manifest, mutually exclusive with `--expect-head`. This joins
+  the comparison verb STEP-02 shipped to the storage STEP-03 D1 built; without
+  it the anchor would exist but nothing would read it.
 
 ### Changed
 

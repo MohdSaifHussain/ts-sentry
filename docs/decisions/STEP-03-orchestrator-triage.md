@@ -1,7 +1,7 @@
 # STEP-03: Orchestrator + Triage Agent
 
 **Project:** Trust & Safety Sentry | **Phase:** 3 of 8 | **Date:** 31 July 2026 (IST)
-**Status:** Specified, not started
+**Status:** D1-D6 implemented; awaiting Saif's phase-close verification
 **Depends on:** STEP-01, STEP-02
 
 ## 1. Objective
@@ -39,8 +39,187 @@ closes with an intact chain.
 - Evidence pivots, memos, prompt registry evaluation.
 
 ## 5. Exit Checklist
-- [ ] Full session on seed-42 dataset produces intact ledger (verify-ledger 0)
-- [ ] Injection fixture corpus: 0 behavioral deviations
-- [ ] Monotonicity property green; component vectors present on every row
-- [ ] CI fully offline green; live-mode smoke documented
-- [ ] mypy --strict, ruff, coverage floor green; CHANGELOG updated
+- [x] Full session on seed-42 dataset produces intact ledger (verify-ledger 0)
+      - `build-dataset --seed 42 --scale 1 --out build_p3` then `run-session
+        --agent triage --seed-dataset build_p3`: 25 cases ranked, 25 rationales
+        accepted, closed `completed`, head `8:a02af8f9...`; `verify-ledger`
+        exit 0 on both the JSONL export and the DuckDB store.
+- [x] Injection fixture corpus: 0 behavioral deviations
+      - True and narrow. See "What the 3.2 result does and does not say".
+- [x] Monotonicity property green; component vectors present on every row
+      - Property restated at floating-point precision after hypothesis found a
+        counter-example; see below.
+- [x] CI fully offline green; live-mode smoke documented
+      - 558 tests, no network. Verified by running the whole suite with
+        `socket.connect`, `create_connection` and `connect_ex` patched to
+        raise: zero attempts. The live-mode smoke is documented as a procedure
+        and **not run**; see Honest limits.
+- [x] mypy --strict, ruff, coverage floor green; CHANGELOG updated
+      - 99% line coverage against a 90 floor.
+
+## 6. Outcome
+
+Shipped: D1-D6, in `src/ts_sentry/orchestrator/`, `src/ts_sentry/agents/`, and
+the `run-session` subcommand. The D1/D2 review stop was observed; Saif reviewed
+the firewall on source and supplied an adversarial fixture set, which produced
+one real finding. 558 tests green, mypy `--strict` and ruff clean, 99% line
+coverage against a 90 floor.
+
+### The four carried obligations, discharged
+
+1. **Signature import-graph test.** In `tests/test_import_graph.py`, worded per
+   the sealed two-consumer model and enforced over the *transitive* first-party
+   closure rather than direct imports. It failed on its first run, and the
+   failure was a design defect rather than a false positive:
+   `agents.triage.rationale` reached `governance.signature` through
+   `verifier -> gates`. The rule could have been widened; it was not, because
+   an agent holding its own verifier is an agent nobody is verifying.
+   Verification moved to `orchestrator/rationale_check.py` and the agent kept
+   only the citation format it writes to. The agent's output schema likewise
+   carries accepted rationale *text* rather than the verifier's verdict type.
+2. **No-orphan `ToolId`.** Entry per ID now, handler per ID by its own phase,
+   per Saif's chosen reading. `RefusalCode.TOOL_HANDLER_NOT_IN_BUILD` keeps a
+   build limitation from ever being counted as a mandate violation, and it
+   ledgers `GATE_REJECTION` rather than `MANDATE_VIOLATION_ATTEMPT`. The
+   countdown binds at full strength: the pending set shrank from four to three
+   when the triage handler landed, and bumping `IMPLEMENTATION_PHASE` without
+   landing the handler that phase owes reddens the suite.
+3. **Session-manifest head anchor.** `orchestrator/manifest.py` records the
+   expected head after `SESSION_CLOSE` is appended, and
+   `verify-ledger --expect-head-from` reads it back. Demonstrated on a real
+   artifact: a truncated export verifies clean (exit 0) and the anchor refuses
+   it (exit 6).
+4. **Refusal ledgering.** `validate()` is unchanged, still pure and total with
+   no I/O. `orchestrator/dispatch.py` is the caller that ledgers, through a
+   single `_refuse` helper so the property is checkable by reading one
+   function. Scope refusals reuse `gates.guard_scope_request` rather than a
+   reimplementation.
+
+### The truncation test, rewritten precisely
+
+`test_truncating_the_tail_is_undetectable` was rewritten as its own docstring
+demanded, but the framing needs stating accurately: landing the anchor did
+**not** make it fail. `verify_chain` is untouched and still cannot see a
+truncated tail, so its assertion stays true. What the anchor falsified was the
+docstring's claim *about the system*. It is now
+`test_tail_truncation_is_invisible_to_chain_verification_alone`, narrowed to a
+statement about that function, with the companion in
+`tests/test_session_manifest.py` asserting what the anchor catches.
+
+The system's own limit moved rather than disappeared, and is asserted: an
+anchor is only as independent as its custody. A test shows a rewritten manifest
+agreeing with a truncated ledger. Co-located files catch accidents and partial
+tampering; the anchor becomes a real control when a copy is held where the
+ledger's writer cannot reach it.
+
+### Findings from Saif's adversarial fixture set (D2 review stop)
+
+Seven fixtures, placed by measured result with no pattern tuned to force a
+pass. Two DETECTED: case/spacing evasion, and non-breaking-space separators
+(Python's `re` is Unicode-aware, so `\s` matches U+00A0). Five UNDETECTED and
+asserted as such: zero-width space inside a keyword, `ftp://` and UNC-path
+exfiltration, redaction-marker forgery, and CRLF record forgery.
+
+**Redaction markers were forgeable, and that was a real finding.** Case content
+containing the literal marker string produced a model-facing block in which an
+attacker-planted marker was byte identical to one the firewall wrote. Two
+things were wrong at once: marker text is orchestrator-authored text living
+inside the data channel, so the fence's own failure mode reappeared one level
+down; and it read in the attacker's favour, because a payload wrapped in a fake
+marker claims to have already been neutralized. Fixed by binding markers to the
+block nonce, which closes it by the same preimage argument the fence rests on.
+
+### Defects found by tests rather than by inspection
+
+- **U+2028 fence escape (D2).** Found by a hypothesis property. `json.dumps`
+  escapes newline and carriage return but not U+2028, U+2029, NEL, VT, FF, FS,
+  GS or RS, while `str.splitlines` breaks on all of them, so a comment carrying
+  U+2028 plus a forged JSON object appeared as *two records inside one fenced
+  block*. That is case content writing a record into the analyst's evidence.
+  Fixed by escaping those characters.
+- **DuckDB timestamp rendering, again (D5).** Reading `TIMESTAMPTZ` into Python
+  needs `pytz`, which this project does not have, and casting to text would
+  have been quieter and worse: DuckDB renders in the *reader's* session time
+  zone. The recidivism component counts distinct observation days, so two
+  machines would have computed different priorities from one dataset and
+  neither would have looked wrong. Timestamps are now selected as
+  `epoch_ms(...)`, verified identical under three reader time zones. Same class
+  of defect STEP-02 D3 avoided in the ledger, found in a new place.
+- **Monotonicity is non-strict in floating point (D5).** Hypothesis immediately
+  found that raising `severity_class` from 0.9999999999999999 to 1.0 leaves the
+  priority bit-identical, because the weighted difference falls below the sum's
+  resolution. Not fixable in the scorer and not a defect in it, so 3.1's
+  property is now two parts: priority is never lower when a component rises
+  (always), and strictly higher once the change survives the weighting.
+- **`PREV_HASH_MISMATCH` had no test (D1).** Every other tampering shape fires
+  an earlier check, so reaching it takes rewriting a `prev_hash` specifically.
+  Pre-existing gap, now covered.
+
+### What the 3.2 result does and does not say
+
+"0 behavioral deviations" is true and narrow. The corpus proves that **no case
+content can change what a rationale may cite**, because the resolvable id set
+comes from the scored queue and the verifier checks against it. It is **not**
+evidence that a model resists injection: the stub is deterministic and cannot
+be persuaded, so no assertion in this phase is about model behavior. The claim
+is about the pipeline, that output is checked rather than trusted, and it holds
+regardless of which model sits behind the adapter.
+
+### Recorded readings and deviations
+
+1. **The flagged-entity queue (`orchestrator/detection_stub.py`).**
+   ARCHITECTURE 4.1 gives triage a queue STEP-01 never built, and Honest Limits
+   says this system does not detect abuse. Resolved per Saif: a deterministic
+   stub standing in for the upstream enterprise detector. **Severity is a
+   heuristic stand-in signal, not ground truth**, with no sealed influence
+   direct or derived, and a test asserts that against the SQL rather than the
+   docstring. It has no measured precision or recall and must never be reported
+   as detection performance.
+2. **The model call sits after the tool, not inside it.** Handlers are
+   deterministic and make no model call, so a ranking is reproducible from the
+   dataset alone; rationales are a separate, separately verified, separately
+   ledgered step. A tool that could prompt would be an agent wearing an
+   allowlist entry.
+3. **Two event-type readings**, in the style STEP-02 used for its ENFORCE
+   reading: a declared tool with no handler ledgers `GATE_REJECTION` alone
+   (nothing was violated), and a handler that raised ledgers `TOOL_RESULT`
+   carrying the failure with no gate run (a gate over a nonexistent artifact
+   would be manufacturing a verdict).
+4. **`ScopeGuardResult` and `GateOutcome` gained payload fields**, bridged by
+   `Session.attach_event`. The chain stores only digests, so an artifact that
+   cannot show the body behind a `GATE_REJECTION` cannot evidence it. The
+   bridge verifies the body against the digest before filing it.
+5. **Module moves, no behavior change.** `ChainHead`/`chain_head` moved to
+   `governance.ledger` and `git_sha`/`sha256_file` to `ts_sentry.provenance`,
+   because two consumers now need the identical spelling and `orchestrator`
+   must not import `cli`. `orchestrator.toolspec` was split from
+   `orchestrator.tools` to break a cycle between the table and its handlers.
+
+### Cost and credentials
+
+The system builds, tests, and runs a full session with **zero credentials and
+zero cost**. `TS_SENTRY_LLM_MODE` gates the live path and is absent by default;
+anything but exactly `live` resolves to the stub. `LiveAdapter` refuses to
+construct without both that variable and `ANTHROPIC_API_KEY`, whose *value* is
+never read: only its presence is checked, and the vendor client reads it
+itself. That package is an optional extra and is not installed.
+`tests/conftest.py` strips all three variables session-wide, so the guarantee
+does not depend on anyone's shell. Verified by running the suite with the live
+variables exported, and again with the socket layer patched to raise.
+
+### Honest limits
+
+- **`LiveAdapter.complete` is untested and unrun.** It is marked `no-cover`;
+  covering it means a network call in CI or a mock, and a mock would assert
+  only that the code matches the shape its author imagined for the SDK. The
+  live-mode smoke run is documented as a procedure and **not performed**, so
+  the live path was written against the official API reference and never
+  executed. That is a real gap, stated rather than implied.
+- **Prompt-pattern injection detection is incomplete by construction.** Four
+  fixtures are asserted as undetected to keep that honest. The load-bearing
+  controls are structural.
+- **The triage scorer is transparent, not accurate.** Weights are analyst
+  judgment, not fitted parameters; there is no measured outcome on synthetic
+  data to fit against.
+- **The 3.12 gap persists.** Local Python is 3.14 and CI pins 3.12, so every
+  green result here is a 3.14 result, as in STEP-02.

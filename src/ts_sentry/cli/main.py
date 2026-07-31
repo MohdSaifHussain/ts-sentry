@@ -8,10 +8,18 @@ Two subcommands so far, both documented in README.md:
   AnalystKit quality gate, and the build manifest.
 * ``verify-ledger`` (STEP-02 D6) recomputes a trajectory-ledger hash chain
   and reports the first broken link.
+* ``run-session`` (STEP-03 D6) opens an analyst session, runs one agent turn,
+  closes with an anchored manifest, and writes the session artifacts.
 
 Exit codes are allocated across the whole CLI rather than per subcommand, so
 no number means two different things: 0 pass, 2 quality-gate fail, 3 leakage
 fail, 4 broken chain, 5 input error, 6 chain-head mismatch.
+
+``run-session`` is offline by default and costs nothing. ``--llm-mode stub``
+is the default and the CI path; ``live`` additionally requires the
+``TS_SENTRY_LLM_MODE`` environment variable and a credential the adapter never
+reads, only checks for. A run with no environment configured at all is a
+complete, valid session.
 """
 
 import argparse
@@ -43,6 +51,10 @@ from ts_sentry.governance.scopes import (
     resolve_export_path,
     resolve_scope_by_name,
 )
+from ts_sentry.orchestrator.adapter import ModelAdapter, ModelMode, StubAdapter
+from ts_sentry.orchestrator.manifest import ManifestError, read_expected_head
+from ts_sentry.orchestrator.session_runner import run_triage_session
+from ts_sentry.orchestrator.triage_turn import stub_triage_responder
 from ts_sentry.provenance import git_sha, sha256_file
 
 GENERATOR_VERSION = "0.1.0"
@@ -171,6 +183,91 @@ def run_build_dataset(
 
 
 # --------------------------------------------------------------------------
+# STEP-03 D6: run-session
+# --------------------------------------------------------------------------
+
+TRIAGE_AGENT = "triage"
+
+
+def _build_adapter(mode: str) -> ModelAdapter:
+    """Resolve the adapter, defaulting to the offline stub.
+
+    ``live`` is refused here unless the environment also says live. The flag
+    alone is not enough on purpose: a shell alias or a stray script argument
+    should not be able to start spending money, so the intent has to be
+    expressed twice, in two different places.
+    """
+    if mode != ModelMode.LIVE.value:
+        return StubAdapter(responder=stub_triage_responder)
+
+    from ts_sentry.orchestrator.adapter import LiveAdapter, resolve_mode
+
+    if resolve_mode() is not ModelMode.LIVE:
+        raise InputError(
+            "--llm-mode live also requires TS_SENTRY_LLM_MODE=live in the environment. "
+            "The stub adapter is the default and runs a complete session offline"
+        )
+    return LiveAdapter()
+
+
+def run_run_session(
+    seed_dataset: Path,
+    out_dir: Path,
+    *,
+    analyst_id: str,
+    llm_mode: str,
+    limit: int,
+    seed: int,
+    session_id: str | None,
+) -> int:
+    """Run one triage session and report where it left its artifacts."""
+    try:
+        adapter = _build_adapter(llm_mode)
+        run = run_triage_session(
+            seed_dataset,
+            out_dir,
+            adapter,
+            analyst_id=analyst_id,
+            session_id=session_id,
+            limit=limit,
+            seed=seed,
+        )
+    except InputError as exc:
+        print(f"run-session: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    except (FileNotFoundError, duckdb.Error) as exc:
+        print(f"run-session: could not open the dataset: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+
+    queue = run.turn.queue
+    print(f"session:   {run.manifest.session_id}")
+    print(f"analyst:   {run.manifest.analyst_id}")
+    print(f"adapter:   {adapter.adapter_id} ({adapter.model_id})")
+    print(f"close:     {run.close_reason.value}")
+    print(f"cases:     {0 if queue is None else len(queue.rows)}")
+    print(
+        f"rationales:{'' if queue is None else ''} {0 if queue is None else queue.rationale_count}"
+    )
+    if run.turn.rationales is not None and run.turn.rationales.rejected:
+        print(f"rejected:  {len(run.turn.rationales.rejected)} rationale(s) failed verification")
+    if run.turn.injection_signals:
+        print(f"injection: {run.turn.injection_signals} signal(s) in case content")
+    print(f"head:      {run.manifest.expected_head.render()}")
+    print(f"artifacts: {run.artifacts.out_dir}")
+
+    if not run.intact:
+        print(
+            f"run-session: the session produced a broken chain at seq "
+            f"{run.verification.first_broken_seq}",
+            file=sys.stderr,
+        )
+        return EXIT_BROKEN_CHAIN
+
+    print("result:    session closed with an intact chain")
+    return EXIT_OK
+
+
+# --------------------------------------------------------------------------
 # STEP-02 D6: verify-ledger
 # --------------------------------------------------------------------------
 
@@ -226,15 +323,38 @@ def _read_entries(path: Path) -> tuple[LedgerEntry, ...]:
         raise InputError(f"could not read {path}: {type(exc).__name__}: {exc}") from exc
 
 
-def run_verify_ledger(path: Path, expect_head_raw: str | None = None) -> int:
+def run_verify_ledger(
+    path: Path,
+    expect_head_raw: str | None = None,
+    expect_head_from: Path | None = None,
+) -> int:
     """Verify a ledger chain and report its head.
 
     Precedence is deliberate: chain integrity is checked before the head
     comparison. A broken chain makes any head claim meaningless, so it is
     reported as a broken chain rather than as a mismatch.
+
+    ``--expect-head-from`` reads the anchor out of a session manifest instead
+    of taking it on the command line. STEP-02 shipped the comparison verb and
+    deliberately shipped no storage; STEP-03 D1 built the storage, and this is
+    the flag that joins them. Without it the anchor exists but nothing reads
+    it, which would make the manifest a record rather than a control.
+
+    The two forms are mutually exclusive: an expectation supplied twice could
+    disagree with itself, and there is no correct way to resolve that.
     """
     try:
+        if expect_head_raw is not None and expect_head_from is not None:
+            raise InputError(
+                "--expect-head and --expect-head-from are mutually exclusive; "
+                "supply the expectation once"
+            )
         expected = None if expect_head_raw is None else parse_expect_head(expect_head_raw)
+        if expect_head_from is not None:
+            try:
+                expected = read_expected_head(expect_head_from)
+            except ManifestError as exc:
+                raise InputError(str(exc)) from exc
         entries = _read_entries(path)
     except InputError as exc:
         print(f"verify-ledger: {exc}", file=sys.stderr)
@@ -329,6 +449,33 @@ def main(argv: list[str] | None = None) -> int:
             "Chain verification alone cannot detect entries removed from the end."
         ),
     )
+    verify_parser.add_argument(
+        "--expect-head-from",
+        type=Path,
+        default=None,
+        metavar="MANIFEST",
+        help=(
+            "Read the expected head from a session manifest. Mutually exclusive with --expect-head."
+        ),
+    )
+
+    session_parser = subparsers.add_parser("run-session")
+    session_parser.add_argument("--agent", choices=[TRIAGE_AGENT], required=True)
+    session_parser.add_argument("--seed-dataset", type=Path, required=True)
+    session_parser.add_argument("--out", type=Path, default=Path("session"))
+    session_parser.add_argument("--analyst-id", type=str, default="analyst")
+    session_parser.add_argument(
+        "--llm-mode",
+        choices=[ModelMode.STUB.value, ModelMode.LIVE.value],
+        default=ModelMode.STUB.value,
+        help=(
+            "Model adapter. The default stub is deterministic, offline, and free; "
+            "live additionally requires TS_SENTRY_LLM_MODE=live in the environment."
+        ),
+    )
+    session_parser.add_argument("--limit", type=int, default=25)
+    session_parser.add_argument("--seed", type=int, default=42)
+    session_parser.add_argument("--session-id", type=str, default=None)
 
     # The root parser has no options of its own, so the first token is the
     # subcommand. Needed because a root-parser error carries no parsed
@@ -362,7 +509,18 @@ def main(argv: list[str] | None = None) -> int:
         return run_build_dataset(args.seed, args.scale, args.out, thresholds)
 
     if args.command == "verify-ledger":
-        return run_verify_ledger(args.path, args.expect_head)
+        return run_verify_ledger(args.path, args.expect_head, args.expect_head_from)
+
+    if args.command == "run-session":
+        return run_run_session(
+            args.seed_dataset,
+            args.out,
+            analyst_id=args.analyst_id,
+            llm_mode=args.llm_mode,
+            limit=args.limit,
+            seed=args.seed,
+            session_id=args.session_id,
+        )
 
     parser.error(f"unknown command {args.command!r}")
     return 2  # pragma: no cover - parser.error() above always raises SystemExit

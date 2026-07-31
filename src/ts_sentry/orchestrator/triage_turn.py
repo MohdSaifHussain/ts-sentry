@@ -45,6 +45,7 @@ from ts_sentry.orchestrator.adapter import (
     ModelRequest,
     RetryPolicy,
     Sleeper,
+    StubMode,
     call_model,
 )
 from ts_sentry.orchestrator.core import CloseReason, Session
@@ -59,7 +60,7 @@ from ts_sentry.orchestrator.firewall import apply_firewall, compose_user_content
 from ts_sentry.orchestrator.rationale_check import RationaleResult, verify_rationales
 from ts_sentry.orchestrator.tools import TOOL_TABLE, ToolResources, required_scope_names
 
-__all__ = ["TriageTurn", "run_triage_turn"]
+__all__ = ["TriageTurn", "run_triage_turn", "stub_triage_responder"]
 
 _MAX_OUTPUT_TOKENS = 2048
 
@@ -79,6 +80,33 @@ class TriageTurn:
     @property
     def delivered(self) -> bool:
         return self.queue is not None
+
+
+def stub_triage_responder(request: ModelRequest, mode: StubMode) -> str:
+    """What the offline stub says when it is standing in for the triage model.
+
+    Lives here rather than in the adapter because the adapter must not know
+    what a rationale looks like - that contract is D5's, and encoding it in
+    D4 would have been implementing ahead of the STEP. The adapter takes a
+    responder; this is the one the triage path supplies.
+
+    It reads the citation menu back out of the request rather than
+    hard-coding component ids, so the stub tracks whatever the scorer
+    produced instead of a snapshot of it. ``OVERCLAIM`` cites an id that
+    cannot resolve, which is how the ``VERIFICATION_FAIL`` path gets
+    demonstrated on a real session rather than only in a unit test.
+    """
+    lines: list[str] = []
+    for line in request.user_content.splitlines():
+        if ": cite only " not in line:
+            continue
+        case_id = line.split(":", 1)[0].strip()
+        first_id = line.split("[", 1)[1].split("]", 1)[0]
+        if mode is StubMode.OVERCLAIM:
+            lines.append(f"{case_id}: confirmed abusive per [sealed:ground_truth]")
+        else:
+            lines.append(f"{case_id}: ranked here on [{first_id}]")
+    return "\n".join(lines)
 
 
 def run_triage_turn(
