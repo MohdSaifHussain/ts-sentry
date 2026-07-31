@@ -27,6 +27,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# The live model path only. Never installed in CI: STEP-03 3.4 makes the
+# deterministic stub adapter the CI path, and the whole suite passes with this
+# extra absent. Deliberately without a version floor - the offline environment
+# cannot resolve or verify one, and asserting a number nobody checked is the
+# guess CLAUDE.md's official-sources rule exists to prevent. The version
+# actually exercised is recorded in the STEP-03 live-mode smoke note.
+live = ["anthropic"]
 dev = [
     "pytest>=8.0",
     "hypothesis>=6.100",
@@ -59,6 +66,14 @@ show_missing = true
 [tool.mypy]
 strict = true
 files = ["src", "tests"]
+
+# The live adapter's only vendor import, and it is intentionally absent from
+# the offline environment (see the `live` extra above). Typing it as Any here
+# keeps `mypy --strict` meaningful for the other 99% of the codebase rather
+# than failing on a dependency CI is designed not to have.
+[[tool.mypy.overrides]]
+module = ["anthropic.*", "anthropic"]
+ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py312"

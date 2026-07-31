@@ -138,6 +138,19 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   `GATE_REJECTION`, never as `MANDATE_VIOLATION_ATTEMPT`: counting a build
   limitation as a governance violation would inflate the exact metric this
   system showcases.
+- STEP-03 D4: `ts_sentry.orchestrator.adapter` - the single model boundary.
+  `StubAdapter` is deterministic, seeded, and the default; `LiveAdapter` is
+  gated on `TS_SENTRY_LLM_MODE=live`, checks only that `ANTHROPIC_API_KEY`
+  exists (never its value), and imports the vendor client inside the call so
+  an offline run never loads it. Retries use exponential backoff with full
+  jitter over a seeded generator, and the vendor SDK's own retries are
+  switched off so there is exactly one retry authority. `call_model` checks
+  the mandate budget before sending, ledgers `PROMPT_SENT` before the call,
+  and books actual usage after. A provider refusal (`stop_reason: refusal`)
+  is its own error class and is never retried.
+- `tests/conftest.py` strips `TS_SENTRY_LLM_MODE`, `TS_SENTRY_LLM_MODEL`, and
+  `ANTHROPIC_API_KEY` for the whole test session, so "the suite costs nothing"
+  is a property of the repository rather than of a developer's shell.
 
 ### Changed
 
