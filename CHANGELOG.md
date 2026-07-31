@@ -199,6 +199,23 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ### Fixed
 
+- Detection stub: the flagged queue did not discriminate. Undisclosed synthetic
+  media was a flag trigger and holds for 64 of 66 channels on the seed-42
+  build, so every case scored an identical severity and the ranking collapsed
+  to a velocity sort while the real rings never reached the queue. Found by
+  Saif reading a real `ranked_queue.json`. Undisclosed media is now a severity
+  contributor rather than a trigger; signals carried by accounts *commenting*
+  on a channel now count when at least two share one value (measured: every
+  link-domain and shared-device holder owns no channel and comments on eleven,
+  so a channel-centric queue was blind to comment-side rings); and recidivism
+  is redefined as pattern persistence across days, because counting a
+  subject's own observation days is structurally zero on this data.
+- Triage rationales were uninformative: every one cited `severity_class`,
+  the largest component on every row and therefore the one that explained
+  nothing about the ordering. The builder now cites the component that most
+  differentiates a case from its rank-neighbours, with deterministic
+  fallbacks. An informativeness fix in the rationale builder, not a change to
+  what the verifier accepts.
 - Detection stub: reading `TIMESTAMPTZ` columns into Python failed on the
   missing optional `pytz` dependency, and casting them to text would have been
   worse - DuckDB renders a `TIMESTAMPTZ` in the reader's session time zone, so

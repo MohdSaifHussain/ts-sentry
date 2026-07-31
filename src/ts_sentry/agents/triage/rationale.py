@@ -19,10 +19,16 @@ verifier would then be checking sentences rather than claims.
 import re
 from collections.abc import Sequence
 
-from ts_sentry.agents.triage.scorer import PriorityScore, ScoreComponent, component_id
+from ts_sentry.agents.triage.scorer import (
+    WEIGHTS,
+    PriorityScore,
+    ScoreComponent,
+    component_id,
+)
 
 __all__ = [
     "CITATION_PATTERN",
+    "discriminating_component",
     "parse_citations",
     "parse_rationale_lines",
     "render_expected_form",
@@ -59,6 +65,58 @@ def parse_rationale_lines(text: str) -> dict[str, str]:
     return lines
 
 
+def discriminating_component(scores: Sequence[PriorityScore], index: int) -> ScoreComponent:
+    """The component that most separates this case from its rank-neighbours.
+
+    Not the largest component, which is what an obvious implementation cites
+    and what the first version of this agent did. Saif found the failure by
+    reading a real ranked queue: every rationale cited ``severity_class``,
+    because severity was the biggest number on every row, and at equal
+    severity it was the one thing that explained *nothing* about why this case
+    outranked the next one. A citation identical across the whole queue
+    carries no information even though it verifies perfectly.
+
+    So the choice is comparative. Each component is scored by how far it
+    deviates from the same component on the neighbouring rows, weighted by
+    what that component is worth in the priority, and the largest deviation
+    wins. That surfaces velocity where velocity moved the case and spread
+    where spread did.
+
+    Fallbacks, in order, so the function is total: if the neighbourhood is
+    uniform, use the component that varies most across the whole queue; if the
+    queue itself is uniform, use the largest weighted component. Ties break on
+    ``ScoreComponent`` declaration order, so the result is deterministic.
+
+    This changes what the agent is *asked* to cite, not what the verifier
+    accepts. Any resolvable citation is still valid; this only decides which
+    one is worth making.
+    """
+    if not scores:
+        raise ValueError("cannot choose a component for an empty queue")
+    item = scores[index]
+    neighbours = [scores[i] for i in (index - 1, index + 1) if 0 <= i < len(scores)]
+
+    def weighted_deviation(component: ScoreComponent) -> float:
+        if not neighbours:
+            return 0.0
+        mean = sum(n.components[component] for n in neighbours) / len(neighbours)
+        return abs(item.components[component] - mean) * WEIGHTS[component]
+
+    best = max(ScoreComponent, key=weighted_deviation)
+    if weighted_deviation(best) > 0.0:
+        return best
+
+    def queue_spread(component: ScoreComponent) -> float:
+        values = [s.components[component] for s in scores]
+        return (max(values) - min(values)) * WEIGHTS[component]
+
+    widest = max(ScoreComponent, key=queue_spread)
+    if queue_spread(widest) > 0.0:
+        return widest
+
+    return max(ScoreComponent, key=lambda c: item.components[c] * WEIGHTS[c])
+
+
 def render_expected_form(scores: Sequence[PriorityScore]) -> str:
     """The citation menu handed to the model with the task.
 
@@ -66,11 +124,17 @@ def render_expected_form(scores: Sequence[PriorityScore]) -> str:
     followable. It is not the control - the verifier is - but a model that is
     told exactly what it may cite fails the check less often, and every failure
     costs a turn.
+
+    Each line also names the component that most differentiates that case from
+    its neighbours. That is guidance, not a constraint: the verifier accepts
+    any resolvable citation, and a model with a better reason to cite
+    something else is free to use it.
     """
     lines = []
-    for item in scores:
+    for index, item in enumerate(scores):
         ids = ", ".join(
             f"[{component_id(item.case_id, component)}]" for component in ScoreComponent
         )
-        lines.append(f"{item.case_id}: cite only {ids}")
+        focus = component_id(item.case_id, discriminating_component(scores, index))
+        lines.append(f"{item.case_id}: cite only {ids}; most distinguishing: [{focus}]")
     return "\n".join(lines)

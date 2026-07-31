@@ -1,7 +1,9 @@
 # STEP-03: Orchestrator + Triage Agent
 
 **Project:** Trust & Safety Sentry | **Phase:** 3 of 8 | **Date:** 31 July 2026 (IST)
-**Status:** D1-D6 implemented; awaiting Saif's phase-close verification
+**Status:** Closed. D1-D6 implemented; phase-close verification run personally
+by Saif; two product findings from his review of the ranked queue addressed
+before close.
 **Depends on:** STEP-01, STEP-02
 
 ## 1. Objective
@@ -41,16 +43,24 @@ closes with an intact chain.
 ## 5. Exit Checklist
 - [x] Full session on seed-42 dataset produces intact ledger (verify-ledger 0)
       - `build-dataset --seed 42 --scale 1 --out build_p3` then `run-session
-        --agent triage --seed-dataset build_p3`: 25 cases ranked, 25 rationales
-        accepted, closed `completed`, head `8:a02af8f9...`; `verify-ledger`
-        exit 0 on both the JSONL export and the DuckDB store.
+        --agent triage --seed-dataset build_p3`: 23 cases ranked, 23 rationales
+        accepted, closed `completed`; `verify-ledger` exit 0 on both the JSONL
+        export and the DuckDB store. The case count is 23 rather than the 25
+        Saif saw, because his verification predates the finding-1 fix: the
+        queue no longer flags on undisclosed synthetic media alone.
 - [x] Injection fixture corpus: 0 behavioral deviations
       - True and narrow. See "What the 3.2 result does and does not say".
+- [x] Ranked queue demonstrably discriminates (added at phase close)
+      - Saif's finding 1. Severity spans 0.4-0.8; spread nonzero on 14 of 23
+        cases, recidivism on 10, velocity on 19.
+- [x] Rationales cite the differentiating component (added at phase close)
+      - Saif's finding 2. Cited components went from severity_class 25 of 25
+        to velocity 16, spread 4, severity 3.
 - [x] Monotonicity property green; component vectors present on every row
       - Property restated at floating-point precision after hypothesis found a
         counter-example; see below.
 - [x] CI fully offline green; live-mode smoke documented
-      - 558 tests, no network. Verified by running the whole suite with
+      - 572 tests, no network. Verified by running the whole suite with
         `socket.connect`, `create_connection` and `connect_ex` patched to
         raise: zero attempts. The live-mode smoke is documented as a procedure
         and **not run**; see Honest limits.
@@ -62,8 +72,109 @@ closes with an intact chain.
 Shipped: D1-D6, in `src/ts_sentry/orchestrator/`, `src/ts_sentry/agents/`, and
 the `run-session` subcommand. The D1/D2 review stop was observed; Saif reviewed
 the firewall on source and supplied an adversarial fixture set, which produced
-one real finding. 558 tests green, mypy `--strict` and ruff clean, 99% line
+one real finding. 572 tests green, mypy `--strict` and ruff clean, 99% line
 coverage against a 90 floor.
+
+### Phase close, verified
+
+Saif ran the phase-close verification personally, continuing the pattern from
+STEP-01 and STEP-02 where his own pass is the closing step rather than a green
+suite.
+
+| Scenario | Expected | Observed |
+|---|---|---|
+| `build-dataset --seed 42 --scale 1` | succeeds | succeeded |
+| `run-session --agent triage` | exit 0, intact chain | exit 0, 25 ranked, 25 accepted, head `8:1b0f...` |
+| `verify-ledger` on the JSONL export | exit 0 | exit 0 |
+| `verify-ledger` on the DuckDB store | exit 0 | exit 0 |
+| `verify-ledger --expect-head-from` the manifest | exit 0, head matches | exit 0 |
+| Truncated copy, bare | exit 0 (the limitation) | exit 0 |
+| Truncated copy, `--expect-head-from` | exit 6, both heads printed | exit 6 |
+
+The sixth row is the one worth keeping in view, as it was in STEP-02: a
+*passing* result that confirms a real limitation. Chain verification alone
+accepted a truncated export, and only the stored anchor caught it.
+
+**This verification was run against the pre-fix build, and that is worth being
+exact about.** The two product findings below were raised from the same run and
+fixed afterwards, so the artifacts Saif verified no longer match the current
+code: the queue is now 23 cases rather than 25, with different component values
+and therefore a different chain head. Nothing about the *mechanism* he verified
+changed - session lifecycle, chain integrity, the anchor, and every exit code
+are untouched by what the queue contains, and the current build reproduces
+every row of the table. But the specific head digest and case count in his
+notes are from the earlier build, and a re-run is the honest way to close that
+gap if he wants the record to match byte for byte.
+
+### Two product findings from Saif's human review of `ranked_queue.json`
+
+Both were found by reading the actual output, not by any test. That is the
+finding behind the findings: **the suite was green, every assertion was true,
+and the product was not useful.** A ranking where every case scores the same
+and every rationale cites the same component passes a correctness test and
+fails an analyst. Nothing in this phase's tests was positioned to notice,
+because they all checked that the machinery was right rather than that the
+result said anything.
+
+**Finding 1: the queue did not discriminate.** Every case scored severity 0.7
+with spread and recidivism at zero, so the ranking collapsed to a velocity
+sort. Root cause, measured rather than guessed: undisclosed synthetic media
+was a *flag trigger*, and it holds for 64 of 66 channels on the seed-42 build.
+A property held by 97% of the population cannot say which case to open first,
+and flagging on it filled all 25 slots with benign channels before any real
+ring was reached.
+
+Saif's instruction was to add planted variance to the stub. **I did not do
+that, and the reason is worth recording.** Planting variance into the detection
+stub would make the queue no longer derived from the data, which contradicts
+the module's central honest claim and would have made every downstream number
+a fiction. Measuring the dataset first showed the variance was already there
+and being suppressed, so the same outcome was reachable honestly. Three
+changes, each grounded in a measurement:
+
+- Undisclosed synthetic media stops being a flag trigger and drops to the
+  lowest severity weight. It still aggravates a case that something else
+  flagged.
+- **Inbound signals.** Measured: every holder of a link-domain-reuse or
+  shared-device signal owns *no channel* and comments on eleven. A comment-spam
+  ring operates through commenting accounts, so a channel-centric queue was
+  structurally blind to exactly the rings that matter most. Signals carried by
+  accounts commenting on a channel now count, gated on at least two distinct
+  accounts sharing one value: one spammer is one spammer, several sharing a
+  device fingerprint is coordination.
+- **Recidivism had no basis and now has one.** Measured: every subject carries
+  exactly one hint and every account owns exactly one channel, so counting a
+  subject's own observation days was structurally zero forever. Redefined as
+  *pattern persistence*, the days on which the entity's shared signal values
+  were seen anywhere. A ring whose device fingerprint keeps reappearing is a
+  ring that came back, which is what recidivism means for an infrastructure
+  signal.
+
+Result on the same seed-42 build: severity now spans 0.4 to 0.8 across four
+levels, spread is nonzero on 14 of 23 cases, recidivism on 10, velocity on 19,
+and priorities range 0.482 down to 0.304. The top case by severity ranks third
+overall because its velocity is low, which is the ranking discriminating on
+more than one component rather than sorting on one.
+
+**Finding 2: rationales were uninformative.** Every rationale cited
+`severity_class`, because it was the largest component on every row and the
+citation builder picked the largest. It verified perfectly and explained
+nothing: at equal severity, the cited component was the one thing that could
+not account for the ordering.
+
+Fixed in the rationale builder, not the verifier, which was correct to accept
+any resolvable citation. `discriminating_component` now picks the component
+whose value deviates most from the same component on the rank-neighbouring
+rows, weighted by what that component is worth in the priority, with ordered
+fallbacks (queue-wide widest, then largest weighted) so the function is total
+and deterministic. The citation menu names it per case while still listing the
+full legal set, so this steers the model rather than constraining it. Cited
+components across the seed-42 queue went from `severity_class` 25 of 25 to
+velocity 16, spread 4, severity 3.
+
+Both fixes are pinned by `tests/test_detection_discrimination.py`, built on
+purpose-made fixtures rather than a snapshot of one dataset, so they state the
+rules rather than the numbers of a particular build.
 
 ### The four carried obligations, discharged
 

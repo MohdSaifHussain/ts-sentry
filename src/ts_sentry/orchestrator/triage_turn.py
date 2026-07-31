@@ -101,11 +101,14 @@ def stub_triage_responder(request: ModelRequest, mode: StubMode) -> str:
         if ": cite only " not in line:
             continue
         case_id = line.split(":", 1)[0].strip()
-        first_id = line.split("[", 1)[1].split("]", 1)[0]
+        # The menu ends with the most distinguishing id, which is the one worth
+        # citing; citing the first would reproduce the uninformative-rationale
+        # defect the menu was changed to fix.
+        focus = line.rsplit("[", 1)[1].split("]", 1)[0]
         if mode is StubMode.OVERCLAIM:
             lines.append(f"{case_id}: confirmed abusive per [sealed:ground_truth]")
         else:
-            lines.append(f"{case_id}: ranked here on [{first_id}]")
+            lines.append(f"{case_id}: ranked here on [{focus}]")
     return "\n".join(lines)
 
 

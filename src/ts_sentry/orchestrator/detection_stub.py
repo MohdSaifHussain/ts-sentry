@@ -63,7 +63,6 @@ _SPREAD_CAP = 12
 """Peer count at which spread saturates. A presentation choice, not a finding:
 it makes the component readable as a 0..1 share rather than an unbounded
 count."""
-_RECIDIVISM_CAP = 6
 
 SIGNAL_SEVERITY: Mapping[InfraSignalKind, float] = {
     InfraSignalKind.LINK_DOMAIN_REUSE: 1.0,
@@ -81,8 +80,30 @@ upload pattern ranks lowest because benign tooling produces it constantly.
 Nothing here was fitted to data.
 """
 
-_UNDISCLOSED_SYNTHETIC_SEVERITY = 0.7
+_UNDISCLOSED_SYNTHETIC_SEVERITY = 0.3
+"""Undisclosed synthetic media, as a severity *contributor* only.
+
+It is deliberately not a flag trigger and deliberately the lowest weight here.
+On the seed-42 build it holds for 64 of 66 channels, which makes it worthless
+as a discriminator: flagging on it produced a queue where every case scored an
+identical 0.7 and the ranking collapsed to a velocity sort. Saif found that by
+reading a real ``ranked_queue.json``, which is the kind of thing only a human
+reading the output catches.
+
+A property held by 97% of the population is a property that says nothing about
+which case to open first. It still contributes once something else has flagged
+the entity, because on a channel that is *already* coordinating it is a
+genuine aggravator.
+"""
+
 _TEMPLATED_COMMENT_SEVERITY = 0.5
+
+_RECIDIVISM_CAP = 4
+
+_INBOUND_COORDINATION_FLOOR = 2
+"""Distinct commenting accounts that must share one signal value before it
+counts. One spammer in a comment section is one spammer; several sharing a
+device fingerprint is coordination."""
 
 
 # Table names come from `resolve_table`, an exhaustive match over `DataScope`,
@@ -119,6 +140,10 @@ def queries() -> Mapping[str, str]:
         "comment_times": (
             f"SELECT v.channel_id, epoch_ms(cm.posted_ts) FROM {comment} cm "
             f"JOIN {video} v ON cm.video_id = v.video_id ORDER BY cm.comment_id;"
+        ),
+        "commenters": (
+            f"SELECT DISTINCT v.channel_id, cm.account_id FROM {comment} cm "
+            f"JOIN {video} v ON cm.video_id = v.video_id ORDER BY v.channel_id;"
         ),
         "channel_text": (
             f"SELECT channel_id, display_name, description FROM {channel} WHERE channel_id = ?;"
@@ -167,8 +192,9 @@ class SignalCounts:
     itself rather than emitting a bare number."""
 
     infra_signals: Mapping[str, int]
+    inbound_signals: Mapping[str, int]
     peer_entities: int
-    observation_days: int
+    pattern_days: int
     undisclosed_videos: int
     templated_comments: int
     comment_count: int
@@ -177,8 +203,9 @@ class SignalCounts:
     def to_json_object(self) -> dict[str, object]:
         return {
             "infra_signals": dict(sorted(self.infra_signals.items())),
+            "inbound_signals": dict(sorted(self.inbound_signals.items())),
             "peer_entities": self.peer_entities,
-            "observation_days": self.observation_days,
+            "pattern_days": self.pattern_days,
             "undisclosed_videos": self.undisclosed_videos,
             "templated_comments": self.templated_comments,
             "comment_count": self.comment_count,
@@ -253,10 +280,16 @@ def build_flagged_queue(
 ) -> tuple[FlaggedEntity, ...]:
     """Produce the queue an analyst starts their hour with.
 
-    Reads only allowlisted tables. Flags a channel when it carries at least
-    one observable coordination artifact, then ranks by the same severity
-    the components expose, so the queue's own order is explainable from the
-    row.
+    Reads only allowlisted tables. Flags a channel when it carries an
+    observable *coordination* artifact - an infrastructure signal on the
+    channel or its owning account, or templated comments - then ranks by the
+    same severity the components expose, so the queue's own order is
+    explainable from the row.
+
+    Undisclosed synthetic media deliberately does not flag on its own. See
+    ``_UNDISCLOSED_SYNTHETIC_SEVERITY`` for why: it is near-universal in this
+    population, so flagging on it buried every real ring under 25 identical
+    cases.
     """
     if limit <= 0:
         raise ValueError(f"limit must be positive; got {limit}")
@@ -268,7 +301,7 @@ def build_flagged_queue(
 
     signal_kinds: dict[str, dict[str, int]] = {}
     signal_values: dict[str, set[tuple[str, str]]] = {}
-    observation_days: dict[str, set[str]] = {}
+    value_days: dict[tuple[str, str], set[str]] = {}
     value_holders: dict[tuple[str, str], set[str]] = {}
 
     for row in connection.execute(sql["infra_hints"]).fetchall():
@@ -280,7 +313,7 @@ def build_flagged_queue(
         signal_kinds[subject_id][signal_type] = signal_kinds[subject_id].get(signal_type, 0) + 1
         signal_values.setdefault(subject_id, set()).add((signal_type, signal_value))
         value_holders.setdefault((signal_type, signal_value), set()).add(subject_id)
-        observation_days.setdefault(subject_id, set()).add(_ist_date(int(observed)))
+        value_days.setdefault((signal_type, signal_value), set()).add(_ist_date(int(observed)))
 
     undisclosed = {
         str(row[0]): int(row[1]) for row in connection.execute(sql["undisclosed_videos"]).fetchall()
@@ -288,6 +321,10 @@ def build_flagged_queue(
     templated = {
         str(row[0]): int(row[1]) for row in connection.execute(sql["templated_comments"]).fetchall()
     }
+
+    commenters: dict[str, set[str]] = {}
+    for row in connection.execute(sql["commenters"]).fetchall():
+        commenters.setdefault(str(row[0]), set()).add(str(row[1]))
 
     times_by_channel: dict[str, list[datetime]] = {}
     for row in connection.execute(sql["comment_times"]).fetchall():
@@ -305,22 +342,63 @@ def build_flagged_queue(
             for name, count in signal_kinds.get(subject, {}).items():
                 kinds[name] = kinds.get(name, 0) + count
 
+        # Inbound signals: what the accounts commenting on this channel carry.
+        #
+        # Without this the queue is structurally blind to the rings that matter
+        # most. Measured on the seed-42 build: every holder of a link-domain
+        # reuse or shared-device signal owns *no* channel and comments on
+        # eleven, because a comment-spam ring operates through commenting
+        # accounts rather than by publishing. A channel-centric queue that
+        # reads only the channel and its owner can never see them.
+        #
+        # Gated on concentration, not presence: a signal counts only when at
+        # least two distinct commenting accounts share the same value on this
+        # channel. One spammer in a comment section is one spammer; several
+        # sharing a device fingerprint is coordination, and only the second is
+        # a reason to open the case.
+        inbound: dict[str, int] = {}
+        inbound_values: set[tuple[str, str]] = set()
+        sharers: dict[tuple[str, str], set[str]] = {}
+        for account in commenters.get(channel_id, set()):
+            for key in signal_values.get(account, set()):
+                sharers.setdefault(key, set()).add(account)
+        for key, accounts in sharers.items():
+            if len(accounts) >= _INBOUND_COORDINATION_FLOOR:
+                inbound[key[0]] = inbound.get(key[0], 0) + len(accounts)
+                inbound_values.add(key)
+
         undisclosed_count = undisclosed.get(channel_id, 0)
         templated_count = templated.get(channel_id, 0)
-        if not kinds and undisclosed_count == 0 and templated_count == 0:
+        if not kinds and not inbound and templated_count == 0:
             continue
 
+        own_values = signal_values.get(channel_id, set()) | signal_values.get(account_id, set())
         peers: set[str] = set()
-        for subject in (channel_id, account_id):
-            for key in signal_values.get(subject, set()):
-                peers |= value_holders.get(key, set())
+        for key in own_values | inbound_values:
+            peers |= value_holders.get(key, set())
         peers -= {channel_id, account_id}
 
-        days = len(
-            observation_days.get(channel_id, set()) | observation_days.get(account_id, set())
-        )
+        # Recidivism as *pattern persistence*: the days on which this entity's
+        # own signal values were seen anywhere in the record, not the days this
+        # one subject was seen.
+        #
+        # The obvious reading (count this subject's own observation days) is
+        # structurally dead on this data: every subject carries exactly one
+        # hint and every account owns exactly one channel, so it is zero for
+        # every case, forever. Measured before changing it rather than assumed.
+        # Persistence is the honest signal the data does support - a ring whose
+        # shared device fingerprint keeps reappearing across days is a ring
+        # that came back, which is what recidivism means for an infrastructure
+        # signal.
+        days: set[str] = set()
+        for key in own_values | inbound_values:
+            days |= value_days.get(key, set())
 
-        severity_inputs = [SIGNAL_SEVERITY[kind] for kind in InfraSignalKind if kind.value in kinds]
+        severity_inputs = [
+            SIGNAL_SEVERITY[kind]
+            for kind in InfraSignalKind
+            if kind.value in kinds or kind.value in inbound
+        ]
         if undisclosed_count:
             severity_inputs.append(_UNDISCLOSED_SYNTHETIC_SEVERITY)
         if templated_count:
@@ -339,11 +417,12 @@ def build_flagged_queue(
                 severity_class=severity,
                 spread=min(1.0, len(peers) / _SPREAD_CAP),
                 velocity=velocity,
-                recidivism=min(1.0, days / _RECIDIVISM_CAP),
+                recidivism=min(1.0, max(0, len(days) - 1) / _RECIDIVISM_CAP),
                 signals=SignalCounts(
                     infra_signals=kinds,
+                    inbound_signals=inbound,
                     peer_entities=len(peers),
-                    observation_days=days,
+                    pattern_days=len(days),
                     undisclosed_videos=undisclosed_count,
                     templated_comments=templated_count,
                     comment_count=len(times),
