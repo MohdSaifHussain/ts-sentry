@@ -43,6 +43,9 @@
   STEP-08.
 - Pushes to origin are checkpoint-gated: commit locally per deliverable;
   push only after Saif confirms his phase-close verification.
+- Saif's verification artifacts in the repo root (build_*, session_*) are his;
+  never delete, overwrite, or reuse those paths. All session-generated builds
+  and test artifacts go in the scratchpad or temp dirs.
 
 ## Documentation style
 - No em-dashes anywhere in docs or docstrings. Verified metrics only. No
