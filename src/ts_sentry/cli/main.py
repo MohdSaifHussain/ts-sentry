@@ -1,13 +1,17 @@
 # SPDX-License-Identifier: MIT
-"""D7: `ts-sentry build-dataset` - the single CLI entry point for Phase 1.
+"""The `ts-sentry` CLI.
 
-Orchestrates, in order: D1+D3 in-memory build, D4 DuckDB persistence and
-Parquet export, a build-time leakage self-check (defense-in-depth alongside
-the pytest leakage suite), the D6 AnalystKit quality gate, and the D1
-build manifest.
+Two subcommands so far, both documented in README.md:
 
-Exit codes (documented in README.md): 0 pass, 2 quality-gate fail,
-3 leakage fail.
+* ``build-dataset`` (STEP-01 D7) orchestrates the in-memory build, DuckDB
+  persistence and Parquet export, a build-time leakage self-check, the
+  AnalystKit quality gate, and the build manifest.
+* ``verify-ledger`` (STEP-02 D6) recomputes a trajectory-ledger hash chain
+  and reports the first broken link.
+
+Exit codes are allocated across the whole CLI rather than per subcommand, so
+no number means two different things: 0 pass, 2 quality-gate fail, 3 leakage
+fail, 4 broken chain, 5 input error, 6 chain-head mismatch.
 """
 
 import argparse
@@ -16,6 +20,8 @@ import json
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 import duckdb
@@ -24,6 +30,14 @@ from ts_sentry.data.generator import build_dataset
 from ts_sentry.data.population import BuildConfig
 from ts_sentry.data.quality import QualityGateResult, QualityThresholds, run_quality_gate
 from ts_sentry.data.store import export_dataset, persist_dataset
+from ts_sentry.governance.canonical import require_sha256_hex
+from ts_sentry.governance.ledger import (
+    GENESIS_PREV_HASH,
+    LedgerEntry,
+    read_jsonl,
+    read_store,
+    verify_chain,
+)
 from ts_sentry.governance.scopes import (
     DataScope,
     ScopeViolation,
@@ -36,6 +50,9 @@ GENERATOR_VERSION = "0.1.0"
 EXIT_OK = 0
 EXIT_QUALITY_GATE_FAIL = 2
 EXIT_LEAKAGE_FAIL = 3
+EXIT_BROKEN_CHAIN = 4
+EXIT_INPUT_ERROR = 5
+EXIT_HEAD_MISMATCH = 6
 
 _SEALED_ONLY_COLUMNS = frozenset({"threat_class", "ring_id", "generator_params_hash", "planted_ts"})
 
@@ -168,6 +185,130 @@ def run_build_dataset(
     return EXIT_OK
 
 
+# --------------------------------------------------------------------------
+# STEP-02 D6: verify-ledger
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class ChainHead:
+    """Where a chain currently ends.
+
+    ``entry_hash`` of an empty chain is the genesis value, so a head is
+    always well defined and "nothing has been appended" has a spelling rather
+    than being a null.
+    """
+
+    count: int
+    entry_hash: str
+
+    def render(self) -> str:
+        return f"{self.count}:{self.entry_hash}"
+
+
+def chain_head(entries: tuple[LedgerEntry, ...]) -> ChainHead:
+    if not entries:
+        return ChainHead(count=0, entry_hash=GENESIS_PREV_HASH)
+    return ChainHead(count=len(entries), entry_hash=entries[-1].entry_hash)
+
+
+class InputError(Exception):
+    """The path or an argument could not be used. Distinct from an integrity
+    failure, which is a finding about a readable chain rather than a problem
+    reading one."""
+
+
+def parse_expect_head(raw: str) -> ChainHead:
+    """Parse ``COUNT:HASH``.
+
+    A comparison verb, not an anchor system. This reads an expectation the
+    caller already holds; it does not store, derive, or manage one. Anchor
+    storage belongs to the STEP-03 session manifest.
+    """
+    count_text, separator, hash_text = raw.partition(":")
+    if not separator:
+        raise InputError(f"--expect-head must be COUNT:HASH; got {raw!r}")
+    if not count_text.isdigit():
+        raise InputError(f"--expect-head COUNT must be a non-negative integer; got {count_text!r}")
+    try:
+        require_sha256_hex(hash_text, "--expect-head HASH")
+    except ValueError as exc:
+        raise InputError(str(exc)) from exc
+    return ChainHead(count=int(count_text), entry_hash=hash_text)
+
+
+_READERS: dict[str, Callable[[Path], tuple[LedgerEntry, ...]]] = {
+    ".jsonl": read_jsonl,
+    ".duckdb": read_store,
+}
+
+
+def _read_entries(path: Path) -> tuple[LedgerEntry, ...]:
+    """Dispatch by extension.
+
+    Both readers feed the same ``verify_chain``; only the reading differs, so
+    an export and the store it came from cannot disagree about integrity.
+    """
+    reader = _READERS.get(path.suffix.lower())
+    if reader is None:
+        supported = ", ".join(sorted(_READERS))
+        raise InputError(f"unsupported ledger format {path.suffix!r}; expected one of {supported}")
+    if not path.is_file():
+        raise InputError(f"no such file: {path}")
+    try:
+        return reader(path)
+    except InputError:  # pragma: no cover - readers do not raise this
+        raise
+    except Exception as exc:  # noqa: BLE001 - any read failure is an input error
+        raise InputError(f"could not read {path}: {type(exc).__name__}: {exc}") from exc
+
+
+def run_verify_ledger(path: Path, expect_head_raw: str | None = None) -> int:
+    """Verify a ledger chain and report its head.
+
+    Precedence is deliberate: chain integrity is checked before the head
+    comparison. A broken chain makes any head claim meaningless, so it is
+    reported as a broken chain rather than as a mismatch.
+    """
+    try:
+        expected = None if expect_head_raw is None else parse_expect_head(expect_head_raw)
+        entries = _read_entries(path)
+    except InputError as exc:
+        print(f"verify-ledger: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+
+    head = chain_head(entries)
+    result = verify_chain(entries)
+
+    print(f"path:    {path}")
+    print(f"entries: {head.count}")
+    print(f"head:    {head.entry_hash}")
+
+    if not result.intact:
+        print(f"result:  BROKEN CHAIN at seq {result.first_broken_seq}")
+        print(f"reason:  {result.reason.value if result.reason else 'unknown'}")
+        print(f"detail:  {result.detail}")
+        print(
+            f"verify-ledger: broken chain at seq {result.first_broken_seq}",
+            file=sys.stderr,
+        )
+        return EXIT_BROKEN_CHAIN
+
+    if expected is not None and expected != head:
+        print("result:  HEAD MISMATCH")
+        print(f"expected: {expected.render()}")
+        print(f"actual:   {head.render()}")
+        print(
+            "verify-ledger: chain links are intact but the head does not match the "
+            "expectation; entries may have been removed from the end",
+            file=sys.stderr,
+        )
+        return EXIT_HEAD_MISMATCH
+
+    print("result:  intact" + ("" if expected is None else " (head matches)"))
+    return EXIT_OK
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ts-sentry")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -178,11 +319,27 @@ def main(argv: list[str] | None = None) -> int:
     build_parser.add_argument("--out", type=Path, default=Path("build"))
     build_parser.add_argument("--quality-thresholds", type=Path, default=None)
 
+    verify_parser = subparsers.add_parser("verify-ledger")
+    verify_parser.add_argument("path", type=Path)
+    verify_parser.add_argument(
+        "--expect-head",
+        type=str,
+        default=None,
+        metavar="COUNT:HASH",
+        help=(
+            "Compare the chain head against an expectation you already hold. "
+            "Chain verification alone cannot detect entries removed from the end."
+        ),
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "build-dataset":
         thresholds = _load_thresholds(args.quality_thresholds)
         return run_build_dataset(args.seed, args.scale, args.out, thresholds)
+
+    if args.command == "verify-ledger":
+        return run_verify_ledger(args.path, args.expect_head)
 
     parser.error(f"unknown command {args.command!r}")
     return 2  # pragma: no cover - parser.error() above always raises SystemExit
