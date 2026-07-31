@@ -63,9 +63,20 @@ from ts_sentry.governance.mandate import (
 )
 from ts_sentry.governance.scopes import DataScope
 from ts_sentry.orchestrator.core import Session
-from ts_sentry.orchestrator.tools import ToolContext, ToolEntry, ToolViolation, resolve_tool_by_name
+from ts_sentry.orchestrator.toolspec import (
+    ToolContext,
+    ToolEntry,
+    ToolResources,
+    ToolViolation,
+    resolve_tool_by_name,
+)
+
+NO_RESOURCES = ToolResources()
+"""The empty lending set, and the default. A tool that needs a connection
+and was given none refuses rather than reaching for one."""
 
 __all__ = [
+    "NO_RESOURCES",
     "DispatchDecision",
     "DispatchOutcome",
     "ToolProposal",
@@ -170,6 +181,7 @@ def dispatch(
     *,
     table: Mapping[ToolId, ToolEntry],
     checks: GateChecks,
+    resources: ToolResources = NO_RESOURCES,
 ) -> DispatchOutcome:
     """Run one proposal through the full pipeline.
 
@@ -177,6 +189,12 @@ def dispatch(
     ``GateChecks``: there must be no way to dispatch without naming the
     allowlist it is dispatched against, so an unconfigured call cannot
     silently execute anything.
+
+    ``resources`` is what the orchestrator lends the handler for this call and
+    defaults to empty, which is the safe direction: a tool that needs a
+    database connection and was given none refuses, rather than reaching for
+    one. It is kept separate from ``proposal.params`` because params are the
+    agent's and resources are not.
 
     Ordering is load-bearing. Mandate validation runs *before* the handler
     availability check, so a tool this agent may not use is refused as a
@@ -293,6 +311,7 @@ def dispatch(
         agent_id=proposal.agent_id.value,
         granted_scopes=frozenset(granted),
         params=proposal.params,
+        resources=resources,
     )
     try:
         result = entry.handler(context)

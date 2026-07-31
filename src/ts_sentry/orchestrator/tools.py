@@ -7,6 +7,11 @@ mapping rather than a registry with dynamic registration, for the same reason
 the firewall's pattern set is a flat tuple: an allowlist nobody can read off
 in one screen is an allowlist nobody audits.
 
+The contract for what a tool *is* lives in ``orchestrator.toolspec`` and is
+re-exported here, so callers may import either. The split exists because the
+table has to name real handlers and handlers have to be typed against
+``ToolContext``, which would otherwise be a cycle.
+
 The no-orphan rule, and the reading taken
 -----------------------------------------
 STEP-02 recorded the rule at ``ToolId``'s definition site: a member may only
@@ -40,11 +45,21 @@ understate one and walk a RECOMMEND-weight action through an OBSERVE ceiling.
 """
 
 from collections.abc import Mapping
-from dataclasses import dataclass
-from typing import Protocol
 
 from ts_sentry.governance.mandate import Consequence, ToolId
 from ts_sentry.governance.scopes import DataScope
+from ts_sentry.orchestrator.toolspec import (
+    IMPLEMENTATION_PHASE,
+    ToolContext,
+    ToolEntry,
+    ToolHandler,
+    ToolResources,
+    ToolViolation,
+    pending_handlers,
+    required_scope_names,
+    resolve_tool_by_name,
+)
+from ts_sentry.orchestrator.triage_tool import rank_triage_queue
 
 __all__ = [
     "IMPLEMENTATION_PHASE",
@@ -52,79 +67,14 @@ __all__ = [
     "ToolContext",
     "ToolEntry",
     "ToolHandler",
+    "ToolResources",
     "ToolViolation",
     "pending_handlers",
     "required_scope_names",
     "resolve_tool_by_name",
 ]
 
-IMPLEMENTATION_PHASE = 3
-"""The STEP number this build implements.
-
-Bumped by each phase as its first act. It is the countdown test's clock: an
-entry whose ``handler_due_step`` is at or below this number must have a
-handler, so raising it is what forces the next phase to land the handler it
-promised.
-"""
-
-
-class ToolViolation(Exception):
-    """Raised when a requested tool name resolves to nothing.
-
-    Mirrors ``scopes.ScopeViolation``, and for the same reason: an agent hands
-    the orchestrator a string, not a validated enum member, so the resolution
-    step is a real boundary rather than a formality.
-    """
-
-
-@dataclass(frozen=True, slots=True)
-class ToolContext:
-    """Everything a handler is given, and nothing else.
-
-    Handlers receive resolved scopes rather than a connection they may query
-    freely, and parameters the orchestrator has already accepted. A handler
-    cannot widen its own access: what is not in ``granted_scopes`` was not
-    granted, and there is no path from here to the sealed schema because
-    ``DataScope`` has no member for it.
-    """
-
-    agent_id: str
-    granted_scopes: frozenset[DataScope]
-    params: Mapping[str, object]
-
-
-class ToolHandler(Protocol):
-    """A deterministic executable behind one ``ToolId``.
-
-    Handlers do not call models. The model boundary is the D4 adapter, and it
-    is the agent, not the tool, that speaks to it: a tool that could prompt
-    would be an agent wearing a tool's allowlist entry.
-    """
-
-    def __call__(self, context: ToolContext, /) -> object: ...
-
-
-@dataclass(frozen=True, slots=True)
-class ToolEntry:
-    """One row of the allowlist."""
-
-    tool_id: ToolId
-    consequence: Consequence
-    required_scopes: frozenset[DataScope]
-    handler_due_step: int
-    handler: ToolHandler | None
-    summary: str
-
-    def __post_init__(self) -> None:
-        if self.handler_due_step < 1:
-            raise ValueError(f"handler_due_step must be a STEP number; got {self.handler_due_step}")
-        if not self.summary.strip():
-            raise ValueError("every allowlist entry states what the tool does")
-
-    @property
-    def executable(self) -> bool:
-        return self.handler is not None
-
+_ALL_ENTITY_SCOPES = frozenset(DataScope)
 
 TOOL_TABLE: Mapping[ToolId, ToolEntry] = {
     ToolId.RANK_TRIAGE_QUEUE: ToolEntry(
@@ -135,28 +85,17 @@ TOOL_TABLE: Mapping[ToolId, ToolEntry] = {
                 DataScope.CHANNEL,
                 DataScope.VIDEO,
                 DataScope.COMMENT,
-                DataScope.ENGAGEMENT_EVENT,
-                DataScope.ACCOUNT_META,
                 DataScope.INFRA_HINT,
             }
         ),
         handler_due_step=3,
-        handler=None,  # D5 lands it; see tests/test_tool_table.py
+        handler=rank_triage_queue,
         summary="Rank the flagged-entity queue by decomposed priority score.",
     ),
     ToolId.RUN_PARAMETERIZED_PIVOT: ToolEntry(
         tool_id=ToolId.RUN_PARAMETERIZED_PIVOT,
         consequence=Consequence.ASSEMBLE,
-        required_scopes=frozenset(
-            {
-                DataScope.CHANNEL,
-                DataScope.VIDEO,
-                DataScope.COMMENT,
-                DataScope.ENGAGEMENT_EVENT,
-                DataScope.ACCOUNT_META,
-                DataScope.INFRA_HINT,
-            }
-        ),
+        required_scopes=_ALL_ENTITY_SCOPES,
         handler_due_step=4,
         handler=None,
         summary="Run one analyst-approved parameterized pivot query (ARCHITECTURE 4.2).",
@@ -179,43 +118,10 @@ TOOL_TABLE: Mapping[ToolId, ToolEntry] = {
     ),
 }
 """Every ``ToolId``, one entry each. See the module docstring for the reading
-of the no-orphan rule this satisfies and for what it does not claim."""
+of the no-orphan rule this satisfies and for what it does not claim.
 
-
-def pending_handlers(table: Mapping[ToolId, ToolEntry]) -> tuple[ToolId, ...]:
-    """Tools declared in ``table`` with no handler in this build, in due order.
-
-    The countdown test's subject. Reading it in due order makes the shrinking
-    sequence obvious: whichever tool is first is the one the next phase owes.
-    """
-    return tuple(
-        entry.tool_id
-        for entry in sorted(
-            (entry for entry in table.values() if not entry.executable),
-            key=lambda entry: (entry.handler_due_step, entry.tool_id.value),
-        )
-    )
-
-
-def resolve_tool_by_name(name: str) -> ToolId:
-    """Resolve an agent-supplied tool *name*, or deny it.
-
-    Allowlist semantics, identical to ``scopes.resolve_scope_by_name``:
-    lookup is by enum value, so a name with no member is denied by
-    construction rather than by a list of things to reject.
-    """
-    try:
-        return ToolId(name)
-    except ValueError as exc:
-        raise ToolViolation(f"no ToolId member resolves {name!r}") from exc
-
-
-def required_scope_names(entry: ToolEntry) -> tuple[str, ...]:
-    """The scope names a proposal for ``entry`` has to request, sorted.
-
-    Exposed so an agent's proposal is built from the table rather than from a
-    hand-maintained list that drifts out of step with it. The agent still
-    hands dispatch *strings*, which is the point: this returns the names it
-    should ask for, not a pre-validated set that would skip the boundary.
-    """
-    return tuple(sorted(scope.value for scope in entry.required_scopes))
+``RANK_TRIAGE_QUEUE`` requires only the four scopes its queries actually read.
+It was declared with all six until D5 made the queries real, and narrowing it
+to what is used is the least-privilege position: a mandate granting the extra
+two would be granting access nothing asks for.
+"""

@@ -151,6 +151,31 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 - `tests/conftest.py` strips `TS_SENTRY_LLM_MODE`, `TS_SENTRY_LLM_MODEL`, and
   `ANTHROPIC_API_KEY` for the whole test session, so "the suite costs nothing"
   is a property of the repository rather than of a developer's shell.
+- STEP-03 D5: `ts_sentry.agents.triage` - the triage agent. A deterministic
+  weighted-sum scorer over severity_class, spread, velocity and recidivism
+  with published weights (`WEIGHTS_VERSION`), every row rendering as its
+  component vector rather than a bare number. Rationales cite bracketed
+  component ids namespaced by case, so a rationale citing another case's
+  evidence fails.
+- STEP-03 D5: `ts_sentry.orchestrator.detection_stub` - the flagged-entity
+  queue ARCHITECTURE 4.1 assumes and STEP-01 never shipped. Deterministic and
+  seeded, reading only `DataScope`-resolvable tables. Severity here is a
+  heuristic stand-in signal, not ground truth: there is no sealed influence,
+  direct or derived, and a test asserts that against the SQL.
+- STEP-03 D5: `ts_sentry.orchestrator.rationale_check`, reusing the STEP-02
+  symbolic verifier with evidence ids = score component ids (STEP-03 3.5),
+  and `ts_sentry.orchestrator.triage_turn`, which drives the ARCHITECTURE 3.3
+  pipeline once end to end.
+- STEP-03 D5: `ts_sentry.orchestrator.toolspec` splits the tool contract from
+  the tool table, and `ToolResources` gives handlers what the orchestrator
+  holds, kept separate from the agent-supplied params.
+- STEP-03: the signature import-graph test (`tests/test_import_graph.py`),
+  the first obligation carried from STEP-02. Worded per the sealed
+  two-consumer model and enforced over the transitive first-party closure.
+- STEP-03: the no-orphan ToolId countdown now binds at full strength. The
+  pending-handler set shrank from four to three when the triage handler
+  landed, and a phase that passes its deadline without landing a handler
+  reddens the suite.
 
 ### Changed
 
@@ -162,6 +187,15 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ### Fixed
 
+- Detection stub: reading `TIMESTAMPTZ` columns into Python failed on the
+  missing optional `pytz` dependency, and casting them to text would have been
+  worse - DuckDB renders a `TIMESTAMPTZ` in the reader's session time zone, so
+  the recidivism component (which counts distinct observation days) would have
+  produced different priorities on a Kolkata machine than in a UTC CI runner,
+  with neither looking wrong. Timestamps are now selected as `epoch_ms(...)`,
+  which carries no rendering at all; verified identical under three reader
+  time zones and pinned by a test. Same class of defect STEP-02 D3 avoided in
+  the ledger, found in a new place.
 - Input firewall: redaction markers were forgeable. Case content containing
   the literal string `[ts-sentry: instruction-shaped text removed: ...]`
   produced a model-facing block in which an attacker-planted marker was byte

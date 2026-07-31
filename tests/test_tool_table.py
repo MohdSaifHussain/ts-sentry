@@ -48,30 +48,46 @@ def test_the_pending_handler_set_is_pinned() -> None:
     fails when a handler lands (update the list, one line) and equally when
     one silently disappears, which is the direction nobody would notice.
 
-    At the D3 commit the table declares four tools and executes none: dispatch
-    is a mechanism, and the first real tool is the triage ranker in D5. Saying
-    so here is more honest than back-dating a handler to make the list shorter.
+    It shrank once already: at D3 the table declared four tools and executed
+    none, because dispatch is a mechanism and the first real tool was still
+    ahead. D5 landed the triage ranker, so the list is three.
     """
     assert pending_handlers(TOOL_TABLE) == (
-        ToolId.RANK_TRIAGE_QUEUE,
         ToolId.RUN_PARAMETERIZED_PIVOT,
         ToolId.RESOLVE_POLICY_CITATION,
         ToolId.RUN_PROMPT_EVAL,
     )
 
 
-def test_every_pending_handler_has_a_deadline_in_a_later_phase() -> None:
-    """The half of the countdown that binds today.
+def test_nothing_due_this_phase_or_earlier_is_still_pending() -> None:
+    """The countdown, at full strength now that this phase has met its own
+    deadline.
 
-    Each pending tool names the phase that owes its handler, and none of those
-    deadlines may be in the past. The complementary half, that nothing due at
-    or before the current phase is still pending, lands in D5 with this
-    phase's own handler.
+    Saif's condition on the no-orphan reading: the handler-less set must shrink
+    phase by phase rather than being a permanent exemption. This is the test
+    that enforces it. Bumping ``IMPLEMENTATION_PHASE`` to 4 without landing the
+    pivot handler reddens the suite, 5 without the citation handler does the
+    same, and by STEP-06 the table is fully executable or the build is broken.
     """
-    for tool_id in pending_handlers(TOOL_TABLE):
-        entry = TOOL_TABLE[tool_id]
-        assert entry.handler_due_step >= IMPLEMENTATION_PHASE
-        assert entry.handler is None
+    overdue = [
+        tool_id
+        for tool_id in pending_handlers(TOOL_TABLE)
+        if TOOL_TABLE[tool_id].handler_due_step <= IMPLEMENTATION_PHASE
+    ]
+
+    assert overdue == [], (
+        f"phase {IMPLEMENTATION_PHASE} owes handlers for "
+        f"{[t.value for t in overdue]}; the countdown has been missed"
+    )
+
+
+def test_this_phase_landed_the_handler_it_owed() -> None:
+    """The other direction: the countdown above passes vacuously if the entry
+    that was due simply vanished from the table."""
+    entry = TOOL_TABLE[ToolId.RANK_TRIAGE_QUEUE]
+
+    assert entry.handler_due_step == IMPLEMENTATION_PHASE
+    assert entry.executable
 
 
 def test_the_due_steps_match_the_phase_that_owns_each_agent() -> None:
