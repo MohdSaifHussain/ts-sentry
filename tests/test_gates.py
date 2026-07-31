@@ -23,6 +23,7 @@ from ts_sentry.governance.gates import (
     GateDecision,
     GateFailure,
     GateOutcome,
+    ScopeGuardResult,
     guard_scope_request,
     run_gate,
 )
@@ -272,6 +273,21 @@ def test_sealed_scope_request_is_refused_and_ledgered(ledger: Ledger) -> None:
     assert result.ledgered is not None
     assert result.ledgered.event_type is EventType.MANDATE_VIOLATION_ATTEMPT
     assert ledger.verify().intact
+
+
+def test_scope_guard_result_rejects_an_inconsistent_shape() -> None:
+    """A refused result must not carry a scope. Otherwise a caller could read
+    ``result.scope`` without checking ``result.granted`` and act on a table
+    the mandate never allowed.
+    """
+    with pytest.raises(ValueError, match="granted result carries a scope"):
+        ScopeGuardResult(
+            granted=False,
+            scope=DataScope.CHANNEL,
+            code=RefusalCode.SCOPE_NOT_ALLOWED,
+            detail="refused but somehow carrying a scope",
+            ledgered=None,
+        )
 
 
 def test_a_real_scope_outside_the_mandate_is_refused_and_ledgered(ledger: Ledger) -> None:
