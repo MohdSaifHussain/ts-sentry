@@ -1,8 +1,8 @@
 # STEP-01: Data Foundation
 
 **Project:** Trust & Safety Sentry | **Phase:** 1 of 8 | **Date:** 31 July 2026 (IST)
-**Status:** Implemented (D1-D7); byte-stability confirmed by Saif; leakage
-red-team pending Saif's personal post-commit pass
+**Status:** Closed. D1-D7 implemented; byte-stability and the leakage
+red-team both personally verified by Saif post-commit.
 **Standing rule:** every implementation follows the top applicable standard for
 what is being built. Each requirement below names its governing standard.
 
@@ -78,16 +78,13 @@ label-leakage test proves agents cannot reach ground truth.
         and all seven Parquet files, including `sealed/_labels.parquet`) -
         byte-identical.
 - [x] AnalystKit quality gate green at declared thresholds
-- [ ] Leakage test red-teamed: a deliberately added sealed-scope member makes it fail
-      - Automated coverage is in place two ways: `tests/test_scope_leakage.py`
-        red-teams the `DataScope` allowlist itself, and `tests/test_cli.py`
-        `test_leakage_self_check_detects_a_real_leak` red-teams the
-        build-time export check by deliberately denormalizing a label
-        column onto an entity export and confirming detection. Left
-        unchecked deliberately: Saif's own personal red-team pass, per his
-        explicit request, happens **after** this commit series lands, not
-        before - this box records that it is still outstanding, not that it
-        was skipped.
+- [x] Leakage test red-teamed: a deliberately added sealed-scope member makes it fail
+      - Verified personally by Saif, post-commit: adding
+        `SEALED_LABELS = "sealed._labels"` to `DataScope` produced 10
+        failures, then `git revert` restored all 49 tests green. See
+        "Leakage red-team, verified post-commit" below for the full
+        finding - the sabotage was caught at two independent layers, not
+        one.
 - [x] mypy --strict, ruff, pytest, coverage floor all green in CI
 - [x] Data dictionary complete; assumptions section written
 - [x] CHANGELOG updated; STEP-01 moved to docs/decisions/ with outcome notes
@@ -230,3 +227,35 @@ transparency; it simply carries no pass/fail threshold. Documented in
   to well under a second. `pandas` was accordingly added as a direct
   dependency (previously only a transitive one, via `analystkit`), not
   just relied on implicitly.
+
+### Leakage red-team, verified post-commit
+
+Saif's own personal red-team pass (the one deliberately left outstanding
+when Phase 1 was first committed): added
+`SEALED_LABELS = "sealed._labels"` as a member of `DataScope` and reran
+the suite. Result: **10 failures**, then `git revert` of the sabotage
+restored all 49 tests to green.
+
+The finding worth recording is *which* 10 failed, not just the count: it
+wasn't only the tests purpose-built for this
+(`tests/test_scope_leakage.py`'s direct leakage assertions and its
+red-team test). `resolve_table()` and `resolve_export_path()`
+(`ts_sentry/governance/scopes.py`) are written as an exhaustive `match` over
+`DataScope` ending in `case _: assert_never(scope)` specifically so mypy
+can prove every member is handled - adding a new member without also
+adding a matching `case` doesn't just leave the new member unresolved, it
+makes the *function itself* incomplete in a way several unrelated call
+sites immediately trip over. That's what happened here: tests in
+`tests/test_cli.py` (the leakage self-check and build success path),
+`tests/test_persistence.py` (export path resolution), and
+`tests/test_quality_gate.py` (which resolves every `DataScope` member to
+run `profile`/`validate`/`reconcile`) all failed too, none of them written
+with leakage in mind. Two independent layers caught the same sabotage:
+the tests that were designed to catch it, and the exhaustiveness
+structure of the resolver functions themselves, which turned an
+undetected new enum member into loud, immediate breakage across every
+consumer rather than a silent gap. That's the defense-in-depth the
+allowlist design (STEP-01 3.3, "absence is denial") was meant to produce.
+
+With this, both items left open when D1-D7 first landed are closed. Phase
+1 is closed.
