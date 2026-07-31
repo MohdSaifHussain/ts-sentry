@@ -566,7 +566,10 @@ def call_model(
     """
     tracker = session.budget(agent_id)
     estimate = request.estimated_input_tokens() + request.max_output_tokens
-    reason = tracker.check(estimate)
+    # Tokens only. The caller is inside a turn whose step ``begin_turn`` already
+    # booked, and re-checking the step ceiling here would refuse work the
+    # session had just authorized. See ``BudgetTracker.check``.
+    reason = tracker.check(estimate, require_step=False)
     if reason is not None:
         snapshot = tracker.snapshot()
         return ModelCall(

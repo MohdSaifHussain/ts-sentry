@@ -48,12 +48,12 @@ def test_the_pending_handler_set_is_pinned() -> None:
     fails when a handler lands (update the list, one line) and equally when
     one silently disappears, which is the direction nobody would notice.
 
-    It shrank once already: at D3 the table declared four tools and executed
-    none, because dispatch is a mechanism and the first real tool was still
-    ahead. D5 landed the triage ranker, so the list is three.
+    It has shrunk twice. At STEP-03 D3 the table declared four tools and
+    executed none, because dispatch is a mechanism and the first real tool was
+    still ahead. STEP-03 D5 landed the triage ranker, taking it to three.
+    STEP-04 D2 landed the pivot handler, taking it to two.
     """
     assert pending_handlers(TOOL_TABLE) == (
-        ToolId.RUN_PARAMETERIZED_PIVOT,
         ToolId.RESOLVE_POLICY_CITATION,
         ToolId.RUN_PROMPT_EVAL,
     )
@@ -83,11 +83,23 @@ def test_nothing_due_this_phase_or_earlier_is_still_pending() -> None:
 
 def test_this_phase_landed_the_handler_it_owed() -> None:
     """The other direction: the countdown above passes vacuously if the entry
-    that was due simply vanished from the table."""
-    entry = TOOL_TABLE[ToolId.RANK_TRIAGE_QUEUE]
+    that was due simply vanished from the table.
 
-    assert entry.handler_due_step == IMPLEMENTATION_PHASE
-    assert entry.executable
+    Written against ``IMPLEMENTATION_PHASE`` rather than against a named tool,
+    so it does not need rewriting each phase and cannot be quietly retargeted
+    at whichever tool happens to be executable. Every phase from STEP-03 to
+    STEP-06 owes exactly one handler; this asserts that this phase's exists and
+    runs.
+    """
+    due_now = [
+        entry for entry in TOOL_TABLE.values() if entry.handler_due_step == IMPLEMENTATION_PHASE
+    ]
+
+    assert len(due_now) == 1, (
+        f"phase {IMPLEMENTATION_PHASE} should owe exactly one handler; "
+        f"the table says it owes {[entry.tool_id.value for entry in due_now]}"
+    )
+    assert due_now[0].executable
 
 
 def test_the_due_steps_match_the_phase_that_owns_each_agent() -> None:

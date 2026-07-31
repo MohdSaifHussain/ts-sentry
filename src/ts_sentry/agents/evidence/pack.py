@@ -125,6 +125,7 @@ class EdgeRelation(StrEnum):
     """
 
     OWNS_CHANNEL = "owns_channel"
+    PUBLISHED_ON = "published_on"
     SHARES_METADATA = "shares_metadata"
     SHARES_INFRA_SIGNAL = "shares_infra_signal"
     COMMENTED_ON = "commented_on"

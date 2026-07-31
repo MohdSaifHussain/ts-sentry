@@ -340,6 +340,34 @@ def test_steps_are_checked_before_tokens() -> None:
     assert tracker.check() is CloseReason.STEP_BUDGET_EXHAUSTED
 
 
+def test_a_granted_turn_is_not_refused_for_the_step_it_already_booked() -> None:
+    """The defect the first multi-turn agent surfaced (STEP-04 D2).
+
+    ``begin_turn`` books the step, so a model call inside that turn asking
+    ``check()`` again would see the ceiling it had just reached and refuse work
+    the session had already authorized. Every mandate's last step was therefore
+    unusable and ``max_steps`` quietly meant one fewer than it said. One turn
+    per session hid it for the whole of STEP-03.
+
+    ``require_step=False`` is what a caller inside a granted turn asks with.
+    The step ceiling itself is unchanged and still enforced at ``begin_turn``.
+    """
+    tracker = BudgetTracker(_mandate(token_budget=1_000, max_steps=1))
+    tracker.record_step()
+
+    assert tracker.check() is CloseReason.STEP_BUDGET_EXHAUSTED
+    assert tracker.check(require_step=False) is None
+
+
+def test_the_token_ceiling_still_binds_inside_a_granted_turn() -> None:
+    """``require_step=False`` waives the step check and nothing else."""
+    tracker = BudgetTracker(_mandate(token_budget=10, max_steps=1))
+    tracker.record_step()
+    tracker.record_tokens(10)
+
+    assert tracker.check(require_step=False) is CloseReason.TOKEN_BUDGET_EXHAUSTED
+
+
 def test_budget_tracker_rejects_negative_amounts() -> None:
     tracker = BudgetTracker(_mandate())
     with pytest.raises(ValueError, match="must not be negative"):

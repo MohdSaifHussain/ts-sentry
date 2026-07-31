@@ -14,11 +14,17 @@ Ids are cited in square brackets, and the parser accepts nothing else. That
 is not a formatting preference: an unbracketed convention would make ordinary
 prose about "velocity" indistinguishable from a citation of it, and the
 verifier would then be checking sentences rather than claims.
+
+The pattern itself moved to :mod:`ts_sentry.agents.citations` in STEP-04, when
+the evidence agent needed the identical syntax for pivot proposals. It is
+re-exported here, so every STEP-03 caller is unchanged. Two agents parsing one
+syntax with two regexes would be two parsers that can disagree, in the one
+place where disagreement means a claim verifies against the wrong set.
 """
 
-import re
 from collections.abc import Sequence
 
+from ts_sentry.agents.citations import CITATION_PATTERN, parse_citations
 from ts_sentry.agents.triage.scorer import (
     WEIGHTS,
     PriorityScore,
@@ -33,16 +39,6 @@ __all__ = [
     "parse_rationale_lines",
     "render_expected_form",
 ]
-
-CITATION_PATTERN = re.compile(r"\[([A-Za-z0-9._:-]+)\]")
-"""One citation. Deliberately narrow: no whitespace, no nesting, so a bracket
-in ordinary prose cannot be read as a citation and a citation cannot span a
-sentence."""
-
-
-def parse_citations(text: str) -> frozenset[str]:
-    """Every bracketed id in ``text``. Nothing else counts as a citation."""
-    return frozenset(CITATION_PATTERN.findall(text))
 
 
 def parse_rationale_lines(text: str) -> dict[str, str]:

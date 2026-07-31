@@ -14,6 +14,7 @@ import from either.
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 
 import duckdb
@@ -33,7 +34,7 @@ __all__ = [
     "resolve_tool_by_name",
 ]
 
-IMPLEMENTATION_PHASE = 3
+IMPLEMENTATION_PHASE = 4
 """The STEP number this build implements.
 
 Bumped by each phase as its first act. It is the countdown test's clock: an
@@ -61,10 +62,31 @@ class ToolResources:
     untrusted; resources are what the orchestrator already had. A tool that
     needs a database gets the connection from here, so an agent cannot name
     the file it would like opened.
+
+    ``pack`` and ``retrieval_ts`` arrived in STEP-04 for that same reason
+    rather than for convenience. The evidence pack a pivot extends must not be
+    something the agent can supply: an agent that could hand over the pack
+    could hand over one containing entities it invented, and every "must
+    already be in the pack" check in that phase would then be checking the
+    agent's claims against themselves. The timestamp is here because nothing in
+    this system reads the clock behind its caller's back (STEP-03 D1), so a
+    handler that stamps a record gets the session's instant rather than finding
+    its own. Both default to ``None``, so a tool that needs one and was given
+    none refuses rather than improvising.
+
+    ``pack`` is typed ``object`` rather than ``EvidencePack`` on purpose. This
+    module defines what a tool *is*, for every tool, and naming one agent's
+    artifact type here would make the general contract depend on a particular
+    agent. The cost is that the handler cannot assume the type, which it pays
+    with an ``isinstance`` check at its own boundary. That check is worth having
+    anyway: it is the fail-closed refusal for a caller that lends the wrong
+    thing.
     """
 
     connection: duckdb.DuckDBPyConnection | None = None
     seed: int = 42
+    pack: object | None = None
+    retrieval_ts: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)

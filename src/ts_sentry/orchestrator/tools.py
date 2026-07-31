@@ -48,6 +48,7 @@ from collections.abc import Mapping
 
 from ts_sentry.governance.mandate import Consequence, ToolId
 from ts_sentry.governance.scopes import DataScope
+from ts_sentry.orchestrator.pivot_tool import run_parameterized_pivot
 from ts_sentry.orchestrator.toolspec import (
     IMPLEMENTATION_PHASE,
     ToolContext,
@@ -97,7 +98,7 @@ TOOL_TABLE: Mapping[ToolId, ToolEntry] = {
         consequence=Consequence.ASSEMBLE,
         required_scopes=_ALL_ENTITY_SCOPES,
         handler_due_step=4,
-        handler=None,
+        handler=run_parameterized_pivot,
         summary="Run one analyst-approved parameterized pivot query (ARCHITECTURE 4.2).",
     ),
     ToolId.RESOLVE_POLICY_CITATION: ToolEntry(

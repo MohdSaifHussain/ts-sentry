@@ -37,7 +37,7 @@ from ts_sentry.orchestrator.adapter import (
 )
 from ts_sentry.orchestrator.core import Clock, CloseReason, Session, SystemClock
 from ts_sentry.orchestrator.detection_stub import DETECTOR_VERSION
-from ts_sentry.orchestrator.fleet import PHASE_THREE_CHECKS, default_mandates
+from ts_sentry.orchestrator.fleet import PHASE_FOUR_CHECKS, default_mandates
 from ts_sentry.orchestrator.manifest import ArtifactRecord, SessionManifest
 from ts_sentry.orchestrator.toolspec import ToolResources
 from ts_sentry.orchestrator.triage_turn import TriageTurn, run_triage_turn
@@ -143,7 +143,7 @@ def run_triage_session(
             session,
             adapter,
             resources=ToolResources(connection=dataset, seed=seed),
-            checks=PHASE_THREE_CHECKS,
+            checks=PHASE_FOUR_CHECKS,
             policy=RetryPolicy(),
             rng=np.random.default_rng(seed),
             sleeper=sleeper or RealSleeper(),

@@ -20,6 +20,21 @@ WINDOW_START = datetime(2024, 1, 1, tzinfo=IST)
 WINDOW_SECONDS = 2 * 365 * 24 * 3600  # ~2 years
 
 
+def ist_from_epoch_ms(epoch_millis: int) -> datetime:
+    """Rebuild an IST datetime from epoch milliseconds.
+
+    Shared because two modules now need the identical conversion and a second
+    spelling of it is a second chance to get it wrong. Timestamps are read out
+    of DuckDB as ``epoch_ms(...)`` rather than as ``TIMESTAMPTZ`` or a text
+    cast, for the reason STEP-02 D3 established and STEP-03 D5 hit again:
+    DuckDB renders a ``TIMESTAMPTZ`` in the *reader's* session time zone, so a
+    cast to text would produce different evidence on a Kolkata machine than in
+    a UTC CI runner, and neither would look wrong. Epoch milliseconds carry no
+    rendering at all.
+    """
+    return datetime.fromtimestamp(epoch_millis / 1000, tz=IST)
+
+
 def require_ist(value: datetime, field_name: str) -> None:
     """Raise ``ValueError`` unless ``value`` is tz-aware and resolves to IST.
 

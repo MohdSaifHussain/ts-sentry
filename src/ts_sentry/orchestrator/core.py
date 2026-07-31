@@ -272,17 +272,29 @@ class BudgetTracker:
             steps_taken=self._steps_taken,
         )
 
-    def check(self, estimated_tokens: int = 0) -> CloseReason | None:
+    def check(self, estimated_tokens: int = 0, *, require_step: bool = True) -> CloseReason | None:
         """``None`` when the work may proceed, otherwise why it may not.
 
         Steps are checked before tokens so a session that has run out of both
         reports the ceiling it hit first in the sequence a turn actually
         consumes them.
+
+        ``require_step`` is for callers working *inside* a turn that has already
+        been granted. Found by the first multi-turn agent (STEP-04): a turn
+        books its step in ``begin_turn``, and a model call that then re-checked
+        the step budget would see the ceiling it had just reached and refuse
+        work the session had already authorized. The last step of every mandate
+        was therefore unusable, so ``max_steps`` quietly meant one fewer than it
+        said. One turn per session hid it for the whole of STEP-03.
+
+        The step ceiling is unchanged and still enforced where it belongs, at
+        ``begin_turn``: this only stops one step being counted against itself
+        twice.
         """
         if estimated_tokens < 0:
             raise ValueError(f"estimated_tokens must not be negative; got {estimated_tokens}")
         snapshot = self.snapshot()
-        if snapshot.steps_remaining <= 0:
+        if require_step and snapshot.steps_remaining <= 0:
             return CloseReason.STEP_BUDGET_EXHAUSTED
         if snapshot.tokens_remaining <= 0 or estimated_tokens > snapshot.tokens_remaining:
             return CloseReason.TOKEN_BUDGET_EXHAUSTED

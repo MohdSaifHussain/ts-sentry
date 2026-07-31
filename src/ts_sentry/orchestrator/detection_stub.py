@@ -40,7 +40,7 @@ import duckdb
 import numpy as np
 
 from ts_sentry.data.enums import InfraSignalKind
-from ts_sentry.data.tz import IST, require_ist
+from ts_sentry.data.tz import ist_from_epoch_ms, require_ist
 from ts_sentry.governance.scopes import DataScope, resolve_table
 from ts_sentry.orchestrator.firewall import CaseRecord
 
@@ -177,8 +177,12 @@ def _ist_instant(epoch_millis: int) -> datetime:
     Epoch milliseconds carry no rendering at all. Verified against DuckDB
     1.5.5: the same row yields the identical integer under Asia/Kolkata, UTC,
     and America/New_York session time zones.
+
+    The conversion itself moved to ``data.tz`` in STEP-04, when the pivot
+    handler needed the identical one. This wrapper keeps the reasoning at the
+    site that learned it.
     """
-    return datetime.fromtimestamp(epoch_millis / 1000, tz=IST)
+    return ist_from_epoch_ms(epoch_millis)
 
 
 def _ist_date(epoch_millis: int) -> str:
