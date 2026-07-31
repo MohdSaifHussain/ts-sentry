@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: MIT
+"""Shared Asia/Kolkata (IST) constant and structural enforcement helper.
+
+STEP-01 3.2: every timestamp in the synthetic schema must be timezone-aware
+IST. A docstring saying so is not an invariant - ``require_ist`` is called
+from every timestamp-bearing dataclass's ``__post_init__``
+(``ts_sentry.data.schema``, ``ts_sentry.data.sealed``) so a naive or
+wrong-offset datetime cannot be constructed at all.
+"""
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+IST = ZoneInfo("Asia/Kolkata")
+
+# All row timestamps across the generator and threat modules are drawn from
+# this fixed, deterministic window - never from wall-clock "now" - so
+# rebuilds are byte-stable regardless of when they run.
+WINDOW_START = datetime(2024, 1, 1, tzinfo=IST)
+WINDOW_SECONDS = 2 * 365 * 24 * 3600  # ~2 years
+
+
+def require_ist(value: datetime, field_name: str) -> None:
+    """Raise ``ValueError`` unless ``value`` is tz-aware and resolves to IST.
+
+    Checked by UTC-offset equivalence rather than ``tzinfo`` identity:
+    Asia/Kolkata has a fixed +05:30 offset (no DST), so any ``tzinfo``
+    yielding that same offset at this instant is an equivalent
+    representation of IST and is accepted.
+    """
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError(
+            f"{field_name} must be timezone-aware (Asia/Kolkata); got a naive datetime"
+        )
+    if value.utcoffset() != value.astimezone(IST).utcoffset():
+        raise ValueError(
+            f"{field_name} must resolve to Asia/Kolkata (UTC+05:30); got offset {value.utcoffset()}"
+        )
