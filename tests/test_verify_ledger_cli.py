@@ -266,6 +266,69 @@ def test_malformed_expect_head_exits_five(artifacts: tuple[Path, Path], raw: str
     assert main(["verify-ledger", str(jsonl), "--expect-head", raw]) == EXIT_INPUT_ERROR
 
 
+def test_missing_option_value_exits_five_not_two(artifacts: tuple[Path, Path]) -> None:
+    """Interpreter-independent pin on the 3.12 divergence CI caught.
+
+    On 3.12, ``--expect-head -1:<hash>`` never reaches our validation:
+    argparse classifies the dash-prefixed token as an option, because
+    "positional arguments may only begin with - if they look like negative
+    numbers" and that value does not, so it errors with its own status 2
+    before ``parse_expect_head`` runs. On 3.14 the same input is consumed as
+    a value and exits 5 through our path.
+
+    This test drives argparse's error path directly, with an option value
+    that is genuinely absent on every version, so the translated exit code is
+    asserted regardless of which reading the interpreter takes.
+    """
+    _, jsonl = artifacts
+    assert main(["verify-ledger", str(jsonl), "--expect-head"]) == EXIT_INPUT_ERROR
+
+
+def test_missing_path_exits_five(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["verify-ledger"]) == EXIT_INPUT_ERROR
+    assert "verify-ledger:" in capsys.readouterr().err
+
+
+def test_unknown_flag_exits_five(artifacts: tuple[Path, Path]) -> None:
+    _, jsonl = artifacts
+    assert main(["verify-ledger", str(jsonl), "--not-a-flag"]) == EXIT_INPUT_ERROR
+
+
+def test_argparse_never_returns_exit_two_from_verify_ledger(
+    artifacts: tuple[Path, Path],
+) -> None:
+    """The collision this removes.
+
+    argparse's own status 2 means "quality gate failed" elsewhere in this
+    CLI. No verify-ledger invocation may produce it, and none may leak a
+    bare SystemExit either.
+    """
+    _, jsonl = artifacts
+    malformed = [
+        ["verify-ledger"],
+        ["verify-ledger", str(jsonl), "--expect-head"],
+        ["verify-ledger", str(jsonl), "--expect-head", "-1:" + "a" * 64],
+        ["verify-ledger", str(jsonl), "--not-a-flag"],
+    ]
+    for argv in malformed:
+        assert main(argv) == EXIT_INPUT_ERROR
+
+
+def test_other_subcommands_keep_argparse_behaviour() -> None:
+    """The translation is scoped to verify-ledger.
+
+    build-dataset usage errors, and an absent subcommand, still exit through
+    argparse exactly as before, so this change cannot silently alter the
+    STEP-01 CLI contract.
+    """
+    with pytest.raises(SystemExit) as missing_args:
+        main(["build-dataset"])
+    assert missing_args.value.code == 2
+
+    with pytest.raises(SystemExit):
+        main([])
+
+
 def test_parse_expect_head_round_trips() -> None:
     head = parse_expect_head(f"7:{'b' * 64}")
     assert head.count == 7

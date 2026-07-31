@@ -23,6 +23,7 @@ import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import NoReturn
 
 import duckdb
 
@@ -309,9 +310,44 @@ def run_verify_ledger(path: Path, expect_head_raw: str | None = None) -> int:
     return EXIT_OK
 
 
+class _UsageError(Exception):
+    """Carries an argparse failure out to ``main`` instead of exiting.
+
+    argparse "terminates the program with a status code of 2"
+    (https://docs.python.org/3/library/argparse.html, ``ArgumentParser.error``).
+    That is the wrong code twice over here: it collides with
+    ``EXIT_QUALITY_GATE_FAIL``, and it makes a malformed argument
+    indistinguishable from a build-dataset quality failure. Raising instead
+    lets the CLI choose.
+    """
+
+    def __init__(self, parser: argparse.ArgumentParser, message: str) -> None:
+        super().__init__(message)
+        self.parser = parser
+        self.message = message
+
+
+class _RaisingParser(argparse.ArgumentParser):
+    """Parser that raises rather than exiting on a usage error."""
+
+    def error(self, message: str) -> NoReturn:
+        raise _UsageError(self, message)
+
+
+VERIFY_LEDGER = "verify-ledger"
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="ts-sentry")
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    argv_list = sys.argv[1:] if argv is None else list(argv)
+
+    # The root parser raises too, not just the subparsers. Unrecognized
+    # arguments are reported by the *root* parser even when a subcommand was
+    # named, because parse_args() collects leftovers from parse_known_args()
+    # and errors on them itself. Leaving the root alone let
+    # `verify-ledger FILE --not-a-flag` escape as argparse's status 2, which
+    # is the collision this change exists to remove.
+    parser = _RaisingParser(prog="ts-sentry")
+    subparsers = parser.add_subparsers(dest="command", required=True, parser_class=_RaisingParser)
 
     build_parser = subparsers.add_parser("build-dataset")
     build_parser.add_argument("--seed", type=int, required=True)
@@ -319,7 +355,7 @@ def main(argv: list[str] | None = None) -> int:
     build_parser.add_argument("--out", type=Path, default=Path("build"))
     build_parser.add_argument("--quality-thresholds", type=Path, default=None)
 
-    verify_parser = subparsers.add_parser("verify-ledger")
+    verify_parser = subparsers.add_parser(VERIFY_LEDGER)
     verify_parser.add_argument("path", type=Path)
     verify_parser.add_argument(
         "--expect-head",
@@ -332,7 +368,32 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
 
-    args = parser.parse_args(argv)
+    # The root parser has no options of its own, so the first token is the
+    # subcommand. Needed because a root-parser error carries no parsed
+    # namespace to read the command from.
+    targets_verify_ledger = bool(argv_list) and argv_list[0] == VERIFY_LEDGER
+
+    try:
+        args = parser.parse_args(argv_list)
+    except _UsageError as exc:
+        if exc.parser is verify_parser or targets_verify_ledger:
+            # Every malformed verify-ledger invocation exits 5, on every
+            # supported interpreter. Caught by CI on 3.12: argparse resolves
+            # a dash-prefixed option *value* like "-1:<hash>" differently
+            # across versions, because "positional arguments may only begin
+            # with - if they look like negative numbers"
+            # (https://docs.python.org/3/library/argparse.html), and
+            # "-1:<hash>" does not. 3.12 classifies it as an option token and
+            # errors with its own status 2 before our validation runs; 3.14
+            # consumes it as a value and reaches parse_expect_head.
+            # Translating argparse's exit makes the contract independent of
+            # which reading the interpreter takes.
+            print(f"{VERIFY_LEDGER}: {exc.message}", file=sys.stderr)
+            return EXIT_INPUT_ERROR
+        # Every other invocation keeps argparse's stock behaviour verbatim,
+        # so this cannot silently alter the STEP-01 build-dataset contract.
+        exc.parser.print_usage(sys.stderr)
+        exc.parser.exit(2, f"{exc.parser.prog}: error: {exc.message}\n")
 
     if args.command == "build-dataset":
         thresholds = _load_thresholds(args.quality_thresholds)
