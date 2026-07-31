@@ -106,6 +106,19 @@ every row of the table. But the specific head digest and case count in his
 notes are from the earlier build, and a re-run is the honest way to close that
 gap if he wants the record to match byte for byte.
 
+### Boundary observation: a fix-cycle command removed a verification artifact
+
+During the finding-1/finding-2 fix cycle, `rm -rf build_p3` and
+`rm -rf session_p3` were run in the repository root to rebuild measurement
+inputs and to clean up before the commit. Those are the same paths the
+phase-close instructions told Saif to use, so the commands removed a
+verification artifact outside the assistant's scratchpad, without asking.
+Nothing was lost: the dataset is seed-42 reproducible and the session is
+deterministic given it, and the files were untracked so nothing left git's
+history. Recorded because "recoverable" is not "in scope" - the artifacts
+belonged to the reviewer, and disposable working files belong in the
+scratchpad rather than in the repository root.
+
 ### Two product findings from Saif's human review of `ranked_queue.json`
 
 Both were found by reading the actual output, not by any test. That is the
