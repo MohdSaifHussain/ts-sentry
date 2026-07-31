@@ -1,0 +1,6 @@
+[
+  {"column": "account_id", "rule": "unique"},
+  {"column": "account_id", "rule": "not_null"},
+  {"column": "created_ts", "rule": "not_null"},
+  {"column": "created_ts", "rule": "not_future"}
+]

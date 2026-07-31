@@ -1,0 +1,8 @@
+[
+  {"column": "video_id", "rule": "unique"},
+  {"column": "video_id", "rule": "not_null"},
+  {"column": "channel_id", "rule": "not_null"},
+  {"column": "published_ts", "rule": "not_future"},
+  {"column": "duration_s", "rule": "range", "min": 0},
+  {"column": "provenance_signal", "rule": "allowed", "values": ["present", "absent", "unknown"]}
+]

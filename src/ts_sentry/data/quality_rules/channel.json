@@ -1,0 +1,6 @@
+[
+  {"column": "channel_id", "rule": "unique"},
+  {"column": "channel_id", "rule": "not_null"},
+  {"column": "account_id", "rule": "not_null"},
+  {"column": "created_ts", "rule": "not_future"}
+]

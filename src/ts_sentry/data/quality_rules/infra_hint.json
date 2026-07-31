@@ -1,0 +1,8 @@
+[
+  {"column": "hint_id", "rule": "unique"},
+  {"column": "hint_id", "rule": "not_null"},
+  {"column": "subject_id", "rule": "not_null"},
+  {"column": "observed_ts", "rule": "not_future"},
+  {"column": "subject_kind", "rule": "allowed", "values": ["account", "channel", "video", "comment"]},
+  {"column": "signal_type", "rule": "allowed", "values": ["shared_upload_pattern", "template_reuse", "shared_device", "shared_ip_bucket", "link_domain_reuse"]}
+]

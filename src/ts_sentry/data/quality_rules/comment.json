@@ -1,0 +1,7 @@
+[
+  {"column": "comment_id", "rule": "unique"},
+  {"column": "comment_id", "rule": "not_null"},
+  {"column": "video_id", "rule": "not_null"},
+  {"column": "account_id", "rule": "not_null"},
+  {"column": "posted_ts", "rule": "not_future"}
+]
