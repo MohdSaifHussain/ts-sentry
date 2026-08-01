@@ -12,7 +12,7 @@
 # Explicit distro rather than bare `3.12-slim`, so a Debian release change is a
 # visible edit rather than something that happens on a Tuesday. Dependabot
 # watches this line (see .github/dependabot.yml).
-FROM python:3.12-slim-bookworm AS builder
+FROM python:3.14-slim-bookworm AS builder
 
 # uv, for the same reason QUICKSTART names it as the reproducible path: it
 # installs from uv.lock, which pins every version with hashes and pins the
@@ -49,7 +49,7 @@ COPY src/ ./src/
 RUN uv sync --frozen --no-dev --no-editable
 
 
-FROM python:3.12-slim-bookworm
+FROM python:3.14-slim-bookworm
 
 LABEL org.opencontainers.image.title="Trust & Safety Sentry" \
       org.opencontainers.image.description="A governed agentic workbench for Trust & Safety scaled-abuse analysis" \
