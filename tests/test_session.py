@@ -15,10 +15,12 @@ without earning:
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import duckdb
 import pytest
 
+from ts_sentry.data.policy_corpus import PolicyCorpus, load_corpus
 from ts_sentry.data.tz import IST
 from ts_sentry.governance.ledger import (
     EventType,
@@ -79,6 +81,7 @@ def _session(
     *,
     mandate: Mandate | None = None,
     step: timedelta = timedelta(seconds=1),
+    corpus: PolicyCorpus | None = None,
 ) -> Session:
     resolved = _mandate() if mandate is None else mandate
     return Session(
@@ -88,6 +91,7 @@ def _session(
         clock=FixedClock(_START, step=step),
         mandates={resolved.agent_id: resolved},
         dataset_digest=_DATASET_DIGEST,
+        corpus=corpus,
     )
 
 
@@ -516,3 +520,59 @@ def test_system_clock_returns_ist_aware_time() -> None:
     now = SystemClock().now()
     assert now.tzinfo is not None
     assert now.utcoffset() == timedelta(hours=5, minutes=30)
+
+
+# --------------------------------------------------------------------------
+# STEP-05 D1: the corpus binding
+# --------------------------------------------------------------------------
+
+_POLICIES_DIR = Path(__file__).resolve().parent.parent / "policies"
+
+
+def test_session_open_carries_the_corpus_a_session_ran_against() -> None:
+    """How STEP-05 discharges "a corpus update is an explicit ledgered event".
+
+    A re-fetch is build-time provenance and happens with no session open, so it
+    has no place in ARCHITECTURE 3.2's eleven event types. Binding gives the
+    guarantee that matters instead: a memo is permanently tied to the corpus
+    state its citations were checked against, and the tie is hash-chained.
+    """
+    corpus = load_corpus(_POLICIES_DIR)
+    session = _session(corpus=corpus)
+
+    recorded = session.open()
+
+    assert recorded.payload["corpus_version"] == corpus.corpus_version
+    assert recorded.payload["corpus_sha256"] == corpus.corpus_sha256
+    # And the binding is covered by the chain, not merely stored beside it.
+    assert recorded.entry.payload_digest == digest_payload(recorded.payload)
+
+
+def test_a_mismatched_corpus_is_detectable_from_the_chain() -> None:
+    """The other half: a session run against a different corpus is a different
+    ``SESSION_OPEN`` digest, so the substitution cannot pass unnoticed."""
+    corpus = load_corpus(_POLICIES_DIR)
+    altered = PolicyCorpus(
+        corpus_version=corpus.corpus_version,
+        documents=corpus.documents[:-1],  # one document removed
+    )
+
+    genuine = _session(corpus=corpus).open()
+    substituted = _session(corpus=altered).open()
+
+    assert altered.corpus_sha256 != corpus.corpus_sha256
+    assert substituted.entry.payload_digest != genuine.entry.payload_digest
+
+
+def test_a_session_with_no_corpus_records_no_corpus_fields() -> None:
+    """Omitted, not written as nulls.
+
+    A triage session cites no policy. Recording a corpus it never consulted
+    would put the whole fleet's chain at the mercy of a re-fetch that changed
+    nothing it used.
+    """
+    recorded = _session().open()
+
+    assert "corpus_version" not in recorded.payload
+    assert "corpus_sha256" not in recorded.payload
+    assert _session().corpus is None

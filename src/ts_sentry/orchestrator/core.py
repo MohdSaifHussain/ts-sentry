@@ -43,6 +43,7 @@ from datetime import datetime, timedelta
 from enum import StrEnum
 from typing import Protocol, assert_never
 
+from ts_sentry.data.policy_corpus import PolicyCorpus
 from ts_sentry.data.tz import IST, require_ist
 from ts_sentry.governance.canonical import digest_fields, require_sha256_hex
 from ts_sentry.governance.ledger import (
@@ -412,6 +413,7 @@ class Session:
         "_budgets",
         "_clock",
         "_closed_ts",
+        "_corpus",
         "_dataset_digest",
         "_events",
         "_ledger",
@@ -432,6 +434,7 @@ class Session:
         clock: Clock,
         mandates: Mapping[AgentId, Mandate],
         dataset_digest: str,
+        corpus: PolicyCorpus | None = None,
     ) -> None:
         if not session_id.strip():
             raise ValueError("session_id must be a non-empty identifier")
@@ -452,6 +455,7 @@ class Session:
         self._ledger = ledger
         self._clock = clock
         self._dataset_digest = dataset_digest
+        self._corpus = corpus
         self._token = OrchestratorToken(session_id=session_id)
         self._mandates = {
             agent_id: MandateBinding.of(mandate) for agent_id, mandate in mandates.items()
@@ -502,6 +506,17 @@ class Session:
     @property
     def dataset_digest(self) -> str:
         return self._dataset_digest
+
+    @property
+    def corpus(self) -> PolicyCorpus | None:
+        """The policy corpus this session opened against, if it loaded one.
+
+        ``None`` for a triage or evidence session, which cite no policy. A memo
+        session without one is refused by the runner that opens it, not here:
+        this state machine records what it was given, and deciding which agents
+        need a corpus is the fleet's business rather than the session's.
+        """
+        return self._corpus
 
     @property
     def recorded_events(self) -> tuple[RecordedEvent, ...]:
@@ -614,21 +629,41 @@ class Session:
         return recorded
 
     def open(self) -> RecordedEvent:
-        """Bind the analyst, record the fleet configuration, seed the ledger."""
+        """Bind the analyst, record the fleet configuration, seed the ledger.
+
+        The corpus is bound here when one is loaded, which is how STEP-05
+        discharges "a corpus update is an explicit ledgered event, never a
+        silent drift" (ARCHITECTURE 6.2). A corpus re-fetch is build-time
+        provenance rather than a session action, and it happens when no session
+        is open, so it has no place in the eleven event types ARCHITECTURE 3.2
+        fixes. Binding gives the guarantee that actually matters: every memo is
+        permanently tied to the exact corpus state its citations were checked
+        against, the tie is hash-chained, and a later corpus edit no longer
+        matches the chain.
+
+        The fields are omitted entirely when no corpus is loaded, rather than
+        written as nulls. A triage session cites no policy, and recording a
+        corpus it never consulted would put the whole fleet's chain at the mercy
+        of a re-fetch that changed nothing it used.
+        """
         self._transition(SessionState.OPEN)
+        payload: dict[str, object] = {
+            "session_id": self._session_id,
+            "analyst_id": self._analyst_id,
+            "dataset_digest": self._dataset_digest,
+            "mandate_set_hash": self._mandate_set_hash,
+            "mandates": {
+                agent_id.value: binding.hash for agent_id, binding in sorted(self._mandates.items())
+            },
+        }
+        if self._corpus is not None:
+            payload["corpus_version"] = self._corpus.corpus_version
+            payload["corpus_sha256"] = self._corpus.corpus_sha256
+
         recorded = self.append_event(
             EventType.SESSION_OPEN,
             agent_id=None,
-            payload={
-                "session_id": self._session_id,
-                "analyst_id": self._analyst_id,
-                "dataset_digest": self._dataset_digest,
-                "mandate_set_hash": self._mandate_set_hash,
-                "mandates": {
-                    agent_id.value: binding.hash
-                    for agent_id, binding in sorted(self._mandates.items())
-                },
-            },
+            payload=payload,
         )
         self._opened_ts = recorded.entry.timestamp_ist
         return recorded
