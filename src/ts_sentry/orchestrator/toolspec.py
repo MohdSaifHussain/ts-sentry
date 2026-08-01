@@ -35,13 +35,26 @@ __all__ = [
     "resolve_tool_by_name",
 ]
 
-IMPLEMENTATION_PHASE = 6
+IMPLEMENTATION_PHASE = 7
 """The STEP number this build implements.
 
 Bumped by each phase as its first act. It is the countdown test's clock: an
 entry whose ``handler_due_step`` is at or below this number must have a
 handler, so raising it is what forces the next phase to land the handler it
 promised.
+
+From STEP-07 the clock still runs but has nothing left to count. Every
+``ToolId`` gained its handler by STEP-06 and ``pending_handlers`` has been empty
+since, which discharged the claim this module carried from STEP-03: "by STEP-06
+the table is fully executable or the build is broken". STEP-07 and STEP-08 add
+no tools, because measurement is not something an agent may invoke and a report
+is a CLI verb rather than a mandate-gated action.
+
+That changed what the tests around this constant can assert, and the change was
+deliberate rather than a convenience. ``test_tool_table`` used to require that
+*this* phase owed exactly one handler, which is false by construction from here
+on; it now asserts the completed shape of the countdown instead. Both directions
+of failure survive. See its docstring for the reasoning.
 """
 
 

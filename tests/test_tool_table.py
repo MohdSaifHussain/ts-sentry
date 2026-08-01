@@ -15,6 +15,8 @@ Three tests do the work, and they fail for different reasons on purpose:
   this phase has not yet satisfied.
 """
 
+from collections import Counter
+
 import pytest
 
 from ts_sentry.governance.mandate import Consequence, ToolId
@@ -88,25 +90,60 @@ def test_nothing_due_this_phase_or_earlier_is_still_pending() -> None:
     )
 
 
-def test_this_phase_landed_the_handler_it_owed() -> None:
+LAST_HANDLER_PHASE = 6
+"""The final phase that owed a handler. The countdown ends here."""
+
+
+def test_every_phase_that_owed_a_handler_landed_exactly_one() -> None:
     """The other direction: the countdown above passes vacuously if the entry
     that was due simply vanished from the table.
 
-    Written against ``IMPLEMENTATION_PHASE`` rather than against a named tool,
-    so it does not need rewriting each phase and cannot be quietly retargeted
-    at whichever tool happens to be executable. Every phase from STEP-03 to
-    STEP-06 owes exactly one handler; this asserts that this phase's exists and
-    runs.
-    """
-    due_now = [
-        entry for entry in TOOL_TABLE.values() if entry.handler_due_step == IMPLEMENTATION_PHASE
-    ]
+    Rewritten in STEP-07, and the reason matters more than the change. The
+    previous form asserted that *this* phase owed exactly one handler, written
+    against ``IMPLEMENTATION_PHASE`` so it would not need editing each phase.
+    That held from STEP-03 to STEP-06 and became false by construction the
+    moment the clock reached 7: STEP-07 adds no tool, because measurement is not
+    something an agent may invoke, so ``due_now`` is empty and the assertion
+    fails on a table that is perfectly correct.
 
-    assert len(due_now) == 1, (
-        f"phase {IMPLEMENTATION_PHASE} should owe exactly one handler; "
-        f"the table says it owes {[entry.tool_id.value for entry in due_now]}"
+    A test that goes red because the project did the right thing is a broken
+    test, but deleting it would drop the guarantee it carried. So the guarantee
+    is restated over the finished countdown rather than over the current phase:
+    each of steps 3 through 6 owes exactly one handler, every declared tool
+    executes, and nothing is due after the countdown ended.
+
+    Both failure directions survive, which is the point. A handler quietly
+    dropped makes an entry non-executable. An entry deleted breaks the
+    one-per-phase histogram. A new tool parked at a due step past the end of the
+    countdown, which is the obvious way to smuggle in a declared-but-unhandled
+    tool now that the deadline has passed, trips the last assertion.
+    """
+    owed_by_phase = Counter(entry.handler_due_step for entry in TOOL_TABLE.values())
+
+    assert owed_by_phase == Counter(dict.fromkeys(range(3, LAST_HANDLER_PHASE + 1), 1)), (
+        f"each of steps 3..{LAST_HANDLER_PHASE} owes exactly one handler; "
+        f"the table says {dict(sorted(owed_by_phase.items()))}"
     )
-    assert due_now[0].executable
+    assert all(entry.executable for entry in TOOL_TABLE.values()), (
+        "every declared tool must execute now that the countdown has been discharged; "
+        f"{[t.value for t in pending_handlers(TOOL_TABLE)]} do not"
+    )
+    assert max(owed_by_phase) <= LAST_HANDLER_PHASE, (
+        f"no tool may be due after step {LAST_HANDLER_PHASE}; a later due step would park a "
+        "declared-but-unhandled tool beyond the reach of the countdown"
+    )
+
+
+def test_the_countdown_clock_has_passed_the_last_deadline() -> None:
+    """Guards the rewrite above.
+
+    ``LAST_HANDLER_PHASE`` is only the right place to end the countdown while
+    the build is actually past it. If this file were carried into a branch where
+    ``IMPLEMENTATION_PHASE`` had been rolled back, the assertions above would be
+    describing a future rather than a finished history.
+    """
+    assert IMPLEMENTATION_PHASE > LAST_HANDLER_PHASE
+    assert pending_handlers(TOOL_TABLE) == ()
 
 
 def test_the_due_steps_match_the_phase_that_owns_each_agent() -> None:
