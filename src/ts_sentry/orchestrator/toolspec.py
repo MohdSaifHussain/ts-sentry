@@ -35,7 +35,7 @@ __all__ = [
     "resolve_tool_by_name",
 ]
 
-IMPLEMENTATION_PHASE = 5
+IMPLEMENTATION_PHASE = 6
 """The STEP number this build implements.
 
 Bumped by each phase as its first act. It is the countdown test's clock: an
@@ -90,6 +90,20 @@ class ToolResources:
     construction. ``memo`` is ``object`` for the reason ``pack`` is; ``corpus``
     is typed, because a hashed policy corpus is shared infrastructure rather
     than any agent's output.
+
+    The ``eval_*`` fields arrive in STEP-06, and ``eval_labels`` is the sharpest
+    case of the same argument in the fleet: an agent that could supply the eval
+    answers would be marking its own paper, and one that could supply the
+    predictions would be having its report computed from its own account of what
+    it answered. Both are lent by the orchestrator and neither is a parameter.
+
+    ``eval_labels`` and ``eval_predictions`` are typed ``object`` for the reason
+    ``pack`` and ``memo`` are, and here it does a second job: naming
+    ``EvalLabelStore`` in this module would put the eval answers one import away
+    from every tool contract in the system, and ``orchestrator.eval_labels`` is
+    in the import-graph test's forbidden set for agents precisely so that cannot
+    happen. The handler pays for it with an ``isinstance`` check at its own
+    boundary, which is a fail-closed refusal worth having anyway.
     """
 
     connection: duckdb.DuckDBPyConnection | None = None
@@ -98,6 +112,12 @@ class ToolResources:
     retrieval_ts: datetime | None = None
     memo: object | None = None
     corpus: PolicyCorpus | None = None
+    eval_labels: object | None = None
+    eval_predictions: object | None = None
+    eval_unparseable: object | None = None
+    eval_items_sha256: str | None = None
+    eval_adapter_id: str | None = None
+    eval_model_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

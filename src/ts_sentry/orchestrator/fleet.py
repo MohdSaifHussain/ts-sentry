@@ -28,11 +28,13 @@ from ts_sentry.governance.gates import ArtifactCheck, FailureCode, GateChecks, G
 from ts_sentry.governance.mandate import AgentId, Consequence, Mandate, ToolId
 from ts_sentry.orchestrator.memo_gate import memo_checker
 from ts_sentry.orchestrator.pack_gate import pack_checker
+from ts_sentry.orchestrator.prompt_eval import EvalReport
 from ts_sentry.orchestrator.tools import TOOL_TABLE
 
 __all__ = [
     "EVIDENCE_MANDATE",
     "MEMO_MANDATE",
+    "PROMPT_EVAL_MANDATE",
     "PHASE_FOUR_CHECKS",
     "TRIAGE_MANDATE",
     "default_mandates",
@@ -123,12 +125,53 @@ unresolvable citation stops.
 """
 
 
+PROMPT_EVAL_MANDATE = Mandate(
+    agent_id=AgentId.PROMPT_EVAL,
+    version="1.0.0",
+    consequence_ceiling=Consequence.OBSERVE,
+    allowed_tools=frozenset({ToolId.RUN_PROMPT_EVAL}),
+    data_scopes=TOOL_TABLE[ToolId.RUN_PROMPT_EVAL].required_scopes,
+    output_schema=EvalReport,
+    token_budget=600_000,
+    max_steps=2,
+)
+"""The prompt-eval agent's mandate (ARCHITECTURE 4.4, ceiling OBSERVE).
+
+``data_scopes`` is empty, read from the tool table like the other three. The
+prompt-eval agent reaches no platform table: it works from a committed eval set
+and a prompt registry, both lent to it by the orchestrator. The eval *labels*
+are not in its reach either, and that is not expressed here at all, because a
+mandate scope could only ever have denied it a table. It is denied by the
+import graph, which is the stronger statement: there is no code path from any
+agent module to the answers.
+
+OBSERVE is the ceiling, and it is the right one: evaluating a prompt reads and
+reports, it changes nothing. The pointer move that *does* change something is
+not an agent action under any mandate, and no tool in this table performs it.
+
+``token_budget`` is the largest in the fleet because one turn classifies every
+eval item twice, once under each version. ``max_steps`` is 2 because that turn
+is one step and the accounting STEP-04 established leaves a second for a
+retry-shaped failure rather than none.
+"""
+
+
 def default_mandates() -> Mapping[AgentId, Mandate]:
-    """The fleet as it exists in this build."""
+    """The fleet as it exists in this build.
+
+    All four agents, for the first time. Adding one changes
+    ``mandate_set_hash`` for **every** session type, so chain heads recorded
+    before STEP-06 no longer reproduce, including Saif's STEP-05 phase-close
+    head. Same class as the effect STEP-05 recorded when the memo mandate
+    landed, and it looks like tampering while being the opposite: the session
+    is bound to the exact fleet configuration it ran under, so a fleet that
+    gained an agent must hash differently.
+    """
     return {
         AgentId.TRIAGE: TRIAGE_MANDATE,
         AgentId.EVIDENCE: EVIDENCE_MANDATE,
         AgentId.MEMO: MEMO_MANDATE,
+        AgentId.PROMPT_EVAL: PROMPT_EVAL_MANDATE,
     }
 
 

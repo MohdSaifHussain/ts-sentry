@@ -48,13 +48,22 @@ def test_the_pending_handler_set_is_pinned() -> None:
     fails when a handler lands (update the list, one line) and equally when
     one silently disappears, which is the direction nobody would notice.
 
-    It has shrunk three times. At STEP-03 D3 the table declared four tools and
-    executed none, because dispatch is a mechanism and the first real tool was
-    still ahead. STEP-03 D5 landed the triage ranker, taking it to three.
-    STEP-04 D2 landed the pivot handler, taking it to two. STEP-05 D5 landed the
-    citation handler, taking it to one.
+    It has shrunk four times, and this is the last one. At STEP-03 D3 the table
+    declared four tools and executed none, because dispatch is a mechanism and
+    the first real tool was still ahead. STEP-03 D5 landed the triage ranker,
+    taking it to three. STEP-04 D2 landed the pivot handler, taking it to two.
+    STEP-05 D5 landed the citation handler, taking it to one. STEP-06 D3 landed
+    the prompt-eval handler, taking it to **none**.
+
+    So this now asserts the empty tuple, and that is the discharge of the claim
+    ``orchestrator.tools`` has carried since STEP-03: "by STEP-06 the table is
+    fully executable or the build is broken". Every declared tool now runs.
+
+    The assertion keeps working in the other direction, which is the one that
+    matters from here: a tool added without a handler, or a handler quietly
+    dropped, makes this non-empty again.
     """
-    assert pending_handlers(TOOL_TABLE) == (ToolId.RUN_PROMPT_EVAL,)
+    assert pending_handlers(TOOL_TABLE) == ()
 
 
 def test_nothing_due_this_phase_or_earlier_is_still_pending() -> None:

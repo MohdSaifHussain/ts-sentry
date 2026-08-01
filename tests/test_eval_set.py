@@ -134,7 +134,21 @@ def test_the_label_store_exposes_no_per_item_lookup() -> None:
     assert "label_of" not in public
     assert "labels" not in public
     assert "items" not in public
-    assert public == {"correct_flags", "covers", "digest", "score", "support"}
+
+    # Pinned exactly, so a new method on the answers is a deliberate edit here
+    # rather than something nobody noticed. It has already earned that once:
+    # `paired_class_correctness` failed this assertion when D3 added it, which
+    # is the review it was written to force. It returns outcome pairs grouped by
+    # class and carries no item id, so it widens what leaves the store without
+    # widening it to a label map.
+    assert public == {
+        "correct_flags",
+        "covers",
+        "digest",
+        "paired_class_correctness",
+        "score",
+        "support",
+    }
 
 
 def test_only_aggregates_cross_the_boundary() -> None:

@@ -188,6 +188,12 @@ class EvalLabelStore:
         hits: dict[ThreatClass, int] = {member: 0 for member in ThreatClass}
 
         for prediction in predictions:
+            # An unparseable answer predicted nothing, so it inflates no class's
+            # precision denominator. It still counts as a miss for the recall of
+            # whatever class the item truly is, because `support` below is taken
+            # from the labels rather than from the predictions.
+            if prediction.predicted is None:
+                continue
             predicted[prediction.predicted] += 1
             if self._answers[prediction.item_id] is prediction.predicted:
                 hits[prediction.predicted] += 1
@@ -201,6 +207,54 @@ class EvalLabelStore:
             )
             for member in ThreatClass
         }
+
+    def paired_class_correctness(
+        self,
+        incumbent: Sequence[ClassificationProposal],
+        candidate: Sequence[ClassificationProposal],
+    ) -> dict[ThreatClass, tuple[tuple[bool, bool], ...]]:
+        """Per-class, per-item ``(incumbent_correct, candidate_correct)`` pairs.
+
+        What the paired bootstrap resamples. Grouping by class is unavoidable
+        because recall is a within-class quantity, and pairing is unavoidable
+        because the question is whether the candidate is worse *than the
+        incumbent on the same items*.
+
+        For an item that truly carries class ``c``, "correct" and "recalled" are
+        the same event, which is what lets recall be a mean over one of these
+        vectors.
+
+        **No item id crosses this boundary.** The caller receives, per class, a
+        bag of outcome pairs in a fixed order, which is exactly enough to
+        resample and not enough to say which item was which. That is not a
+        secrecy claim - the caller is the orchestrator and is entitled to grade
+        - it is the same minimum-surface discipline the rest of this class
+        follows, so a future caller cannot casually acquire a label map it did
+        not need.
+
+        Both versions must have answered the same items, in the same order. A
+        report pairing two different item orders would compute differences
+        between unrelated answers and put a confidence interval on them.
+        """
+        if len(incumbent) != len(candidate):
+            raise EvalSetError(
+                f"the two versions answered {len(incumbent)} and {len(candidate)} items; a "
+                "paired comparison needs both to have answered the same set"
+            )
+        for left, right in zip(incumbent, candidate, strict=True):
+            if left.item_id != right.item_id:
+                raise EvalSetError(
+                    f"predictions are misaligned at {left.item_id} vs {right.item_id}. Pairing "
+                    "two different orders would difference unrelated answers"
+                )
+
+        self._require_coverage(prediction.item_id for prediction in incumbent)
+
+        grouped: dict[ThreatClass, list[tuple[bool, bool]]] = {member: [] for member in ThreatClass}
+        for left, right in zip(incumbent, candidate, strict=True):
+            truth = self._answers[left.item_id]
+            grouped[truth].append((truth is left.predicted, truth is right.predicted))
+        return {member: tuple(pairs) for member, pairs in grouped.items()}
 
     def _require_coverage(self, item_ids: Iterable[str]) -> None:
         unknown = sorted(item_id for item_id in item_ids if item_id not in self._answers)

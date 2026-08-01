@@ -413,6 +413,40 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   renderer never emits an entity id, a ring id, or an infrastructure signal
   *value*, and `_refuse_leaky_item` fails the build if one appears. The label
   store exposes no `label_of`: it grades and returns counts.
+- STEP-06 D3: the eval harness (`ts_sentry.orchestrator.prompt_eval`), the
+  `RUN_PROMPT_EVAL` handler (`orchestrator.eval_tool`) and the turn that drives
+  it (`orchestrator.prompt_eval_turn`). Reports precision, recall, F1 and
+  per-class confusion for both versions, plus a **paired percentile bootstrap**
+  on every per-class recall delta. Paired because the question is whether the
+  candidate is worse *than the incumbent on the same items*; percentile rather
+  than a normal approximation because at these sizes the approximation reports
+  uncertainty about a class collapse the data settles completely, and puts part
+  of the interval below -1.
+- STEP-06 D3: `PROMPT_EVAL_MANDATE`, the fourth and last agent mandate. The
+  fleet is complete, `IMPLEMENTATION_PHASE` is 6, and `pending_handlers` is
+  **empty for the first time**, discharging `orchestrator.tools`' standing claim
+  that "by STEP-06 the table is fully executable".
+- STEP-06 D4: the regression gate (`ts_sentry.orchestrator.regression_gate`).
+  `decide(report, tolerances)` is pure and total, with the hypothesis property
+  for 3.5 asserting same-inputs-same-verdict over generated reports and an AST
+  test asserting it reads nothing else. Fail-closed per decision D: activation
+  requires the confidence interval to *exclude* a drop beyond tolerance, so
+  absence of evidence of regression is not evidence of absence.
+- STEP-06 D4: `RECALL_REGRESSION` and `REGRESSION_NOT_EXCLUDED` are distinct
+  breach codes. The first says the candidate is measurably worse; the second
+  says the eval set cannot tell. Conflating them would blame a prompt for the
+  eval set's resolution.
+- STEP-06 D4: declared tolerances in `evals/threat_class/tolerances.json`,
+  hashed, with the rationale for each number in the file an operator edits.
+  `recall_drop` is 0.25 because that is one item on the coarsest class (support
+  4), which is the finest change the instrument can register there. No defaults
+  and no fallback: an unconfigured gate refuses to run.
+- STEP-06 D7 (added deliverable, not in the STEP-06 table): the degraded-prompt
+  fixture suite. Three real degraded prompt versions - class collapse, broken
+  output contract, and a noisier-but-not-worse variant - each asserting its
+  **breach code**, plus the strongest available passing control: the incumbent
+  evaluated against itself, which must be activatable or every refusal proves
+  nothing. The noisy fixture is the one that proves decision D earns its cost.
 
 ### Changed
 

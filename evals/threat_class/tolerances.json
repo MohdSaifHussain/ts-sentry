@@ -1,0 +1,9 @@
+{
+  "_note": "STEP-06 3.3. Declared limits for the classify.threat_class regression gate. Derived from the measured resolution of the committed eval set, not chosen to make a candidate pass. See orchestrator/regression_gate.py and the STEP-06 Outcome.",
+  "_recall_drop_rationale": "0.25 is one item on the coarsest class. t04 and t05 carry 4 items each, so their recall moves in steps of 0.25 and nothing finer is expressible there. A tolerance below the instrument's own granularity would refuse every candidate that differs at all, on classes where a single item is a quarter of the score.",
+  "_macro_f1_rationale": "0.10 as a point estimate. Macro F1 is an aggregate over classes rather than a per-item quantity, so the paired item bootstrap does not apply to it and no interval is claimed.",
+  "_max_unparseable_rationale": "Zero. A prompt that stops emitting 'CLASS: <name>' has broken its output contract, which is a different failure from classifying badly, and there is no volume of it that is acceptable.",
+  "recall_drop": 0.25,
+  "macro_f1_drop": 0.1,
+  "max_unparseable": 0
+}

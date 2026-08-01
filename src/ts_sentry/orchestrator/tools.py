@@ -49,6 +49,7 @@ from collections.abc import Mapping
 from ts_sentry.governance.mandate import Consequence, ToolId
 from ts_sentry.governance.scopes import DataScope
 from ts_sentry.orchestrator.citation_tool import resolve_policy_citation
+from ts_sentry.orchestrator.eval_tool import run_prompt_eval
 from ts_sentry.orchestrator.pivot_tool import run_parameterized_pivot
 from ts_sentry.orchestrator.toolspec import (
     IMPLEMENTATION_PHASE,
@@ -115,7 +116,7 @@ TOOL_TABLE: Mapping[ToolId, ToolEntry] = {
         consequence=Consequence.OBSERVE,
         required_scopes=frozenset(),
         handler_due_step=6,
-        handler=None,
+        handler=run_prompt_eval,
         summary="Evaluate a prompt version against the labeled set (ARCHITECTURE 4.4).",
     ),
 }

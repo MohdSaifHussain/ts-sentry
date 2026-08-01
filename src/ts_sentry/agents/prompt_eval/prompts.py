@@ -112,13 +112,28 @@ class ClassificationProposal:
     answer. A model that could name which item it was answering about could
     answer about a different one, and the grader would then be scoring a
     prediction against the wrong label. The harness knows which item it sent.
+
+    ``predicted`` is ``None`` when the answer could not be parsed, and that
+    spelling is load-bearing rather than a convenience. A paired comparison
+    needs both versions to have answered the same items in the same order, so an
+    unparseable answer cannot simply be dropped: dropping it would shorten one
+    side, and dropping the item from *both* sides would quietly delete the
+    failure from the failing version's recall, which is the flattering
+    direction. ``None`` keeps the item in place and is never equal to any true
+    class, so an unparseable answer scores as a miss for recall while counting
+    as a prediction for no class's precision. It is also reported separately, on
+    the ``ClassificationParseError`` reasoning: a broken output contract is a
+    different finding from a wrong answer.
     """
 
     item_id: str
-    predicted: ThreatClass
+    predicted: ThreatClass | None
 
     def to_json_object(self) -> dict[str, object]:
-        return {"item_id": self.item_id, "predicted": self.predicted.value}
+        return {
+            "item_id": self.item_id,
+            "predicted": None if self.predicted is None else self.predicted.value,
+        }
 
 
 class ClassificationParseError(Exception):
