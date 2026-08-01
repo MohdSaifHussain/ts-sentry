@@ -400,6 +400,19 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   effect**: digests unchanged, module constants still the runtime source, and a
   test asserting every registered version reproduces its constant's `prompt_id`,
   text and digest so the two cannot drift.
+- STEP-06 D2: the labeled eval set. `ts_sentry.data.eval_build` (build-time,
+  reads `sealed._labels`, on `LEGITIMATE_SEALED_CONSUMERS`),
+  `ts_sentry.data.eval_set` (the item side, no labels anywhere in it), and
+  `ts_sentry.orchestrator.eval_labels` (the label store, in
+  `FORBIDDEN_FOR_AGENTS`), plus the committed `evals/threat_class/` artifact:
+  59 items stratified across T-01..T-07 with benign controls at 25%.
+- STEP-06 3.2: contamination discipline made structural rather than procedural.
+  `EvalItem` carries `item_id` and `content` and **has no third field**, so a
+  label has nowhere to sit; item ids are opaque (`item-0000`) because planted
+  entity ids name their own class in three characters (`t02_chan_000_000`); the
+  renderer never emits an entity id, a ring id, or an infrastructure signal
+  *value*, and `_refuse_leaky_item` fails the build if one appears. The label
+  store exposes no `label_of`: it grades and returns counts.
 
 ### Changed
 

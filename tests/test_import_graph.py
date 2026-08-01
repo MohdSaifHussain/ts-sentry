@@ -67,9 +67,19 @@ FORBIDDEN_FOR_AGENTS = {
     f"{PACKAGE}.governance.ledger": "the chain and its write capability",
     f"{PACKAGE}.governance.gates": "the machinery that judges agent output",
     f"{PACKAGE}.orchestrator.dispatch": "the executor that decides what may run",
+    f"{PACKAGE}.orchestrator.eval_labels": "the eval answers (STEP-06 3.2)",
+    f"{PACKAGE}.orchestrator.regression_gate": "the verdict on an agent's own successor",
+    f"{PACKAGE}.data.eval_build": "ground truth, read at build time to make the eval set",
 }
 """What no agent module may reach. Each entry names why, so a future reader
-deciding whether to relax one has the argument in front of them."""
+deciding whether to relax one has the argument in front of them.
+
+The three STEP-06 entries are the phase's contamination and self-verification
+controls. An agent that could reach ``eval_labels`` could be graded against
+answers it had seen; an agent that could reach ``regression_gate`` would be
+deciding whether its own successor is good enough to ship. Both are the failure
+the prompt-eval phase exists to prevent, and neither is prevented by anybody
+remembering not to do it."""
 
 
 def _module_name(path: Path) -> str:
@@ -240,6 +250,7 @@ LEGITIMATE_SEALED_CONSUMERS = frozenset(
         f"{PACKAGE}.data.quality",  # the build-time reconcile gate reads it
         f"{PACKAGE}.measurement.recovery",  # measurement, from STEP-04 onward
         f"{PACKAGE}.cli.main",  # names it only to prove the allowlist denies it
+        f"{PACKAGE}.data.eval_build",  # STEP-06 D2: build-time, labels the eval set
     }
 )
 """Who may name the sealed table *in code*, as an allowlist.

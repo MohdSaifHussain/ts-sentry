@@ -1,0 +1,22 @@
+{
+  "benign_control_fraction": 0.25,
+  "class_balance": {
+    "benign": 15,
+    "t01_comment_spam_ring": 6,
+    "t02_fake_engagement_network": 12,
+    "t03_off_platform_diversion": 6,
+    "t04_undisclosed_synthetic_media": 4,
+    "t05_ai_persona_authority": 4,
+    "t06_slop_farm": 6,
+    "t07_coordinated_influence_op": 6
+  },
+  "dataset_digest": "060c60d71ac4acf67046f49e7fb581160937355ce1f88c3a2b3d118f48860e1d",
+  "dataset_scale": 1,
+  "dataset_seed": 42,
+  "generator_version": "0.1.0",
+  "item_count": 59,
+  "items_sha256": "e4c0e9c32d3b5beb8c69b542d2e33280843ca2fa5c3081fb1ca82a301a943e3e",
+  "label_provenance": "Ground truth from the synthetic generator's own plant, read from sealed._labels at build time. These are generator plants, not human labels: there is no adjudication, no inter-rater reliability, and no rater-disagreement modelling.",
+  "labels_sha256": "a7eb09db02835564f37bc18ea5809ce4fb74c40edcdb12c00d28e5b57116e7fc",
+  "schema": "ts-sentry/eval-set/v1"
+}
