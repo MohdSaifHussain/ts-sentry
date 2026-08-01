@@ -326,6 +326,40 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   `orchestrator.pack_export.read_pack_json`. STEP-04 wrote packs and never read
   one; the round trip preserves `content_digest`, which the memo's `pack_digest`
   binding depends on.
+- STEP-05 D6: `ts_sentry.orchestrator.signing` and
+  `ts_sentry.orchestrator.memo_export`, plus `ts-sentry sign-memo`. The AI-DRAFT
+  watermark has **no suppression parameter**: rendering takes a memo and an
+  optional signature and nothing else, so the only way to remove the label is to
+  produce a signature that covers the memo. A signature over a *different* memo
+  leaves the watermark in place and says so. A test asserts the parameter list
+  itself, so a future `watermark=False` fails rather than quietly working.
+- STEP-05 D6: `Memo.content_digest` **excludes `status`**. Signing sets the
+  status to SIGNED, and if that flip changed the digest the signature would be
+  over a value the signed memo no longer has, so the artifact would fail its own
+  verification the instant it was produced. A DRAFT and a SIGNED memo with
+  identical content share a digest; what distinguishes them is the existence of
+  a signature.
+- STEP-05 D6: the RECOMMEND gate now **refuses a SIGNED memo** (HALT-2 finding
+  4). Re-gating answers the wrong question: what makes a signed memo trustworthy
+  is that its digest recomputes and the signature verifies, and accepting one
+  here would let it be re-laundered through the agent path and emerge with a
+  fresh `VERIFICATION_PASS` that says nothing about the signature.
+- STEP-05 D6: `orchestrator.signing` is a **deliberate third entry** in
+  `LEGITIMATE_SIGNATURE_CONSUMERS`. A new consumer required editing that named
+  list in the same commit as the module rather than appearing unnoticed, which
+  is the allowlist working. `agents.*` still cannot reach it.
+- STEP-05 D7: the overclaim fixture suite. Every planted defect asserts its
+  **reason code**, not merely that something failed: a suite checking only "this
+  was rejected" would pass if the gate rejected everything for the wrong reason,
+  and refusals that cannot be counted by cause make `GATE_REJECTION` counts
+  meaningless. Covers unsupported claims, phantom anchors, unknown documents,
+  fabricated quotations, excerpt overruns and underruns, mid-word quotations,
+  and wrong pack and corpus bindings, each as a one-defect mutation of a passing
+  control.
+- STEP-05 3.5: the hypothesis property. A memo that passes verification carries
+  no sentence whose evidence ids are absent from the pack, generated over
+  arbitrary id sets. Checked in the soundness direction, which is the claim the
+  gate makes about itself, rather than as a claim about coverage.
 - STEP-04 follow-up: `ts_sentry.orchestrator.subject_check` - an evidence
   session refuses a `--subject` that does not exist in the dataset, exiting `5`
   and producing no session and no chain. The check runs before the output
