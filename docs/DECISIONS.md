@@ -230,6 +230,12 @@ it is the only source that describes the stratification and the allocation.
 | 7.9 | **A per-stratum degeneracy condition was added to the validity check** | Leave the four aggregate conditions | Found by running the D2 sample-size curve: at 14,000 of 18,780 views the interval collapsed to **zero width** while all four aggregate conditions passed. The optimal allocation had censused the middle stratum and the lowest returned no violative calls, so its `p(1-p)` contribution vanished. This is the Wald interval's known collapse at `p_hat = 0`, and the aggregate conditions cannot see it because in aggregate the sample did find violative views. Observing nothing in a stratum is not evidence the stratum holds nothing. Censused strata are excluded, because there the zero is real. | `635add7` |
 | 7.10 | **matplotlib is a main dependency; curve data is byte-stable, PNGs are byte-identical in-environment only** | (a) dev-only extra with a data-only degraded path; (b) pin a version and assert PNG bytes against fixtures | D5's `report` verb renders at runtime, not only under test, so (a) would mean designing and testing a behaviour split for no gain. (b) claims a stability belonging to the pin rather than to the code and reddens the suite on every upgrade. The claim is stated at exactly its width: JSON/CSV identical across runs and machines and it is what a reader regenerates numbers from; two renders in one environment byte-identical; cross-version PNG stability explicitly not claimed. Saif's decision. | Saif, this session; `e8b31fc` |
 | 7.11 | **The `NO_SCORE` window is seven days, and that is a choice rather than a finding** | 24 hours, which the source's "very close to the time that sampling was done" might suggest | Barnett's footnote 7 gives no number. On the seed-42 build the last publication falls 4.8 days before the last view, so a 24-hour window leaves the fifth stratum holding nothing and it would exist only on paper. Seven days puts 2 videos and 97 views in it. No label was consulted, and it is a parameter rather than a constant so another corpus can set its own. | `597b77c` |
+| 7.13 | **Both Phase 4 traversal obligations are solved by one construction, not two branches** | (a) chain seeds, and separately special-case an empty pivot; (b) leave the strategy and report the saturation | A work list of `(pivot, entity)` pairs built from the pack in pack order, with hop `h` taking `work[h]`. It chains because the pack grows; it varies pivot kind because each entity contributes several; and an empty pivot needs no handling at all, because it adds nothing to the pack so `work[h+1]` is simply the next pair. A branch nobody has to remember to write cannot be forgotten. Pack order is what keeps `work[h]` stable as the pack grows, so sessions still replay. | `8480aec` |
+| 7.14 | **The t02 recovery result is accepted as unmet rather than counted discharged because a different class moved** | Count the obligation met on the strength of T-06 growing | STEP-04 named `t02_chan_000_000` reaching past its first shell as the concrete target. It went 3 to 4 of 8 members and stayed flat across budgets, so that specific claim is not discharged and the STEP-04 Outcome says so. Recording a partial as a pass is how an obligation quietly stops constraining anything. Saif's decision, with the accompanying reading: the plateau is a bounded limit of a metadata-pivot strategy, the same shape as the structural recovery ceiling (4.9), not a defect. | Saif, this session; `8480aec` |
+| 7.15 | **The analyst-minutes model is a TSPA-grounded sensitivity model, never a benchmarked measurement** | Cite a per-case handling-time figure from any platform or vendor report | There is no benchmark to cite. TSPA defines review time and then warns that it "may include time waiting in queues or going through automatic processes, or only the time when the reviewer is actively working on a specific review", and that "there is considerable industry variation in both precise definitions and naming conventions". DTSP assesses maturity on a five-level scale rather than publishing handling-time figures. A number lifted from one platform beside one from this workbench would not measure the same quantity. Saif's requirement. | Saif, this session; `680ea19` |
+| 7.16 | **The minutes model's honest summary statistic is the break-even, not a delta** | Report "minutes saved" or a percentage improvement | A delta over assumed inputs is a property of the assumption table. The break-even, the assisted time at which a step stops contributing, converts "this saves time" into "this holds only if handling is under N minutes, which nobody measured". Enforced structurally: `MinutesResult` has no `minutes_saved` attribute, the assumptions table renders above the number and that ordering is asserted by index, and `BANNED_CAUSAL_PHRASES` is asserted absent from every rendering including the report. Prose drifts, and it drifts in the flattering direction. | `680ea19`, `a067097` |
+| 7.17 | **`report --session` alone says the platform lens was "Not computed" rather than omitting it** | (a) require `--build`; (b) omit the section silently | STEP-07 D5 names only `--session`, and the workflow lens genuinely needs nothing else, so (a) would contradict the contract. (b) is worse: a report missing a whole lens without saying so lets a reader believe it covered more than it did. The section is present and states its own absence. | `c28161e` |
+| 7.18 | **The report verb draws a pilot so the estimate uses optimal allocation** | Leave the default, which is proportional | Found by reading the first generated report: it said `allocation=proportional`. On seed 42 that is a 95% interval of 0.0445% to 0.1333% against 0.0720% to 0.1186% with the pilot, so the omission reported an interval half again as wide as the method being replicated gives. Pinned by a test on `allocation=optimal` rather than left to inspection. | `c28161e` |
 | 7.12 | **`test_this_phase_landed_the_handler_it_owed` was rewritten, not deleted or exempted** | (a) delete it; (b) leave `IMPLEMENTATION_PHASE` at 6 so it keeps passing | It asserted that the current phase owes exactly one handler, which became false by construction at phase 7 because STEP-07 adds no tool. (b) would make the phase constant lie about which STEP the build implements. (a) drops the guarantee that the countdown cannot pass vacuously. Restated over the finished countdown instead: steps 3..6 owe exactly one handler each, every declared tool executes, nothing is due after step 6. All three failure directions survive, including the new one of parking a tool past the deadline. | `659d14e` |
 
 ### What the corpus can and cannot support, measured
@@ -286,6 +292,30 @@ half is the part that matters: panels buy real robustness against independent
 error and **nothing at all** against correlated error, such as a policy
 misreading that a whole panel shares. Nothing in this phase models correlated
 rater error, and the D2 bias curve inherits that limit.
+
+### Future work: traversal enrichment (its own task, NOT STEP-07)
+
+Recorded here as a task rather than a deferral, because it is scoped work with
+a known blocker rather than something STEP-07 chose not to finish.
+
+**Reaching the ring members a metadata pivot cannot see needs non-registration
+pivot signals.** The traversing strategy recovers the shared-registration-linked
+core and plateaus there, which is a property of the signals it can ask about
+rather than of the budget it is given. The five remaining members of
+`ring_t02_000` are connected by looser evidence: behavioural co-occurrence,
+temporal proximity, weaker shared-attribute overlap. None of those is expressible
+in the pivots the strategy currently uses.
+
+`TEMPORAL_CORRELATION` is the vocabulary member that would supply the temporal
+half, and it **cannot be proposed today**: it requires an `anchor_epoch_ms` and
+no timestamp appears anywhere in the prompt the agent reads, so proposing it
+would mean inventing a parameter rather than deriving one. That is the concrete
+blocker, and it is a prompt-surface change rather than a strategy change.
+
+Scope for whoever takes it: put a timestamp anchor in the evidence prompt so
+`TEMPORAL_CORRELATION` becomes proposable, then measure whether behavioural and
+temporal pivots reach members that registration metadata does not. Explicitly
+**not** a STEP-07 blocker, and explicitly not a defect in the current strategy.
 
 ---
 

@@ -490,10 +490,50 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   supplies the required direction, and carries `is_faithful_vvr = False`
   because it changes the attribution rule rather than the class set.
 - `matplotlib>=3.8` as a runtime dependency (STEP-07 D2 renders figures, and
-  D5's `report` verb will render them at runtime rather than only under test).
+  D5's `report` verb renders them at runtime rather than only under test).
+- STEP-07 D3: `ts_sentry.measurement.workflow`, the workflow lens. Measured
+  counts (governance activity, verification pass rate) and the **modelled**
+  analyst-minutes comparison are separated in the types and in the rendering.
+  The minutes model is a TSPA-grounded sensitivity model over a visible
+  assumption table, reporting a delta with its one-way sensitivity and a
+  **break-even** rather than a headline figure, because **no published per-case
+  review-time benchmark exists** to compare against. Governance activity is a
+  mandatory section and renders when every count is zero, with a note that zero
+  means nothing exercised the gates.
+- STEP-07 D3: a **traversing** evidence strategy
+  (`orchestrator.evidence_turn`), discharging the two defects STEP-04 carried
+  into this phase. A work list of `(pivot, entity)` pairs built from the pack in
+  pack order chains discovered entities as new seeds, varies pivot kind, and
+  makes an empty pivot advance to a different question with no special case.
+  Four of seven threat classes now recover strictly more at every budget, and
+  T-06 becomes budget-sensitive.
+- STEP-07 D4: `ts_sentry.measurement.report`, the stamped measurement report in
+  Markdown, HTML and JSON. Stamped with dataset seed and scale, dataset digest,
+  git SHA, policy corpus version and hash, and the active prompt version per
+  task. Honest Limits is mandatory and asserted entry by entry into every
+  rendering; the comment-attribution arm is labelled NOT a VVR everywhere it
+  appears; and causal language is asserted absent from the rendered document.
+- STEP-07 D5: `ts-sentry report --session PATH --out PATH`, with an optional
+  `--build` for the platform lens. Without it the report states that the lens
+  was not computed rather than omitting the section.
 
 ### Changed
 
+- **`test_recovery_saturates_before_the_smallest_reported_budget` replaced by
+  `test_the_budget_axis_carries_information`.** It was written to fail the day a
+  strategy traversed, it did, and its own instruction was to rewrite rather than
+  delete it. The STEP-04 Outcome's saturation note is rewritten with the
+  measured before/after table.
+- **`IMPLEMENTATION_PHASE` is 7**, and
+  `test_this_phase_landed_the_handler_it_owed` is rewritten as
+  `test_every_phase_that_owed_a_handler_landed_exactly_one`. The old form
+  asserted that the current phase owes exactly one handler, which is false by
+  construction from STEP-07 onward because measurement is not a tool an agent
+  may invoke. The guarantee is restated over the finished countdown; all three
+  failure directions survive.
+- **The measurement-reachability import test quantifies over the whole
+  `measurement` package** instead of pinning `measurement.recovery` by name,
+  which would have left the five new modules unguarded.
 - **`dataset_digest` now derives from the build manifest's `table_hashes`**
   rather than from `sha256(build.duckdb)`, closing the gap STEP-03 recorded and
   carried. The store is not byte-stable across rebuilds even when its contents
@@ -628,6 +668,25 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 - **PNG figures are byte-identical across two renders in one environment
   only.** Cross-version stability is not claimed and not tested. The byte-stable
   reproducibility artifact is the curve data in JSON and CSV.
+- **The analyst-minutes model is modelled, not measured.** No published
+  per-case review-time benchmark exists to compare against: TSPA, which defines
+  the metric, notes that review time may mean the queue wait or only active
+  handling and warns of "considerable industry variation in both precise
+  definitions and naming conventions", and DTSP assesses maturity qualitatively
+  rather than publishing handling-time figures. Every minute figure is a stated
+  assumption and the section reports a sensitivity range and a break-even, never
+  a saving.
+- **Evidence recovery plateaus.** The metadata-pivot strategy recovers the
+  shared-registration-linked core and cannot reach ring members connected only
+  by looser signals: on `t02_chan_000_000` it reaches 4 of 8 members and the
+  budget curve is flat from 5 pivots onward. A bounded limit of a metadata-pivot
+  strategy rather than a defect. Reaching the rest needs behavioural or temporal
+  pivots, and `TEMPORAL_CORRELATION` cannot be proposed while the evidence
+  prompt carries no timestamp anchor. Recorded as future work, not a STEP-07 gap.
+- **Rater error is modelled as independent per rater.** Correlated error, such
+  as a policy misreading a whole panel shares, is not modelled and would not be
+  suppressed by majority voting, so the bias curve understates what a real panel
+  with shared training could get wrong.
 - Firewall detection does not survive zero-width characters inside a keyword
   (U+200B and similar). They break regex tokens without breaking lines, and
   matching through them would mean normalizing text the analyst never sees,
