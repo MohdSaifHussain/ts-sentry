@@ -85,6 +85,46 @@ The truncation row is what it has been since STEP-02: a *passing* result that
 confirms a real limitation. Chain verification alone accepts a truncated export,
 and only the stored anchor catches it.
 
+### Phase close, verified
+
+Saif ran the phase-close verification personally, continuing the pattern from
+STEP-01 through STEP-05 where his own pass is the closing step rather than a
+green suite.
+
+| Scenario | Expected | Observed |
+|---|---|---|
+| Neutral candidate | exit 0, activatable | exit 0, activatable, zero-width interval on every class |
+| Degraded candidate | exit 7, per-class breach report | exit 7, four recall breaches (t01, t02, t04, t07) plus macro-F1 |
+| Each breach's basis | decided on the 95% lower bound | confirmed against tolerance on every breach |
+| Session id | reproducible from inputs | `session-0141ddcc24bc`, reproduced exactly |
+| `verify-ledger`, bare | exit 0, intact | exit 0, 124 entries intact |
+| `verify-ledger --expect-head-from` | exit 0, head matches | exit 0, head matches |
+| Truncated copy, bare | exit 0 (the limitation) | exit 0 |
+| Truncated copy, `--expect-head-from` | exit 6, both heads | exit 6, both heads printed |
+| Report read by eye | both caveats present in the artifact | both present, verbatim |
+| Report stamp | seed, hashes, code SHA | `bootstrap_seed` 42 over 2000 resamples; items, labels, tolerances and git SHA all stamped |
+
+Three rows are worth keeping in view.
+
+The **third** is the one that makes this phase's central claim checkable rather
+than asserted: every breach was decided on the interval's lower bound against
+the tolerance, which is decision D working on a real artifact rather than in a
+unit test. A gate reading the point estimate would have produced a different
+refusal on at least one of those classes.
+
+The **fourth** confirms the reproducibility claim `derive_session_id` makes.
+Session ids read no clock, so his id matched exactly; the chain *heads* did not
+and should not, because the eval session stamps real timestamps. Count and
+verdict reproduce; head does not.
+
+The **seventh** is what it has been since STEP-02: a *passing* result that
+confirms a real limitation. Chain verification alone accepted a truncated
+export, exactly as the STEP-02 Honest Limit says it must, and only the stored
+anchor caught it.
+
+Pushes are checkpoint-gated (CLAUDE.md Process): the six commits were held
+locally per deliverable and pushed only after this confirmation.
+
 ### The central finding: the eval set has a ceiling the generator sets
 
 Full measurements and the reasoning are in `docs/DECISIONS.md` under Phase 6.
