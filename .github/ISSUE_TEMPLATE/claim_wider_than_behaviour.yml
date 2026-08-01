@@ -1,0 +1,33 @@
+name: A claim is wider than the behaviour
+description: Documentation, a NOTES.md, or an output says something the system does not actually do.
+labels: ["claim-accuracy"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This is the most valuable report this project can receive.**
+
+        Every phase-close defect in this project's history was found by a human
+        running something and reading the artifact, never by a test. If an output
+        does not mean what the documentation says it means, that is a real finding
+        even when nothing crashed and every test passes.
+  - type: textarea
+    id: claim
+    attributes:
+      label: The claim, quoted
+      description: Paste the exact sentence, with the file and line.
+      placeholder: "README.md:120 says ..."
+    validations:
+      required: true
+  - type: textarea
+    id: behaviour
+    attributes:
+      label: What the system actually does
+      description: The command you ran and the output you got. Paste the real output.
+    validations:
+      required: true
+  - type: textarea
+    id: width
+    attributes:
+      label: How the claim should be narrowed
+      description: Optional. What would the true sentence be?

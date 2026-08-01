@@ -1,0 +1,45 @@
+name: Bug report
+description: Something errors, crashes, or produces a wrong result.
+labels: ["bug"]
+body:
+  - type: checkboxes
+    id: known
+    attributes:
+      label: Not an already-documented limitation
+      options:
+        - label: I checked the Honest Limits in the README and SECURITY.md's "Known limits, already documented".
+          required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: The exact command
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result, and what happened instead
+      description: Include the exit code. Exit codes are allocated across the whole CLI and are meaningful.
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12.7"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "Windows 11 / Ubuntu 24.04"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: ts-sentry version or commit SHA
+    validations:
+      required: true

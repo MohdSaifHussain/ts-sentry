@@ -10,6 +10,15 @@ All timestamp columns are `TIMESTAMPTZ`, always `Asia/Kolkata` (IST),
 serialized ISO 8601 at the Parquet/JSON export boundary. Every table's
 primary key and foreign keys are declared in `ts_sentry.data.store`.
 
+> **Currency, checked at release rather than assumed (STEP-08).** No phase after
+> STEP-01 changed this schema, and that was verified by reading
+> `information_schema` out of a real seed-42 build and comparing it against this
+> file column by column: **seven tables, zero undocumented columns.**
+> `engagement_event.session_id` is still reserved and still `NULL` on every row.
+> The later phases added artifacts (session manifests, evidence packs, memos,
+> eval sets, measurement reports) rather than dataset columns, and those are
+> documented where they are produced rather than here.
+
 ## `main.account_meta`
 
 | Column | Type | Unit | Nullable | Provenance |

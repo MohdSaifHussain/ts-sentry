@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security or conduct report (private)
+    url: https://github.com/MohdSaifHussain/ts-sentry/security/advisories/new
+    about: Do not open a public issue for anything exploitable, or for a conduct concern. Use private reporting.
+  - name: Read the honest limits first
+    url: https://github.com/MohdSaifHussain/ts-sentry#honest-limits
+    about: Several known limitations are documented and asserted by test. Please check before reporting one as a bug.

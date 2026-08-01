@@ -31,7 +31,15 @@ dependencies = [
     # which the D6 quality gate (profile/validate/reconcile against Parquet
     # exports) depends on. See docs/decisions/STEP-01-data-foundation.md
     # Outcome section for the accuracy-via-reconcile rationale.
-    "analystkit @ git+https://github.com/MohdSaifHussain/analystkit@v2.1.0",
+    #
+    # Pinned to the commit SHA rather than the tag `v2.1.0` (STEP-08, closing a
+    # gap docs/DECISIONS.md has listed since it was written: "a tag can be
+    # moved, a SHA cannot"). Verified with `git ls-remote` rather than assumed:
+    # refs/tags/v2.1.0^{} dereferences to exactly ab98ee6a..., so this tightens
+    # the pin without changing a byte of what gets installed. The tag also
+    # currently equals the remote's main HEAD, which is precisely the situation
+    # where a tag is cheapest to move.
+    "analystkit @ git+https://github.com/MohdSaifHussain/analystkit@ab98ee6a3c309f57134d48787aa604b1d1044f62",
 ]
 
 [project.optional-dependencies]

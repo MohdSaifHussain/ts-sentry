@@ -1,0 +1,34 @@
+name: Feature request
+description: Propose a capability.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the v1.1 roadmap in the release notes first. Several things
+        are already scoped and deferred deliberately, including free-form pivot
+        exploration behind a gate, a dashboard, concurrency, automated prompt
+        optimization with contamination review, and the traversal-enrichment task.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What analyst work is currently hard or unauditable?
+    validations:
+      required: true
+  - type: textarea
+    id: governance
+    attributes:
+      label: How it stays inside the governance model
+      description: >-
+        Which consequence ceiling does it need? Does it require a new tool, a new
+        data scope, or a new ledger event type? A proposal that needs an agent to
+        reach further than its mandate allows will be declined, so it is worth
+        thinking about up front.
+    validations:
+      required: true
+  - type: textarea
+    id: proof
+    attributes:
+      label: What would prove it works
+      description: The metric or test. "It runs" is not a criterion.

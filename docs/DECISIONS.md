@@ -302,10 +302,24 @@ a known blocker rather than something STEP-07 chose not to finish.
 **Reaching the ring members a metadata pivot cannot see needs non-registration
 pivot signals.** The traversing strategy recovers the shared-registration-linked
 core and plateaus there, which is a property of the signals it can ask about
-rather than of the budget it is given. The five remaining members of
+rather than of the budget it is given. The **four** remaining members of
 `ring_t02_000` are connected by looser evidence: behavioural co-occurrence,
 temporal proximity, weaker shared-attribute overlap. None of those is expressible
 in the pivots the strategy currently uses.
+
+> **Corrected in STEP-08, by measuring rather than by reading.** This paragraph
+> said "five remaining", which was true when recovery stood at 3 of 8 and
+> stopped being true when 7.13's work-list traversal took it to 4 of 8. Entry
+> 7.14 records the 4 correctly; this paragraph was written against the earlier
+> state and was not updated with it, so the two disagreed by one for the whole
+> of Phase 7. Found while generating the D1 examples, by running
+> `recovery_for_pack` against a committed pack instead of quoting a prior
+> sentence. The four are named now, because a count without names invites the
+> next reader to guess which ones: `t02_chan_000_001`, `t02_chan_000_002`,
+> `t02_vid_000_001`, `t02_vid_000_002`. Pinned by
+> `tests/test_examples.py::test_the_t02_example_still_recovers_four_of_eight`,
+> so the day the number moves the test fails and this text gets rewritten
+> rather than quietly outliving its own truth again.
 
 `TEMPORAL_CORRELATION` is the vocabulary member that would supply the temporal
 half, and it **cannot be proposed today**: it requires an `anchor_epoch_ms` and

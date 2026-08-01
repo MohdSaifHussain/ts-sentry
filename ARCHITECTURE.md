@@ -2,9 +2,15 @@
 
 ## Governed Agentic Workbench for Trust & Safety Scaled Abuse Analysis
 
-**Version:** 0.1.0-draft | **Date:** 31 July 2026 (IST) | **Author:** Mohd Saif Hussain
-**Status:** Architecture baseline, pre-implementation
-**License:** MIT (planned)
+**Version:** 1.0.0 | **Date:** 31 July 2026 (IST), status updated 2 August 2026
+**Author:** Mohd Saif Hussain
+**Status:** Implemented through Phase 8. This document remains the **design
+authority**: it is the specification the build was measured against, not a
+description written afterwards to match it. Where the implementation departs
+from it, the departure is recorded as a deviation or an erratum in the relevant
+STEP file's Outcome and in `docs/DECISIONS.md`, and this text is left standing.
+Two errata are noted inline below (3.2 and 4.4).
+**License:** MIT
 
 ---
 
@@ -128,6 +134,13 @@ An append-only, hash-chained record of every step every agent takes.
   payload_digest, prev_hash, entry_hash)`.
 - `entry_hash = SHA256(seq || timestamp || agent_id || mandate_hash ||
   payload_digest || prev_hash)`, giving tamper-evidence across the chain.
+
+  > **Erratum, recorded in STEP-02 rather than silently corrected.** Read
+  > literally, `||` is bare concatenation, which is ambiguous: `("ab", "c")` and
+  > `("a", "bc")` produce identical bytes, so two materially different entries
+  > can collide on the one digest whose whole job is telling entries apart. The
+  > implementation uses a `\x1f`-separated encoding that rejects any field
+  > containing the separator. See DECISIONS 2.1.
 - Event types: `PROMPT_SENT`, `TOOL_CALLED`, `TOOL_RESULT`, `OUTPUT_PROPOSED`,
   `VERIFICATION_PASS`, `VERIFICATION_FAIL`, `GATE_REJECTION`, `HUMAN_DECISION`,
   `MANDATE_VIOLATION_ATTEMPT`, `SESSION_OPEN`, `SESSION_CLOSE`.
@@ -220,8 +233,20 @@ deterministic orchestrator, which validates, ledgers, and routes.
   compares against the incumbent version.
 - Regression gate: activation is refused if any monitored metric drops beyond
   a declared tolerance. Refusals are ledgered.
-- Solves: safe iteration speed on prompts, the JD's prompt engineering, data
-  labeling, and performance analysis bullet, made rigorous.
+- Solves: safe iteration speed on prompts, and the prompt engineering, data
+  labeling and performance analysis responsibilities of the target role,
+  made rigorous.
+
+  > **Erratum, STEP-08.** This line originally read "the JD's ... bullet". No job
+  > description is committed to this repository and none is quoted anywhere in
+  > it. The reference was to a generalized responsibility profile, and it is
+  > reworded here so the document does not imply a source it does not have. The
+  > traceability matrix built on that profile is `docs/POSITIONING.md`, which
+  > labels its own left column as representative rather than quoted.
+  >
+  > **Honest limit carried from STEP-06:** `classify.threat_class` is versioned,
+  > evaluated and gated, and **no session consumes its output**. The wind tunnel
+  > is real and the aircraft does not yet fly.
 
 ---
 
@@ -395,26 +420,39 @@ Identical bar to delivery-engine v1.4:
 
 ---
 
-## 10. Repository Layout (planned)
+## 10. Repository Layout
+
+As built. Two departures from the plan are marked.
 
 ```
 ts-sentry/
-  pyproject.toml
-  README.md  ARCHITECTURE.md  PROJECT_CHARTER.md  CHANGELOG.md  LICENSE
+  pyproject.toml  uv.lock
+  README.md  QUICKSTART.md  ARCHITECTURE.md  CHANGELOG.md  LICENSE  CITATION.cff
+  SECURITY.md  CONTRIBUTING.md  CODE_OF_CONDUCT.md
   src/ts_sentry/
-    orchestrator/      # state machine, dispatch, firewall, gates
-    governance/        # Mandate, Consequence, ledger, verifier
+    orchestrator/      # state machine, dispatch, firewall, gates, turns
+    governance/        # Mandate, Consequence, ledger, signature, scopes
     agents/            # triage, evidence, memo, prompt_eval (thin: prompts + schemas)
-    data/              # synthetic generator, policy corpus tooling
-    measurement/       # vvr, workflow metrics
-    cli/               # run-session, verify-ledger, build-dataset, eval-prompts
+    data/              # synthetic generator, policy corpus, eval set, quality gate
+    measurement/       # vvr, sensitivity, recovery, workflow, report, plots
+    prompt_registry/   # content-addressed versions + append-only activation log
+    cli/               # the eight verbs
   prompts/             # versioned registry (hash-named)
   policies/            # hashed public policy corpus + anchors
-  examples/            # curated sessions with ledgers + memos + reports
+  evals/               # committed eval set: items, labels, tolerances
+  examples/            # eight curated runs with full artifacts + NOTES
   tests/
-  docs/decisions/      # STEP-NN files
+  docs/                # USER_GUIDE, POSITIONING, model-card, diagrams,
+                       # DECISIONS, data-dictionary, decisions/STEP-NN
   .github/workflows/
 ```
+
+- **`PROJECT_CHARTER.md` was never written.** Section 9 names it in the docs
+  set; STEP-08 D2's documentation list does not, and inventing a charter at
+  release time to satisfy a bullet would produce a document with no authority
+  behind it. Recorded as an unshipped item rather than manufactured.
+- **`prompt_registry/`** is a package this section did not plan. It arrived in
+  STEP-06 to hold the versioned registry the design already required.
 
 ---
 
@@ -431,13 +469,72 @@ ts-sentry/
 | 7 | Measurement layer (VVR + workflow) | CI-stamped report with 95% CI and sensitivity plots |
 | 8 | Examples, docs, release v1.0.0, GHCR image | Fresh-clone quickstart under 10 minutes |
 
+### 11.1 Exit criteria against what actually happened
+
+Added at release. Every row was verified by Saif personally at that phase's
+close, following the pattern STEP-01 set where his own pass is the closing step
+rather than a green test suite. The full evidence is in each STEP file's Outcome.
+
+| Phase | Exit criterion | Result |
+|---|---|---|
+| 1 | Seeded rebuild byte-stable; leakage test passes | **Met.** Verified twice, by `fc` diff of manifests and all Parquet files, and by a red-team that added a sealed `DataScope` member and failed 10 tests, only 3 of which were written for leakage |
+| 2 | Property tests green; ENFORCE unreachability proven | **Met.** Two independent mechanisms, neither subsuming the other |
+| 3 | First full ledgered session end to end | **Met**, and it produced two product findings from reading the output that no test was positioned to notice |
+| 4 | Ground-truth recovery metric reportable | **Met.** The metric also surfaced that the strategy plateaued, which became STEP-07's central risk |
+| 5 | Verification demonstrably catching planted overclaims | **Met.** 3 gate rejections and 3 verification failures on a real overclaim run, memo held at DRAFT |
+| 6 | A deliberately worse prompt version is refused, ledgered | **Met.** Exit 7, four per-class recall breaches plus macro-F1, chain intact |
+| 7 | CI-stamped report with 95% CI and sensitivity plots | **Met**, after a phase-close defect Saif found by reading a generated report: the bootstrap cross-check's expected width ratio was computed from the wrong quantity |
+| 8 | Fresh-clone quickstart under 10 minutes | See `docs/quickstart-timing.md` |
+
+**One obligation is recorded unmet and stays visible.** STEP-04 named
+`t02_chan_000_000` reaching past its first shell as STEP-07's concrete target.
+It went from 3 to 4 of 8 members and did not become budget-sensitive, so the
+specific claim is not discharged. It is carried into the v1.1 roadmap as the
+traversal-enrichment task, with its blocker named. Recording a partial as a pass
+is how an obligation quietly stops constraining anything.
+
 ---
 
 ## 12. Honest Limits (standing section, carried into README)
 
-- Synthetic data only; no claim of real-platform efficacy.
-- Workflow uplift figures are modeled estimates, not user studies.
+- Synthetic data only; no claim of real-platform efficacy. One exception, scoped
+  and labelled: `examples/08-firewall-real-comments` pushes 1,956 real public
+  YouTube comments through the input firewall and states exactly what that does
+  and does not show.
+- Workflow uplift figures are modeled estimates, not user studies. There is no
+  published per-case review-time benchmark to cite, so the model reports a
+  break-even rather than "minutes saved".
 - Framework rows in Section 8 evidence alignment by artifact; nothing here is
   a certification, audit, or legal compliance claim.
 - Detection is simulated upstream; this system does not detect abuse.
 - One analyst, one session at a time in v1; concurrency is roadmap.
+
+Added as the build produced them. Each is recorded at the width the artifact
+supports rather than the width that would be convenient.
+
+- **Every agent's competence is untested.** Every model output in this
+  repository came from a deterministic stub that cannot be persuaded and cannot
+  reason. What is demonstrated is the pipeline, not the agent.
+- **Two code paths are written and have never been run:** the live model adapter
+  and the interactive reviewer. Both are marked and documented.
+- **Prompt-injection detection is incomplete by construction.** Four adversarial
+  fixtures are asserted as *undetected*. The load-bearing controls are
+  structural, not the pattern set.
+- **Tail truncation is invisible to chain verification alone**, and an anchor is
+  only as independent as its custody. A manifest beside the ledger it describes
+  catches accidents, not a determined editor with write access to both.
+- **A signature proves integrity, not identity.** Real analyst authentication is
+  out of scope.
+- **The triage scorer is transparent, not accurate.** Weights are analyst
+  judgment, not fitted parameters.
+- **Evidence recovery plateaus at the ring core**, 4 of 8 on the named target,
+  flat from 5 to 20 pivots. A recorded-unmet obligation with a named blocker.
+- **The prompt regression gate detects class collapse, not drift**, bounded by
+  the generator's fixed per-class threat volume rather than by the gate's design.
+- **The VVR estimand is narrow**, carried by 18 violative views from two threat
+  classes; the interval covers sampling error only, and at realistic rater
+  accuracy the rater-induced bias exceeds it. Correlated rater error is not
+  modelled at all.
+- **`classify.threat_class` is gated but consumed by no session.**
+- **PNG figures are byte-identical within one environment only.** The CSV and
+  JSON curve data are byte-stable across runs and machines.

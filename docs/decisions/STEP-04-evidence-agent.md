@@ -322,10 +322,16 @@ precisely because no shared registration value points at them.
 > 20. Four classes recover strictly more than before at every budget, and t01
 > and t03 were already at the structural ceiling, so there was nothing there to
 > win. The named target `t02_chan_000_000` went from 3 to 4 of 8 members and
-> **did not become budget-sensitive**: the five members no shared registration
+> **did not become budget-sensitive**: the members no shared registration
 > value points at are still not reached, so the specific claim this paragraph
 > made is not discharged. Recorded as unmet rather than counted as met because
 > a different class moved.
+>
+> *(STEP-08 correction: this sentence said "the five members", carried over from
+> the 3-of-8 state one line above it. At 4 of 8 there are **four**, and they are
+> `t02_chan_000_001`, `t02_chan_000_002`, `t02_vid_000_001`, `t02_vid_000_002`.
+> Found by measuring a committed example pack rather than by re-reading. See
+> DECISIONS, "Future work: traversal enrichment".)*
 
 ### Defects found by running it, not by inspection
 

@@ -19,3 +19,11 @@ htmlcov/
 # manual verification runs commonly use build_a/, build_b/, etc.)
 /build/
 /build_*/
+
+# Saif's own phase-close verification artifacts. CLAUDE.md: these paths are his
+# and are never to be deleted, overwritten or reused. They are also not release
+# artifacts, and a `git add -A` during STEP-08 swept several of them into a
+# release commit before this rule existed. Root-anchored so the curated
+# `examples/` tree is unaffected.
+/session_*/
+/report_*/
