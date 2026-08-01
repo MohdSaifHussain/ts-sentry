@@ -251,6 +251,7 @@ LEGITIMATE_SEALED_CONSUMERS = frozenset(
         f"{PACKAGE}.measurement.recovery",  # measurement, from STEP-04 onward
         f"{PACKAGE}.cli.main",  # names it only to prove the allowlist denies it
         f"{PACKAGE}.data.eval_build",  # STEP-06 D2: build-time, labels the eval set
+        f"{PACKAGE}.measurement.frame",  # STEP-07 D1: the VVR lens's one truth join
     }
 )
 """Who may name the sealed table *in code*, as an allowlist.
@@ -309,23 +310,37 @@ def _code_strings(path: Path) -> list[str]:
 def test_no_agent_or_orchestrator_module_can_reach_measurement() -> None:
     """STEP-07 3.2, landed early because ``measurement/`` exists as of STEP-04.
 
-    Not vacuous: the package is real and has a module in it. The rule is the
+    Not vacuous: the package is real and has modules in it. The rule is the
     other half of the sealed boundary. Ground truth is reachable from
     measurement, so anything that can reach measurement can reach ground truth
     by one more import, and an agent that could do that is an agent grading its
     own homework.
+
+    Written over **every** module under ``measurement`` rather than against a
+    named one. Until STEP-07 this pinned ``measurement.recovery`` by name, which
+    was fine while that was the only module and became a hole the moment the VVR
+    lens added four more: a new measurement module would have been unguarded and
+    nothing would have failed. Quantifying over the package closes it and keeps
+    closing it as the package grows.
     """
     graph = build_import_graph()
-    measurement = f"{PACKAGE}.measurement.recovery"
+    measurement_modules = {
+        module for module in graph if module.startswith(f"{PACKAGE}.measurement")
+    }
 
-    assert measurement in graph, "the measurement module is missing; this test would be vacuous"
+    assert len(measurement_modules) >= 2, (
+        "the measurement package is missing or empty; this test would be vacuous"
+    )
+    assert f"{PACKAGE}.measurement.recovery" in measurement_modules
+    assert f"{PACKAGE}.measurement.frame" in measurement_modules
 
     for module in graph:
         if not module.startswith((f"{PACKAGE}.agents", f"{PACKAGE}.orchestrator")):
             continue
         reachable = reachable_from(graph, module)
-        assert measurement not in reachable, (
-            f"{module} can reach {measurement}, and through it sealed ground truth"
+        trespass = reachable & measurement_modules
+        assert not trespass, (
+            f"{module} can reach {sorted(trespass)}, and through them sealed ground truth"
         )
         assert f"{PACKAGE}.measurement" not in reachable, (
             f"{module} can reach the measurement package"
