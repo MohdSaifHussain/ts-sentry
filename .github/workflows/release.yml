@@ -28,7 +28,14 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Lowercased, and not for tidiness. `github.repository` here is
+  # `MohdSaifHussain/ts-sentry`, and a container registry rejects it outright:
+  # "repository name must be lowercase". `docker/metadata-action` lowercases
+  # the tags it generates, so the push would have succeeded while the
+  # attestation subject built from the raw variable named an image nobody
+  # published. Caught by reading the v1.0.0-rc.1 job environment rather than by
+  # the run, which had already failed one job earlier.
+  IMAGE_NAME: mohdsaifhussain/ts-sentry
 
 jobs:
   guard:
@@ -47,15 +54,50 @@ jobs:
           python-version: "3.12"
 
       - id: check
+        env:
+          IS_PRERELEASE: ${{ github.event.release.prerelease }}
         run: |
           set -euo pipefail
           tag="${GITHUB_REF_NAME#v}"
+
+          # SemVer 2.0.0: `1.0.0-rc.1` is a pre-release *of* `1.0.0`, so the
+          # package version legitimately stays `1.0.0` throughout the release
+          # candidates. Comparing the whole tag was wrong, and v1.0.0-rc.1
+          # failed on it in six seconds, which is what the candidate is for.
+          # Bumping pyproject to `1.0.0-rc.1` would have been the wrong fix:
+          # the package being released is 1.0.0.
+          base="${tag%%-*}"
+          prerelease="${tag#"$base"}"
           version="$(python -c 'import tomllib,pathlib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
-          echo "tag=$tag package=$version"
-          if [ "$tag" != "$version" ]; then
-            echo "tag $GITHUB_REF_NAME does not match pyproject version $version"
+          echo "tag=$tag base=$base prerelease=${prerelease:-none} package=$version"
+
+          if [ "$base" != "$version" ]; then
+            echo "tag $GITHUB_REF_NAME resolves to base version $base, which does not match pyproject $version"
             exit 1
           fi
+
+          # A pre-release tag must be published as a pre-release, and a plain
+          # tag must not be. Without this, `v1.0.0-rc.1` could be published as
+          # the real release and would move `latest` to a candidate.
+          if [ -n "$prerelease" ] && [ "$IS_PRERELEASE" != "true" ]; then
+            echo "tag $GITHUB_REF_NAME carries a pre-release suffix but the release is not marked pre-release"
+            exit 1
+          fi
+          if [ -z "$prerelease" ] && [ "$IS_PRERELEASE" = "true" ]; then
+            echo "tag $GITHUB_REF_NAME has no pre-release suffix but the release is marked pre-release"
+            exit 1
+          fi
+
+          # IMAGE_NAME is a literal because it has to be lowercase, so it can
+          # drift from the repository it claims to name. This is the check that
+          # stops that being discovered by a reader pulling an image that does
+          # not exist.
+          expected="$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          if [ "$IMAGE_NAME" != "$expected" ]; then
+            echo "IMAGE_NAME is $IMAGE_NAME but this repository lowercases to $expected"
+            exit 1
+          fi
+
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
   distributions:

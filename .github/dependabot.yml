@@ -47,3 +47,16 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: "build(docker)"
+    ignore:
+      # The Python minor version in the image is not a dependency that should
+      # drift: it is pinned to whatever CI pins, because "the Dockerfile mirrors
+      # CI" is the D4 requirement and an image built on a different interpreter
+      # than the tests ran on is a second, unverified build.
+      #
+      # This rule exists because the first Dependabot run after these configs
+      # landed proposed exactly that: bump python 3.12-slim-bookworm to
+      # 3.14-slim-bookworm, which would have broken the parity silently while
+      # looking like routine hygiene. Patch updates still come through, so
+      # security fixes to the base image are not blocked.
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
