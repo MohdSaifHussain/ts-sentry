@@ -372,6 +372,34 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   boundary check that ties the audit trail to a real subject. Asked of the
   entity tables through `resolve_table`, never of `sealed._labels`: whether an
   entity is *planted* is ground truth.
+- STEP-06 D1: the versioned prompt registry (`ts_sentry.prompt_registry`), plus
+  the committed `prompts/` directory. Files are content-hash-named, so a version
+  edited in place no longer hashes to its own name and the tampering is visible
+  with `sha256sum` alone. Two identities are recorded per version and both are
+  re-derived on load rather than believed: `content_digest` over the text's bytes
+  (the file name) and `system_prompt_sha256` from `firewall.system_prompt` (what
+  a session's `PROMPT_SENT` payload already carries). Following DECISIONS 5.2,
+  where the policy corpus learned the same distinction.
+- STEP-06 D1: activation is an **append-only pointer history**
+  (`prompt_registry.activation`), not a field on a version record. A mutable
+  `active` flag would mean activating one prompt rewrites another prompt's
+  record, which is the overwrite STEP-06 3.4 forbids; the active version of a
+  task is therefore derived from the log, and version records are written once.
+  Rollback is another entry, so a history never describes a system that did not
+  make the mistake it made, and its target must be a version the task has
+  actually run.
+- STEP-06 D1: `classify.threat_class.v1`
+  (`ts_sentry.agents.prompt_eval.prompts`) - the classification prompt this
+  phase evaluates, and the only registry task whose output is a class label.
+  **No session consumes its output** (decision A); see Known limitations.
+- STEP-06 D1: the three shipped prompts (`triage.rationale.v1`,
+  `evidence.pivot.v1`, `memo.statement.v1`) are registered at the exact bytes
+  they have run under since their own phases, closing the deferral
+  `orchestrator.firewall.SystemPrompt` recorded ("a versioned registry with
+  content-addressed files is STEP-06"). Record-only, with **zero behaviour
+  effect**: digests unchanged, module constants still the runtime source, and a
+  test asserting every registered version reproduces its constant's `prompt_id`,
+  text and digest so the two cannot drift.
 
 ### Changed
 

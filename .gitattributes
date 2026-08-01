@@ -1,0 +1,16 @@
+# Content-addressed prompt files: never translate line endings.
+#
+# STEP-06 D1 names each file in prompts/ by the SHA-256 of its own content, and
+# the point of that is that a reviewer can check the name with sha256sum. With
+# core.autocrlf=true (the Windows default, and Saif's setting), a fresh checkout
+# rewrites LF to CRLF, the bytes change, and sha256sum stops agreeing with the
+# file name on exactly the platform this project is developed on. Measured
+# during D1 by exporting the index with `git checkout-index` rather than assumed:
+# all four files came back with CRLF and none matched its own name by raw bytes.
+#
+# The registry itself survives that, because `Path.read_text` normalizes
+# newlines on read and the digest is taken over the normalized text. So this is
+# not what keeps the registry loading; it is what keeps the *independent* check
+# honest, and an independent check that only works on one platform is not one.
+prompts/*.txt -text
+prompts/manifest.json -text
