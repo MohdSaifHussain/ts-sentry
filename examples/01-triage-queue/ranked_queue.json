@@ -1,0 +1,551 @@
+{
+  "session_id": "session-2d3ca01015f8",
+  "weights_version": "1.0.0",
+  "weights_hash": "d841e2468f3781b02bfb60273a348d2d8cf7c66f65ced2404bb004cc13715e4e",
+  "detector_version": "0.1.0-stub",
+  "close_reason": "completed",
+  "detail": "23 cases ranked, 23 rationales accepted, 0 rejected",
+  "injection_signals": 0,
+  "queue": {
+    "weights_version": "1.0.0",
+    "detector_version": "0.1.0-stub",
+    "row_count": 23,
+    "rows": [
+      {
+        "case_id": "case-0008",
+        "priority": 0.481667,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.6,
+          "spread": 0.166667,
+          "velocity": 1.0,
+          "recidivism": 0.0
+        },
+        "subject_id": "t07_chan_000",
+        "rationale": "case-0008: ranked here on [case-0008:velocity]"
+      },
+      {
+        "case_id": "case-0009",
+        "priority": 0.481667,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.6,
+          "spread": 0.166667,
+          "velocity": 1.0,
+          "recidivism": 0.0
+        },
+        "subject_id": "t07_chan_001",
+        "rationale": "case-0009: ranked here on [case-0009:velocity]"
+      },
+      {
+        "case_id": "case-0000",
+        "priority": 0.389057,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.8,
+          "spread": 0.25,
+          "velocity": 0.032787,
+          "recidivism": 0.0
+        },
+        "subject_id": "chan_000035",
+        "rationale": "case-0000: ranked here on [case-0000:velocity]"
+      },
+      {
+        "case_id": "case-0001",
+        "priority": 0.324981,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.6,
+          "spread": 0.166667,
+          "velocity": 0.02907,
+          "recidivism": 0.25
+        },
+        "subject_id": "chan_000004",
+        "rationale": "case-0001: ranked here on [case-0001:severity_class]"
+      },
+      {
+        "case_id": "case-0004",
+        "priority": 0.324524,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.6,
+          "spread": 0.166667,
+          "velocity": 0.026786,
+          "recidivism": 0.25
+        },
+        "subject_id": "chan_000031",
+        "rationale": "case-0004: ranked here on [case-0004:velocity]"
+      },
+      {
+        "case_id": "case-0003",
+        "priority": 0.323167,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.6,
+          "spread": 0.166667,
+          "velocity": 0.02,
+          "recidivism": 0.25
+        },
+        "subject_id": "chan_000024",
+        "rationale": "case-0003: ranked here on [case-0003:velocity]"
+      },
+      {
+        "case_id": "case-0005",
+        "priority": 0.323127,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.6,
+          "spread": 0.166667,
+          "velocity": 0.019802,
+          "recidivism": 0.25
+        },
+        "subject_id": "chan_000032",
+        "rationale": "case-0005: ranked here on [case-0005:velocity]"
+      },
+      {
+        "case_id": "case-0007",
+        "priority": 0.322976,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.6,
+          "spread": 0.166667,
+          "velocity": 0.019048,
+          "recidivism": 0.25
+        },
+        "subject_id": "chan_000047",
+        "rationale": "case-0007: ranked here on [case-0007:velocity]"
+      },
+      {
+        "case_id": "case-0006",
+        "priority": 0.322655,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.6,
+          "spread": 0.166667,
+          "velocity": 0.017442,
+          "recidivism": 0.25
+        },
+        "subject_id": "chan_000039",
+        "rationale": "case-0006: ranked here on [case-0006:spread]"
+      },
+      {
+        "case_id": "case-0002",
+        "priority": 0.303967,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.6,
+          "spread": 0.083333,
+          "velocity": 0.028169,
+          "recidivism": 0.25
+        },
+        "subject_id": "chan_000015",
+        "rationale": "case-0002: ranked here on [case-0002:spread]"
+      },
+      {
+        "case_id": "case-0010",
+        "priority": 0.281667,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.6,
+          "spread": 0.166667,
+          "velocity": 0.0,
+          "recidivism": 0.0
+        },
+        "subject_id": "t07_chan_002",
+        "rationale": "case-0010: ranked here on [case-0010:severity_class]"
+      },
+      {
+        "case_id": "case-0020",
+        "priority": 0.239167,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.4,
+          "spread": 0.166667,
+          "velocity": 0.0,
+          "recidivism": 0.25
+        },
+        "subject_id": "t06_chan_000",
+        "rationale": "case-0020: ranked here on [case-0020:severity_class]"
+      },
+      {
+        "case_id": "case-0021",
+        "priority": 0.239167,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.4,
+          "spread": 0.166667,
+          "velocity": 0.0,
+          "recidivism": 0.25
+        },
+        "subject_id": "t06_chan_001",
+        "rationale": "case-0021: ranked here on [case-0021:velocity]"
+      },
+      {
+        "case_id": "case-0022",
+        "priority": 0.239167,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.4,
+          "spread": 0.166667,
+          "velocity": 0.0,
+          "recidivism": 0.25
+        },
+        "subject_id": "t06_chan_002",
+        "rationale": "case-0022: ranked here on [case-0022:spread]"
+      },
+      {
+        "case_id": "case-0011",
+        "priority": 0.207547,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.5,
+          "spread": 0.0,
+          "velocity": 0.037736,
+          "recidivism": 0.0
+        },
+        "subject_id": "chan_000003",
+        "rationale": "case-0011: ranked here on [case-0011:spread]"
+      },
+      {
+        "case_id": "case-0018",
+        "priority": 0.205769,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.5,
+          "spread": 0.0,
+          "velocity": 0.028846,
+          "recidivism": 0.0
+        },
+        "subject_id": "chan_000048",
+        "rationale": "case-0018: ranked here on [case-0018:velocity]"
+      },
+      {
+        "case_id": "case-0017",
+        "priority": 0.205333,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.5,
+          "spread": 0.0,
+          "velocity": 0.026667,
+          "recidivism": 0.0
+        },
+        "subject_id": "chan_000042",
+        "rationale": "case-0017: ranked here on [case-0017:velocity]"
+      },
+      {
+        "case_id": "case-0016",
+        "priority": 0.205128,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.5,
+          "spread": 0.0,
+          "velocity": 0.025641,
+          "recidivism": 0.0
+        },
+        "subject_id": "chan_000038",
+        "rationale": "case-0016: ranked here on [case-0016:velocity]"
+      },
+      {
+        "case_id": "case-0019",
+        "priority": 0.204478,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.5,
+          "spread": 0.0,
+          "velocity": 0.022388,
+          "recidivism": 0.0
+        },
+        "subject_id": "chan_000049",
+        "rationale": "case-0019: ranked here on [case-0019:velocity]"
+      },
+      {
+        "case_id": "case-0013",
+        "priority": 0.20396,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.5,
+          "spread": 0.0,
+          "velocity": 0.019802,
+          "recidivism": 0.0
+        },
+        "subject_id": "chan_000017",
+        "rationale": "case-0013: ranked here on [case-0013:velocity]"
+      },
+      {
+        "case_id": "case-0015",
+        "priority": 0.203409,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.5,
+          "spread": 0.0,
+          "velocity": 0.017045,
+          "recidivism": 0.0
+        },
+        "subject_id": "chan_000026",
+        "rationale": "case-0015: ranked here on [case-0015:velocity]"
+      },
+      {
+        "case_id": "case-0014",
+        "priority": 0.203252,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.5,
+          "spread": 0.0,
+          "velocity": 0.01626,
+          "recidivism": 0.0
+        },
+        "subject_id": "chan_000018",
+        "rationale": "case-0014: ranked here on [case-0014:velocity]"
+      },
+      {
+        "case_id": "case-0012",
+        "priority": 0.202597,
+        "weights_version": "1.0.0",
+        "components": {
+          "severity_class": 0.5,
+          "spread": 0.0,
+          "velocity": 0.012987,
+          "recidivism": 0.0
+        },
+        "subject_id": "chan_000009",
+        "rationale": "case-0012: ranked here on [case-0012:velocity]"
+      }
+    ]
+  },
+  "rationale_verification": {
+    "accepted": 23,
+    "rejected": 0,
+    "rationales": [
+      {
+        "case_id": "case-0008",
+        "accepted": true,
+        "text": "case-0008: ranked here on [case-0008:velocity]",
+        "cited_ids": [
+          "case-0008:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0009",
+        "accepted": true,
+        "text": "case-0009: ranked here on [case-0009:velocity]",
+        "cited_ids": [
+          "case-0009:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0000",
+        "accepted": true,
+        "text": "case-0000: ranked here on [case-0000:velocity]",
+        "cited_ids": [
+          "case-0000:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0001",
+        "accepted": true,
+        "text": "case-0001: ranked here on [case-0001:severity_class]",
+        "cited_ids": [
+          "case-0001:severity_class"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0004",
+        "accepted": true,
+        "text": "case-0004: ranked here on [case-0004:velocity]",
+        "cited_ids": [
+          "case-0004:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0003",
+        "accepted": true,
+        "text": "case-0003: ranked here on [case-0003:velocity]",
+        "cited_ids": [
+          "case-0003:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0005",
+        "accepted": true,
+        "text": "case-0005: ranked here on [case-0005:velocity]",
+        "cited_ids": [
+          "case-0005:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0007",
+        "accepted": true,
+        "text": "case-0007: ranked here on [case-0007:velocity]",
+        "cited_ids": [
+          "case-0007:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0006",
+        "accepted": true,
+        "text": "case-0006: ranked here on [case-0006:spread]",
+        "cited_ids": [
+          "case-0006:spread"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0002",
+        "accepted": true,
+        "text": "case-0002: ranked here on [case-0002:spread]",
+        "cited_ids": [
+          "case-0002:spread"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0010",
+        "accepted": true,
+        "text": "case-0010: ranked here on [case-0010:severity_class]",
+        "cited_ids": [
+          "case-0010:severity_class"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0020",
+        "accepted": true,
+        "text": "case-0020: ranked here on [case-0020:severity_class]",
+        "cited_ids": [
+          "case-0020:severity_class"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0021",
+        "accepted": true,
+        "text": "case-0021: ranked here on [case-0021:velocity]",
+        "cited_ids": [
+          "case-0021:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0022",
+        "accepted": true,
+        "text": "case-0022: ranked here on [case-0022:spread]",
+        "cited_ids": [
+          "case-0022:spread"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0011",
+        "accepted": true,
+        "text": "case-0011: ranked here on [case-0011:spread]",
+        "cited_ids": [
+          "case-0011:spread"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0018",
+        "accepted": true,
+        "text": "case-0018: ranked here on [case-0018:velocity]",
+        "cited_ids": [
+          "case-0018:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0017",
+        "accepted": true,
+        "text": "case-0017: ranked here on [case-0017:velocity]",
+        "cited_ids": [
+          "case-0017:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0016",
+        "accepted": true,
+        "text": "case-0016: ranked here on [case-0016:velocity]",
+        "cited_ids": [
+          "case-0016:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0019",
+        "accepted": true,
+        "text": "case-0019: ranked here on [case-0019:velocity]",
+        "cited_ids": [
+          "case-0019:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0013",
+        "accepted": true,
+        "text": "case-0013: ranked here on [case-0013:velocity]",
+        "cited_ids": [
+          "case-0013:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0015",
+        "accepted": true,
+        "text": "case-0015: ranked here on [case-0015:velocity]",
+        "cited_ids": [
+          "case-0015:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0014",
+        "accepted": true,
+        "text": "case-0014: ranked here on [case-0014:velocity]",
+        "cited_ids": [
+          "case-0014:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      },
+      {
+        "case_id": "case-0012",
+        "accepted": true,
+        "text": "case-0012: ranked here on [case-0012:velocity]",
+        "cited_ids": [
+          "case-0012:velocity"
+        ],
+        "reason": null,
+        "unresolvable_ids": []
+      }
+    ]
+  }
+}

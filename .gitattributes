@@ -14,3 +14,12 @@
 # honest, and an independent check that only works on one platform is not one.
 prompts/*.txt -text
 prompts/manifest.json -text
+
+# The same rule for the same reason, one directory over. STEP-08 D1's
+# prompt-eval example carries its own registry (a copy of the fleet's prompts
+# plus one deliberately degraded candidate), and those files are content-
+# addressed by exactly the same scheme. Caught while staging the examples: git
+# reported it would convert all six on checkout, which is the STEP-06 defect
+# reappearing in a new location rather than a new defect.
+examples/registries/**/*.txt -text
+examples/registries/**/manifest.json -text

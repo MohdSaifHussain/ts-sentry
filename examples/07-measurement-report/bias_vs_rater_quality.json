@@ -1,0 +1,94 @@
+{
+  "name": "bias_vs_rater_quality",
+  "note": "The headline interval covers sampling error only, replicating the published method: 'the confidence intervals do not take into account rater quality'. Compare each bias series against its half-width series: the bias grows and the half-width does not follow it. Where covers_truth is 0, a nominally 95% interval has missed the true value, and the cause is rater error rather than anything wrong with the interval. Rater error is modelled here as independent per rater; correlated error, such as a policy misreading a whole panel shares, is not modelled and would not be suppressed by majority voting.",
+  "points": [
+    {
+      "label": "",
+      "values": {
+        "bias_panel_1": -6.95433e-05,
+        "bias_panel_3": -6.95433e-05,
+        "covers_truth_panel_1": 1.0,
+        "covers_truth_panel_3": 1.0,
+        "estimate_panel_1": 0.0008889231,
+        "estimate_panel_3": 0.0008889231,
+        "half_width_panel_1": 0.0004441844,
+        "half_width_panel_3": 0.0004441844,
+        "true_vvr": 0.0009584665
+      },
+      "x": 1.0
+    },
+    {
+      "label": "",
+      "values": {
+        "bias_panel_1": 0.001152756,
+        "bias_panel_3": -6.95433e-05,
+        "covers_truth_panel_1": 0.0,
+        "covers_truth_panel_3": 1.0,
+        "estimate_panel_1": 0.0021112225,
+        "estimate_panel_3": 0.0008889231,
+        "half_width_panel_1": 0.0006843796,
+        "half_width_panel_3": 0.0004441844,
+        "true_vvr": 0.0009584665
+      },
+      "x": 0.999
+    },
+    {
+      "label": "",
+      "values": {
+        "bias_panel_1": 0.0113755522,
+        "bias_panel_3": 4.15763e-05,
+        "covers_truth_panel_1": 0.0,
+        "covers_truth_panel_3": 1.0,
+        "estimate_panel_1": 0.0123340187,
+        "estimate_panel_3": 0.0010000428,
+        "half_width_panel_1": 0.0016456501,
+        "half_width_panel_3": 0.0004711719,
+        "true_vvr": 0.0009584665
+      },
+      "x": 0.99
+    },
+    {
+      "label": "",
+      "values": {
+        "bias_panel_1": 0.0493752578,
+        "bias_panel_3": 0.0074852031,
+        "covers_truth_panel_1": 0.0,
+        "covers_truth_panel_3": 0.0,
+        "estimate_panel_1": 0.0503337243,
+        "estimate_panel_3": 0.0084436696,
+        "half_width_panel_1": 0.003259835,
+        "half_width_panel_3": 0.0013640239,
+        "true_vvr": 0.0009584665
+      },
+      "x": 0.95
+    },
+    {
+      "label": "",
+      "values": {
+        "bias_panel_1": 0.0999287981,
+        "bias_panel_3": 0.0282629343,
+        "covers_truth_panel_1": 0.0,
+        "covers_truth_panel_3": 0.0,
+        "estimate_panel_1": 0.1008872645,
+        "estimate_panel_3": 0.0292214008,
+        "half_width_panel_1": 0.0044904397,
+        "half_width_panel_3": 0.0025110771,
+        "true_vvr": 0.0009584665
+      },
+      "x": 0.9
+    }
+  ],
+  "series": [
+    "bias_panel_1",
+    "bias_panel_3",
+    "covers_truth_panel_1",
+    "covers_truth_panel_3",
+    "estimate_panel_1",
+    "estimate_panel_3",
+    "half_width_panel_1",
+    "half_width_panel_3",
+    "true_vvr"
+  ],
+  "x_label": "rater specificity (P(calls it fine | it is fine))",
+  "y_label": "share of views"
+}

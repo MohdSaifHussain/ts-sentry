@@ -1,0 +1,84 @@
+{
+  "activations": [
+    {
+      "action": "activate",
+      "content_digest": "459d5860b7feb1eeecbc4586d814ec9c50d19890a8697d0502107055cb0003a8",
+      "reason": "STEP-06 D1: initial activation of the fleet's v1 prompts. The three shipped prompts are recorded at the bytes they have run under since their own phase; classify.threat_class.v1 is new in this phase and has no session consumer.",
+      "seq": 0,
+      "task": "triage.rationale",
+      "timestamp_ist": "2026-08-01T12:00:00+05:30"
+    },
+    {
+      "action": "activate",
+      "content_digest": "f67159a912aaa50ed2d064f000c95eb499ca7d8e3b48755f97db5e28146d40b1",
+      "reason": "STEP-06 D1: initial activation of the fleet's v1 prompts. The three shipped prompts are recorded at the bytes they have run under since their own phase; classify.threat_class.v1 is new in this phase and has no session consumer.",
+      "seq": 1,
+      "task": "evidence.pivot",
+      "timestamp_ist": "2026-08-01T12:00:00+05:30"
+    },
+    {
+      "action": "activate",
+      "content_digest": "ff0bce78a2ddf27a774216151c40136f97ada39ac5c902efb0b376ddda82e29f",
+      "reason": "STEP-06 D1: initial activation of the fleet's v1 prompts. The three shipped prompts are recorded at the bytes they have run under since their own phase; classify.threat_class.v1 is new in this phase and has no session consumer.",
+      "seq": 2,
+      "task": "memo.statement",
+      "timestamp_ist": "2026-08-01T12:00:00+05:30"
+    },
+    {
+      "action": "activate",
+      "content_digest": "71610d32c1e6c5b0f8b22b6ad8bf8299231c8b670169aa169d02bd94b5214470",
+      "reason": "STEP-06 D1: initial activation of the fleet's v1 prompts. The three shipped prompts are recorded at the bytes they have run under since their own phase; classify.threat_class.v1 is new in this phase and has no session consumer.",
+      "seq": 3,
+      "task": "classify.threat_class",
+      "timestamp_ist": "2026-08-01T12:00:00+05:30"
+    }
+  ],
+  "schema": "ts-sentry/prompt-registry/v1",
+  "versions": [
+    {
+      "content_digest": "459d5860b7feb1eeecbc4586d814ec9c50d19890a8697d0502107055cb0003a8",
+      "created_ist": "2026-08-01T12:00:00+05:30",
+      "parent": null,
+      "prompt_id": "triage.rationale.v1",
+      "system_prompt_sha256": "08d17a56e73d42b89ae40a43a965aca9c01049f23ca69d12b4b201a098b24123",
+      "task": "triage.rationale",
+      "version": "v1"
+    },
+    {
+      "content_digest": "f67159a912aaa50ed2d064f000c95eb499ca7d8e3b48755f97db5e28146d40b1",
+      "created_ist": "2026-08-01T12:00:00+05:30",
+      "parent": null,
+      "prompt_id": "evidence.pivot.v1",
+      "system_prompt_sha256": "f5d63730055d64543a7fcd699e4c0766272d6ee5a78a9be6d5008d26b9ea30b4",
+      "task": "evidence.pivot",
+      "version": "v1"
+    },
+    {
+      "content_digest": "ff0bce78a2ddf27a774216151c40136f97ada39ac5c902efb0b376ddda82e29f",
+      "created_ist": "2026-08-01T12:00:00+05:30",
+      "parent": null,
+      "prompt_id": "memo.statement.v1",
+      "system_prompt_sha256": "a9f46df7a14e3ca80f51cd09b4e4687b7af100ebea3c01e62e723b65a890d85c",
+      "task": "memo.statement",
+      "version": "v1"
+    },
+    {
+      "content_digest": "71610d32c1e6c5b0f8b22b6ad8bf8299231c8b670169aa169d02bd94b5214470",
+      "created_ist": "2026-08-01T12:00:00+05:30",
+      "parent": null,
+      "prompt_id": "classify.threat_class.v1",
+      "system_prompt_sha256": "ebcc9e0ace145feda996471f2ef05da17836aa37d99e89cbd700b16698748ef2",
+      "task": "classify.threat_class",
+      "version": "v1"
+    },
+    {
+      "content_digest": "334dd1b70e9ee0d722d4ee25e19192cd7334da93aaf1c6ae65d9ec7fa89bd61d",
+      "created_ist": "2026-08-01T12:00:00+05:30",
+      "parent": "71610d32c1e6c5b0f8b22b6ad8bf8299231c8b670169aa169d02bd94b5214470",
+      "prompt_id": "classify.threat_class.v2",
+      "system_prompt_sha256": "8731b856bfbfcb99b4bf749330730101ba8f78ace5c3a0daf05966dac5f29d74",
+      "task": "classify.threat_class",
+      "version": "v2"
+    }
+  ]
+}

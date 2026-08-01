@@ -1,0 +1,161 @@
+{
+  "figures": [
+    "ci_width_vs_sample_size.png",
+    "bias_vs_rater_quality.png",
+    "policy_scope_expansion.png"
+  ],
+  "honest_limits": [
+    "The baseline VVR estimand is narrow by construction and narrower still on this corpus. A view counts as violative only when the viewed video's own label is a non-benign, non-spam class, which is what the published method judges. On the seed-42 build that is 18 views out of 18,780, all of them from T-02 and T-07; T-04 receives no view events at all.",
+    "The 95% interval covers sampling error only. This replicates the published method, which states that its confidence intervals do not take into account rater quality. Rater error is modelled separately and reported as a bias curve, and at realistic rater accuracy that bias is larger than the interval.",
+    "The normal approximation is invalid at every realistic sample size on this corpus and becomes valid only at a full census. Every estimate reports the failed condition rather than suppressing it.",
+    "Only two of the five risk strata hold any views, because viewed videos take just two distinct observable profiles. No choice of band cut points can populate the others.",
+    "The risk proxy is an analog of the published method's classifier-score stratification, built from content-provenance features. It is not a detector, has no measured precision or recall, and must not be read as a detection result.",
+    "Rater error is modelled as independent per rater. Correlated error, such as a policy misreading a whole panel shares, is not modelled and would not be suppressed by majority voting.",
+    "No published per-case review-time benchmark exists. Every figure in the analyst-minutes section is a stated assumption, and the section reports a sensitivity range rather than a result.",
+    "Evidence recovery plateaus. The metadata-pivot strategy recovers the shared-registration-linked core and provably cannot reach ring members connected only by looser signals: on t02_chan_000_000 it reaches 4 of 8 members and the budget curve is flat from 5 pivots onward. That is a bounded limit of a metadata-pivot strategy rather than a defect, and it is the same shape as the structural recovery ceiling already reported per threat class.",
+    "The generator's planted threat volume is fixed and does not vary with scale, so every rate above is bounded by the corpus rather than by the method. This bound comes from the data and no parameter can move it.",
+    "Figures are byte-identical across two renders in one environment only. Cross-version stability is not claimed. The reproducibility artifact is the curve data in JSON and CSV."
+  ],
+  "platform_lens": {
+    "arms": [
+      {
+        "is_faithful_vvr": true,
+        "point": 0.0008889231045588103,
+        "scope": "arm_a_class_expansion"
+      },
+      {
+        "is_faithful_vvr": false,
+        "point": 0.03122360887891488,
+        "scope": "arm_b_comment_attribution"
+      }
+    ],
+    "is_faithful_vvr": true,
+    "lower": 0.0007202352657841205,
+    "point": 0.0009529501411089903,
+    "population": 18780,
+    "sampled": 9000,
+    "scope": "baseline",
+    "upper": 0.0011856650164338602,
+    "validity_holds": false
+  },
+  "session_id": "session-2d3ca01015f8",
+  "stamp": {
+    "corpus_sha256": "9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2",
+    "corpus_version": "1.0.0",
+    "dataset_digest": "060c60d71ac4acf67046f49e7fb581160937355ce1f88c3a2b3d118f48860e1d",
+    "dataset_scale": 1,
+    "dataset_seed": 42,
+    "generated_ts_ist": "2026-08-01T21:07:45.213459+05:30",
+    "git_sha": "63565420eb8c48f0c106465e123ac7d10c2b00a9",
+    "measurement_seed": 42,
+    "prompt_versions": {
+      "classify.threat_class": "71610d32c1e6c5b0f8b22b6ad8bf8299231c8b670169aa169d02bd94b5214470",
+      "evidence.pivot": "f67159a912aaa50ed2d064f000c95eb499ca7d8e3b48755f97db5e28146d40b1",
+      "memo.statement": "ff0bce78a2ddf27a774216151c40136f97ada39ac5c902efb0b376ddda82e29f",
+      "triage.rationale": "459d5860b7feb1eeecbc4586d814ec9c50d19890a8697d0502107055cb0003a8"
+    }
+  },
+  "workflow_lens": {
+    "analyst_minutes": {
+      "assisted_total_minutes": 22.0,
+      "assumptions": [
+        {
+          "assisted_minutes": 1.0,
+          "baseline_minutes": 4.0,
+          "delta_minutes": 3.0,
+          "rationale": "Assumed. The workbench presents a ranked queue with its score components visible, against reading an unordered flagged list. No timing was collected for either arm.",
+          "source": "assumption",
+          "step": "triage and case selection"
+        },
+        {
+          "assisted_minutes": 8.0,
+          "baseline_minutes": 25.0,
+          "delta_minutes": 17.0,
+          "rationale": "Assumed, and the least defensible line in this table. Baseline stands for manual querying across six tables; assisted stands for a bounded pivot sequence. The Phase 4 finding that the scripted strategy does not traverse means the assisted arm here describes an intended capability.",
+          "source": "assumption",
+          "step": "evidence gathering"
+        },
+        {
+          "assisted_minutes": 7.0,
+          "baseline_minutes": 20.0,
+          "delta_minutes": 13.0,
+          "rationale": "Assumed. Assisted covers reviewing a drafted memo and its citations rather than writing one. Review of a draft is not free and the assumed figure is deliberately not close to zero.",
+          "source": "assumption",
+          "step": "memo drafting"
+        },
+        {
+          "assisted_minutes": 3.0,
+          "baseline_minutes": 8.0,
+          "delta_minutes": 5.0,
+          "rationale": "Assumed. The citation resolver checks quoted excerpts against the corpus, so the assisted arm is the analyst confirming a machine check rather than performing the lookup.",
+          "source": "assumption",
+          "step": "citation and policy verification"
+        },
+        {
+          "assisted_minutes": 3.0,
+          "baseline_minutes": 3.0,
+          "delta_minutes": 0.0,
+          "rationale": "Assumed identical, deliberately. ENFORCE is human-only by construction, so this step cannot be assisted and must not appear to contribute to any delta.",
+          "source": "assumption",
+          "step": "human decision and sign-off"
+        }
+      ],
+      "baseline_total_minutes": 60.0,
+      "cases": 1,
+      "delta_minutes": 38.0,
+      "kind": "modelled",
+      "no_benchmark_note": "No published per-case review-time benchmark exists to compare these figures against. TSPA, which defines the metric, notes that review time 'may include time waiting in queues or going through automatic processes, or only the time when the reviewer is actively working on a specific review', and warns that 'there is considerable industry variation in both precise definitions and naming conventions'. Every minute figure below is a stated assumption, not a measurement, and the delta is a property of the assumption table.",
+      "sensitivity": [
+        {
+          "break_even_assisted_minutes": 4.0,
+          "delta_high": 38.5,
+          "delta_low": 37.5,
+          "step": "triage and case selection",
+          "swing": 1.0
+        },
+        {
+          "break_even_assisted_minutes": 25.0,
+          "delta_high": 42.0,
+          "delta_low": 34.0,
+          "step": "evidence gathering",
+          "swing": 8.0
+        },
+        {
+          "break_even_assisted_minutes": 20.0,
+          "delta_high": 41.5,
+          "delta_low": 34.5,
+          "step": "memo drafting",
+          "swing": 7.0
+        },
+        {
+          "break_even_assisted_minutes": 8.0,
+          "delta_high": 39.5,
+          "delta_low": 36.5,
+          "step": "citation and policy verification",
+          "swing": 3.0
+        },
+        {
+          "break_even_assisted_minutes": 3.0,
+          "delta_high": 39.5,
+          "delta_low": 36.5,
+          "step": "human decision and sign-off",
+          "swing": 3.0
+        }
+      ],
+      "variation": 0.5
+    },
+    "governance": {
+      "gate_rejections": 0,
+      "human_decisions": 0,
+      "injection_signals": 0,
+      "kind": "measured",
+      "mandate_violation_attempts": 0,
+      "rejected_hops": 0,
+      "untested": true,
+      "verification_failures": 0,
+      "verification_pass_rate": 1.0,
+      "verification_passes": 2
+    },
+    "recovery": null
+  }
+}

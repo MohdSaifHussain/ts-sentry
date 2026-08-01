@@ -1,0 +1,14 @@
+{
+  "command": "ts-sentry run-session --agent memo --seed-dataset BUILD --pack ../04-evidence-t07-cluster/evidence_pack.json --out . --stub-mode overclaim",
+  "dataset": {
+    "seed": 42,
+    "scale": 1,
+    "built_by": "ts-sentry build-dataset"
+  },
+  "analyst_id": "saif",
+  "regenerated_by": "python examples/regenerate.py",
+  "agent": "memo",
+  "pack": "../04-evidence-t07-cluster/evidence_pack.json",
+  "memo_id": "memo-0001",
+  "stub_mode": "overclaim"
+}

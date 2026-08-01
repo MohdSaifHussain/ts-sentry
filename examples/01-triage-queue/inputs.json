@@ -1,0 +1,13 @@
+{
+  "command": "ts-sentry run-session --agent triage --seed-dataset BUILD --out .",
+  "dataset": {
+    "seed": 42,
+    "scale": 1,
+    "built_by": "ts-sentry build-dataset"
+  },
+  "analyst_id": "saif",
+  "regenerated_by": "python examples/regenerate.py",
+  "agent": "triage",
+  "limit": 25,
+  "stub_mode": "faithful"
+}

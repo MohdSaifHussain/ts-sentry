@@ -1,0 +1,345 @@
+{
+  "caveats": {
+    "precision": "Precision here is not a deployment estimate. This eval set deliberately over-samples rare classes against a platform that is more than 97% benign (ARCHITECTURE 6.1). Per-class recall is a within-class quantity and is unaffected by that choice; precision moves with prevalence and is not.",
+    "resolution": "This gate detects a class collapse, not a few-point drift. The generator plants 4 to 12 entities per threat class regardless of --scale, so a class's recall moves in steps of a quarter to a twelfth and no tolerance setting can resolve anything finer. The bound is a property of the data, not of the gate."
+  },
+  "report": {
+    "adapter_id": "stub/faithful",
+    "bootstrap_seed": 42,
+    "candidate": {
+      "content_digest": "334dd1b70e9ee0d722d4ee25e19192cd7334da93aaf1c6ae65d9ec7fa89bd61d",
+      "macro_f1": 0.050676,
+      "per_class": [
+        {
+          "f1": 0.405405,
+          "precision": 0.254237,
+          "predicted": 59,
+          "recall": 1.0,
+          "support": 15,
+          "threat_class": "benign",
+          "true_positives": 15
+        },
+        {
+          "f1": 0.0,
+          "precision": 0.0,
+          "predicted": 0,
+          "recall": 0.0,
+          "support": 6,
+          "threat_class": "t01_comment_spam_ring",
+          "true_positives": 0
+        },
+        {
+          "f1": 0.0,
+          "precision": 0.0,
+          "predicted": 0,
+          "recall": 0.0,
+          "support": 12,
+          "threat_class": "t02_fake_engagement_network",
+          "true_positives": 0
+        },
+        {
+          "f1": 0.0,
+          "precision": 0.0,
+          "predicted": 0,
+          "recall": 0.0,
+          "support": 6,
+          "threat_class": "t03_off_platform_diversion",
+          "true_positives": 0
+        },
+        {
+          "f1": 0.0,
+          "precision": 0.0,
+          "predicted": 0,
+          "recall": 0.0,
+          "support": 4,
+          "threat_class": "t04_undisclosed_synthetic_media",
+          "true_positives": 0
+        },
+        {
+          "f1": 0.0,
+          "precision": 0.0,
+          "predicted": 0,
+          "recall": 0.0,
+          "support": 4,
+          "threat_class": "t05_ai_persona_authority",
+          "true_positives": 0
+        },
+        {
+          "f1": 0.0,
+          "precision": 0.0,
+          "predicted": 0,
+          "recall": 0.0,
+          "support": 6,
+          "threat_class": "t06_slop_farm",
+          "true_positives": 0
+        },
+        {
+          "f1": 0.0,
+          "precision": 0.0,
+          "predicted": 0,
+          "recall": 0.0,
+          "support": 6,
+          "threat_class": "t07_coordinated_influence_op",
+          "true_positives": 0
+        }
+      ],
+      "unparseable_answers": 0
+    },
+    "deltas": [
+      {
+        "candidate_recall": 1.0,
+        "ci_half_width": 0.166667,
+        "ci_lower": 0.0,
+        "ci_upper": 0.333333,
+        "confidence": 0.95,
+        "delta": 0.133333,
+        "discordant_items": 2,
+        "incumbent_recall": 0.866667,
+        "resamples": 2000,
+        "support": 15,
+        "threat_class": "benign"
+      },
+      {
+        "candidate_recall": 0.0,
+        "ci_half_width": 0.333333,
+        "ci_lower": -1.0,
+        "ci_upper": -0.333333,
+        "confidence": 0.95,
+        "delta": -0.666667,
+        "discordant_items": 4,
+        "incumbent_recall": 0.666667,
+        "resamples": 2000,
+        "support": 6,
+        "threat_class": "t01_comment_spam_ring"
+      },
+      {
+        "candidate_recall": 0.0,
+        "ci_half_width": 0.25,
+        "ci_lower": -0.75,
+        "ci_upper": -0.25,
+        "confidence": 0.95,
+        "delta": -0.5,
+        "discordant_items": 6,
+        "incumbent_recall": 0.5,
+        "resamples": 2000,
+        "support": 12,
+        "threat_class": "t02_fake_engagement_network"
+      },
+      {
+        "candidate_recall": 0.0,
+        "ci_half_width": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "confidence": 0.95,
+        "delta": 0.0,
+        "discordant_items": 0,
+        "incumbent_recall": 0.0,
+        "resamples": 2000,
+        "support": 6,
+        "threat_class": "t03_off_platform_diversion"
+      },
+      {
+        "candidate_recall": 0.0,
+        "ci_half_width": 0.5,
+        "ci_lower": -1.0,
+        "ci_upper": 0.0,
+        "confidence": 0.95,
+        "delta": -0.5,
+        "discordant_items": 2,
+        "incumbent_recall": 0.5,
+        "resamples": 2000,
+        "support": 4,
+        "threat_class": "t04_undisclosed_synthetic_media"
+      },
+      {
+        "candidate_recall": 0.0,
+        "ci_half_width": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "confidence": 0.95,
+        "delta": 0.0,
+        "discordant_items": 0,
+        "incumbent_recall": 0.0,
+        "resamples": 2000,
+        "support": 4,
+        "threat_class": "t05_ai_persona_authority"
+      },
+      {
+        "candidate_recall": 0.0,
+        "ci_half_width": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "confidence": 0.95,
+        "delta": 0.0,
+        "discordant_items": 0,
+        "incumbent_recall": 0.0,
+        "resamples": 2000,
+        "support": 6,
+        "threat_class": "t06_slop_farm"
+      },
+      {
+        "candidate_recall": 0.0,
+        "ci_half_width": 0.333333,
+        "ci_lower": -0.833333,
+        "ci_upper": -0.166667,
+        "confidence": 0.95,
+        "delta": -0.5,
+        "discordant_items": 3,
+        "incumbent_recall": 0.5,
+        "resamples": 2000,
+        "support": 6,
+        "threat_class": "t07_coordinated_influence_op"
+      }
+    ],
+    "incumbent": {
+      "content_digest": "71610d32c1e6c5b0f8b22b6ad8bf8299231c8b670169aa169d02bd94b5214470",
+      "macro_f1": 0.337602,
+      "per_class": [
+        {
+          "f1": 0.634146,
+          "precision": 0.5,
+          "predicted": 26,
+          "recall": 0.866667,
+          "support": 15,
+          "threat_class": "benign",
+          "true_positives": 13
+        },
+        {
+          "f1": 0.8,
+          "precision": 1.0,
+          "predicted": 4,
+          "recall": 0.666667,
+          "support": 6,
+          "threat_class": "t01_comment_spam_ring",
+          "true_positives": 4
+        },
+        {
+          "f1": 0.666667,
+          "precision": 1.0,
+          "predicted": 6,
+          "recall": 0.5,
+          "support": 12,
+          "threat_class": "t02_fake_engagement_network",
+          "true_positives": 6
+        },
+        {
+          "f1": 0.0,
+          "precision": 0.0,
+          "predicted": 0,
+          "recall": 0.0,
+          "support": 6,
+          "threat_class": "t03_off_platform_diversion",
+          "true_positives": 0
+        },
+        {
+          "f1": 0.266667,
+          "precision": 0.181818,
+          "predicted": 11,
+          "recall": 0.5,
+          "support": 4,
+          "threat_class": "t04_undisclosed_synthetic_media",
+          "true_positives": 2
+        },
+        {
+          "f1": 0.0,
+          "precision": 0.0,
+          "predicted": 0,
+          "recall": 0.0,
+          "support": 4,
+          "threat_class": "t05_ai_persona_authority",
+          "true_positives": 0
+        },
+        {
+          "f1": 0.0,
+          "precision": 0.0,
+          "predicted": 0,
+          "recall": 0.0,
+          "support": 6,
+          "threat_class": "t06_slop_farm",
+          "true_positives": 0
+        },
+        {
+          "f1": 0.333333,
+          "precision": 0.25,
+          "predicted": 12,
+          "recall": 0.5,
+          "support": 6,
+          "threat_class": "t07_coordinated_influence_op",
+          "true_positives": 3
+        }
+      ],
+      "unparseable_answers": 0
+    },
+    "item_count": 59,
+    "items_sha256": "ed9e86354f05550db6c3b9445b293fcac283415641bb4416f6a2ea3128e9a77c",
+    "labels_sha256": "0e69188afa1245dc7c2c1944990f63bc68a0983f862182aa40667dfbaf79e8db",
+    "model_id": "deterministic-stub-v1",
+    "task": "classify.threat_class"
+  },
+  "resolution": {
+    "benign": 0.166667,
+    "t01_comment_spam_ring": 0.333333,
+    "t02_fake_engagement_network": 0.25,
+    "t03_off_platform_diversion": 0.0,
+    "t04_undisclosed_synthetic_media": 0.5,
+    "t05_ai_persona_authority": 0.0,
+    "t06_slop_farm": 0.0,
+    "t07_coordinated_influence_op": 0.333333
+  },
+  "stamp": {
+    "dataset_scale": 1,
+    "dataset_seed": 42,
+    "git_sha": "63565420eb8c48f0c106465e123ac7d10c2b00a9",
+    "macro_f1_drop": 0.1,
+    "max_unparseable": 0,
+    "recall_drop": 0.25,
+    "tolerances_sha256": "78e2b8fb0db8a7a6147d03208d0a7c0e2fc7367971d167baa953c677f4f5f3fb"
+  },
+  "verdict": {
+    "breaches": [
+      {
+        "bound": -1.0,
+        "code": "recall_regression",
+        "detail": "t01_comment_spam_ring: recall fell 0.667 (0.667 to 0.000) on 6 item(s), and the 95% interval lower bound -1.000 is beyond the tolerated drop of 0.250",
+        "observed": -0.666667,
+        "threat_class": "t01_comment_spam_ring",
+        "tolerance": 0.25
+      },
+      {
+        "bound": -0.75,
+        "code": "recall_regression",
+        "detail": "t02_fake_engagement_network: recall fell 0.500 (0.500 to 0.000) on 12 item(s), and the 95% interval lower bound -0.750 is beyond the tolerated drop of 0.250",
+        "observed": -0.5,
+        "threat_class": "t02_fake_engagement_network",
+        "tolerance": 0.25
+      },
+      {
+        "bound": -1.0,
+        "code": "recall_regression",
+        "detail": "t04_undisclosed_synthetic_media: recall fell 0.500 (0.500 to 0.000) on 4 item(s), and the 95% interval lower bound -1.000 is beyond the tolerated drop of 0.250",
+        "observed": -0.5,
+        "threat_class": "t04_undisclosed_synthetic_media",
+        "tolerance": 0.25
+      },
+      {
+        "bound": -0.833333,
+        "code": "recall_regression",
+        "detail": "t07_coordinated_influence_op: recall fell 0.500 (0.500 to 0.000) on 6 item(s), and the 95% interval lower bound -0.833 is beyond the tolerated drop of 0.250",
+        "observed": -0.5,
+        "threat_class": "t07_coordinated_influence_op",
+        "tolerance": 0.25
+      },
+      {
+        "bound": -0.286926,
+        "code": "macro_f1_regression",
+        "detail": "macro F1 fell 0.287 (0.338 to 0.051), beyond the tolerated 0.100. Reported as a point estimate: this is an aggregate over classes rather than a per-item quantity, so the paired item bootstrap does not apply to it",
+        "observed": -0.286926,
+        "threat_class": null,
+        "tolerance": 0.1
+      }
+    ],
+    "decision": "refused",
+    "task": "classify.threat_class",
+    "tolerances_sha256": "78e2b8fb0db8a7a6147d03208d0a7c0e2fc7367971d167baa953c677f4f5f3fb"
+  }
+}

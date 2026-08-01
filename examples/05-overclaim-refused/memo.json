@@ -1,0 +1,133 @@
+{
+  "session_id": "session-3b6172e035d7",
+  "corpus_version": "1.0.0",
+  "corpus_sha256": "9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2",
+  "pack_digest": "d40db2ef3e60edb104d1f4282617d260ba9b771523b8cfc8a4b547a8e3dc3d0e",
+  "turn": {
+    "verified": false,
+    "close_reason": null,
+    "detail": "8 drafting attempt(s); memo remains DRAFT",
+    "attempts": 8,
+    "rejected_attempts": 8,
+    "distinct_defects_caught": 1,
+    "agent_revised_after_feedback": false,
+    "injection_signals": 0,
+    "attempt_log": [
+      {
+        "attempt": 1,
+        "outcome": "gate_rejected",
+        "detail": "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999",
+        "flagged": [
+          "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999"
+        ]
+      },
+      {
+        "attempt": 2,
+        "outcome": "gate_rejected",
+        "detail": "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999",
+        "flagged": [
+          "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999"
+        ]
+      },
+      {
+        "attempt": 3,
+        "outcome": "gate_rejected",
+        "detail": "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999",
+        "flagged": [
+          "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999"
+        ]
+      },
+      {
+        "attempt": 4,
+        "outcome": "gate_rejected",
+        "detail": "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999",
+        "flagged": [
+          "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999"
+        ]
+      },
+      {
+        "attempt": 5,
+        "outcome": "gate_rejected",
+        "detail": "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999",
+        "flagged": [
+          "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999"
+        ]
+      },
+      {
+        "attempt": 6,
+        "outcome": "gate_rejected",
+        "detail": "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999",
+        "flagged": [
+          "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999"
+        ]
+      },
+      {
+        "attempt": 7,
+        "outcome": "gate_rejected",
+        "detail": "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999",
+        "flagged": [
+          "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999"
+        ]
+      },
+      {
+        "attempt": 8,
+        "outcome": "gate_rejected",
+        "detail": "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999",
+        "flagged": [
+          "sentence 0 (fact, unresolvable_evidence_id): 'The subject entered this investigation as its seed [prov-9999].'; the pack does not carry prov-9999"
+        ]
+      }
+    ],
+    "memo": {
+      "memo_id": "memo-0001",
+      "case_id": "case-0001",
+      "subject_id": "t07_chan_000",
+      "pack_digest": "d40db2ef3e60edb104d1f4282617d260ba9b771523b8cfc8a4b547a8e3dc3d0e",
+      "corpus_version": "1.0.0",
+      "corpus_sha256": "9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2",
+      "measure": "content_demoted",
+      "automated_means": {
+        "detection_automated": true,
+        "decision": "partially_automated",
+        "drafted_by": "stub/overclaim:deterministic-stub-v1"
+      },
+      "status": "draft",
+      "sentences": [
+        {
+          "index": 0,
+          "role": "fact",
+          "text": "The subject entered this investigation as its seed [prov-9999].",
+          "evidence_ids": [
+            "prov-9999"
+          ],
+          "citation": null
+        },
+        {
+          "index": 1,
+          "role": "policy_ground",
+          "text": "This conduct is incompatible with the platform's spam policy.",
+          "evidence_ids": [],
+          "citation": {
+            "content_digest": "86ea53c9b93053c7e053ce3ec65decf54fe28387b489d9fea529582e823ea9a3",
+            "anchor_id": "comment-spam",
+            "excerpt": "Comment spam: Using high-volume,"
+          }
+        },
+        {
+          "index": 2,
+          "role": "measure",
+          "text": "The proposed measure is content_demoted.",
+          "evidence_ids": [],
+          "citation": null
+        },
+        {
+          "index": 3,
+          "role": "redress",
+          "text": "The channel owner may appeal through the internal complaint-handling system, and may seek out-of-court dispute settlement.",
+          "evidence_ids": [],
+          "citation": null
+        }
+      ]
+    }
+  }
+}

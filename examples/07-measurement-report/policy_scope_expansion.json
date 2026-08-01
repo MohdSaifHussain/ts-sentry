@@ -1,0 +1,48 @@
+{
+  "name": "policy_scope_expansion",
+  "note": "Arm A widens the class set and keeps the video-judges-itself attribution. It is exactly null on this corpus because the classes it adds carry no views, and the null is reported rather than suppressed. Arm B changes the attribution rule so a video counts when it hosts a comment-spam-ring comment; it moves the rate and is where the required scope-effect direction comes from. Arm B is NOT a VVR: the published method judges the video itself, not comments hosted on it, so arm B illustrates a policy-scope question rather than extending the replication.",
+  "points": [
+    {
+      "label": "baseline",
+      "values": {
+        "estimate": 0.0008889231,
+        "is_faithful_vvr": 1.0,
+        "lower": 0.0004447387,
+        "true_rate": 0.0009584665,
+        "upper": 0.0013331075
+      },
+      "x": 0.0
+    },
+    {
+      "label": "arm_a_class_expansion",
+      "values": {
+        "estimate": 0.0008889231,
+        "is_faithful_vvr": 1.0,
+        "lower": 0.0004447387,
+        "true_rate": 0.0009584665,
+        "upper": 0.0013331075
+      },
+      "x": 1.0
+    },
+    {
+      "label": "arm_b_comment_attribution",
+      "values": {
+        "estimate": 0.0312236089,
+        "is_faithful_vvr": 0.0,
+        "lower": 0.0286496077,
+        "true_rate": 0.0310969116,
+        "upper": 0.03379761
+      },
+      "x": 2.0
+    }
+  ],
+  "series": [
+    "estimate",
+    "is_faithful_vvr",
+    "lower",
+    "true_rate",
+    "upper"
+  ],
+  "x_label": "policy scope",
+  "y_label": "share of views judged violative"
+}

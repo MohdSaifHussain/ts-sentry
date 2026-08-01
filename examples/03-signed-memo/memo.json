@@ -1,0 +1,75 @@
+{
+  "session_id": "session-a69eea25ee06",
+  "corpus_version": "1.0.0",
+  "corpus_sha256": "9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2",
+  "pack_digest": "9dfc0932469d64fd3838a662335470d268ee38e6691e67d4792ffa79c8adde97",
+  "turn": {
+    "verified": true,
+    "close_reason": null,
+    "detail": "1 drafting attempt(s); memo verified and awaiting signature",
+    "attempts": 1,
+    "rejected_attempts": 0,
+    "distinct_defects_caught": 0,
+    "agent_revised_after_feedback": false,
+    "injection_signals": 0,
+    "attempt_log": [
+      {
+        "attempt": 1,
+        "outcome": "verified",
+        "detail": "4 sentences passed the RECOMMEND gate",
+        "flagged": []
+      }
+    ],
+    "memo": {
+      "memo_id": "memo-0001",
+      "case_id": "case-0000",
+      "subject_id": "t02_chan_000_000",
+      "pack_digest": "9dfc0932469d64fd3838a662335470d268ee38e6691e67d4792ffa79c8adde97",
+      "corpus_version": "1.0.0",
+      "corpus_sha256": "9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2",
+      "measure": "content_demoted",
+      "automated_means": {
+        "detection_automated": true,
+        "decision": "partially_automated",
+        "drafted_by": "stub/faithful:deterministic-stub-v1"
+      },
+      "status": "draft",
+      "sentences": [
+        {
+          "index": 0,
+          "role": "fact",
+          "text": "The subject entered this investigation as its seed [prov-0000].",
+          "evidence_ids": [
+            "prov-0000"
+          ],
+          "citation": null
+        },
+        {
+          "index": 1,
+          "role": "policy_ground",
+          "text": "This conduct is incompatible with the platform's spam policy.",
+          "evidence_ids": [],
+          "citation": {
+            "content_digest": "86ea53c9b93053c7e053ce3ec65decf54fe28387b489d9fea529582e823ea9a3",
+            "anchor_id": "comment-spam",
+            "excerpt": "Comment spam: Using high-volume,"
+          }
+        },
+        {
+          "index": 2,
+          "role": "measure",
+          "text": "The proposed measure is content_demoted.",
+          "evidence_ids": [],
+          "citation": null
+        },
+        {
+          "index": 3,
+          "role": "redress",
+          "text": "The channel owner may appeal through the internal complaint-handling system, and may seek out-of-court dispute settlement.",
+          "evidence_ids": [],
+          "citation": null
+        }
+      ]
+    }
+  }
+}

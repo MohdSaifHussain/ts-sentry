@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d_kind" for="node" attr.name="kind" attr.type="string" />
+  <key id="d_node_provenance" for="node" attr.name="provenance_id" attr.type="string" />
+  <key id="d_attributes" for="node" attr.name="attributes" attr.type="string" />
+  <key id="d_relation" for="edge" attr.name="relation" attr.type="string" />
+  <key id="d_edge_provenance" for="edge" attr.name="provenance_id" attr.type="string" />
+  <key id="d_edge_attributes" for="edge" attr.name="attributes" attr.type="string" />
+  <graph id="case-0000" edgedefault="directed">
+    <node id="t02_chan_000_000">
+      <data key="d_kind">channel</data>
+      <data key="d_node_provenance">prov-0000</data>
+      <data key="d_attributes">{"role": "subject"}</data>
+    </node>
+    <node id="t02_acct_000_000">
+      <data key="d_kind">account</data>
+      <data key="d_node_provenance">prov-0001</data>
+      <data key="d_attributes">{}</data>
+    </node>
+    <node id="t02_acct_000_001">
+      <data key="d_kind">account</data>
+      <data key="d_node_provenance">prov-0002</data>
+      <data key="d_attributes">{}</data>
+    </node>
+    <node id="t02_vid_000_000">
+      <data key="d_kind">video</data>
+      <data key="d_node_provenance">prov-0002</data>
+      <data key="d_attributes">{}</data>
+    </node>
+    <node id="t02_acct_000_002">
+      <data key="d_kind">account</data>
+      <data key="d_node_provenance">prov-0002</data>
+      <data key="d_attributes">{}</data>
+    </node>
+    <edge id="edge:owns_channel:t02_acct_000_000:t02_chan_000_000" source="t02_acct_000_000" target="t02_chan_000_000">
+      <data key="d_relation">owns_channel</data>
+      <data key="d_edge_provenance">prov-0001</data>
+      <data key="d_edge_attributes">{"weight": "1"}</data>
+    </edge>
+    <edge id="edge:engaged_with:t02_acct_000_001:t02_chan_000_000:subscribe" source="t02_acct_000_001" target="t02_chan_000_000">
+      <data key="d_relation">engaged_with</data>
+      <data key="d_edge_provenance">prov-0002</data>
+      <data key="d_edge_attributes">{"engagement_kind": "subscribe", "event_count": "1"}</data>
+    </edge>
+    <edge id="edge:published_on:t02_chan_000_000:t02_vid_000_000" source="t02_chan_000_000" target="t02_vid_000_000">
+      <data key="d_relation">published_on</data>
+      <data key="d_edge_provenance">prov-0002</data>
+      <data key="d_edge_attributes">{}</data>
+    </edge>
+    <edge id="edge:engaged_with:t02_acct_000_001:t02_vid_000_000:view" source="t02_acct_000_001" target="t02_vid_000_000">
+      <data key="d_relation">engaged_with</data>
+      <data key="d_edge_provenance">prov-0002</data>
+      <data key="d_edge_attributes">{"engagement_kind": "view", "event_count": "1"}</data>
+    </edge>
+    <edge id="edge:engaged_with:t02_acct_000_001:t02_vid_000_000:like" source="t02_acct_000_001" target="t02_vid_000_000">
+      <data key="d_relation">engaged_with</data>
+      <data key="d_edge_provenance">prov-0002</data>
+      <data key="d_edge_attributes">{"engagement_kind": "like", "event_count": "1"}</data>
+    </edge>
+    <edge id="edge:engaged_with:t02_acct_000_002:t02_chan_000_000:subscribe" source="t02_acct_000_002" target="t02_chan_000_000">
+      <data key="d_relation">engaged_with</data>
+      <data key="d_edge_provenance">prov-0002</data>
+      <data key="d_edge_attributes">{"engagement_kind": "subscribe", "event_count": "1"}</data>
+    </edge>
+    <edge id="edge:engaged_with:t02_acct_000_002:t02_vid_000_000:like" source="t02_acct_000_002" target="t02_vid_000_000">
+      <data key="d_relation">engaged_with</data>
+      <data key="d_edge_provenance">prov-0002</data>
+      <data key="d_edge_attributes">{"engagement_kind": "like", "event_count": "1"}</data>
+    </edge>
+    <edge id="edge:engaged_with:t02_acct_000_002:t02_vid_000_000:view" source="t02_acct_000_002" target="t02_vid_000_000">
+      <data key="d_relation">engaged_with</data>
+      <data key="d_edge_provenance">prov-0002</data>
+      <data key="d_edge_attributes">{"engagement_kind": "view", "event_count": "1"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_000:t02_acct_000_001:device_fingerprint_hint" source="t02_acct_000_000" target="t02_acct_000_001">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0005</data>
+      <data key="d_edge_attributes">{"metadata_field": "device_fingerprint_hint", "shared_value": "devhint_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_000:t02_acct_000_002:device_fingerprint_hint" source="t02_acct_000_000" target="t02_acct_000_002">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0005</data>
+      <data key="d_edge_attributes">{"metadata_field": "device_fingerprint_hint", "shared_value": "devhint_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_000:t02_acct_000_001:signup_ip_bucket" source="t02_acct_000_000" target="t02_acct_000_001">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0005</data>
+      <data key="d_edge_attributes">{"metadata_field": "signup_ip_bucket", "shared_value": "ipb_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_000:t02_acct_000_002:signup_ip_bucket" source="t02_acct_000_000" target="t02_acct_000_002">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0005</data>
+      <data key="d_edge_attributes">{"metadata_field": "signup_ip_bucket", "shared_value": "ipb_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_001:t02_acct_000_000:device_fingerprint_hint" source="t02_acct_000_001" target="t02_acct_000_000">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0007</data>
+      <data key="d_edge_attributes">{"metadata_field": "device_fingerprint_hint", "shared_value": "devhint_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_001:t02_acct_000_002:device_fingerprint_hint" source="t02_acct_000_001" target="t02_acct_000_002">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0007</data>
+      <data key="d_edge_attributes">{"metadata_field": "device_fingerprint_hint", "shared_value": "devhint_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_001:t02_acct_000_000:signup_ip_bucket" source="t02_acct_000_001" target="t02_acct_000_000">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0007</data>
+      <data key="d_edge_attributes">{"metadata_field": "signup_ip_bucket", "shared_value": "ipb_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_001:t02_acct_000_002:signup_ip_bucket" source="t02_acct_000_001" target="t02_acct_000_002">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0007</data>
+      <data key="d_edge_attributes">{"metadata_field": "signup_ip_bucket", "shared_value": "ipb_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_002:t02_acct_000_000:device_fingerprint_hint" source="t02_acct_000_002" target="t02_acct_000_000">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0009</data>
+      <data key="d_edge_attributes">{"metadata_field": "device_fingerprint_hint", "shared_value": "devhint_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_002:t02_acct_000_001:device_fingerprint_hint" source="t02_acct_000_002" target="t02_acct_000_001">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0009</data>
+      <data key="d_edge_attributes">{"metadata_field": "device_fingerprint_hint", "shared_value": "devhint_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_002:t02_acct_000_000:signup_ip_bucket" source="t02_acct_000_002" target="t02_acct_000_000">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0009</data>
+      <data key="d_edge_attributes">{"metadata_field": "signup_ip_bucket", "shared_value": "ipb_t02_000"}</data>
+    </edge>
+    <edge id="edge:shares_metadata:t02_acct_000_002:t02_acct_000_001:signup_ip_bucket" source="t02_acct_000_002" target="t02_acct_000_001">
+      <data key="d_relation">shares_metadata</data>
+      <data key="d_edge_provenance">prov-0009</data>
+      <data key="d_edge_attributes">{"metadata_field": "signup_ip_bucket", "shared_value": "ipb_t02_000"}</data>
+    </edge>
+  </graph>
+</graphml>

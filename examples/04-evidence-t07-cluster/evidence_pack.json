@@ -1,0 +1,620 @@
+{
+  "case_id": "case-0001",
+  "subject_id": "t07_chan_000",
+  "hops": 20,
+  "counts": {
+    "nodes": 5,
+    "edges": 18,
+    "timeline": 5,
+    "provenance": 21
+  },
+  "nodes": [
+    {
+      "node_id": "t07_chan_000",
+      "kind": "channel",
+      "provenance_id": "prov-0000",
+      "attributes": {
+        "role": "subject"
+      }
+    },
+    {
+      "node_id": "t07_acct_001",
+      "kind": "account",
+      "provenance_id": "prov-0001",
+      "attributes": {}
+    },
+    {
+      "node_id": "t07_acct_002",
+      "kind": "account",
+      "provenance_id": "prov-0001",
+      "attributes": {}
+    },
+    {
+      "node_id": "t07_acct_000",
+      "kind": "account",
+      "provenance_id": "prov-0001",
+      "attributes": {}
+    },
+    {
+      "node_id": "t07_vid_000",
+      "kind": "video",
+      "provenance_id": "prov-0002",
+      "attributes": {}
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "edge:commented_on:t07_acct_001:t07_chan_000",
+      "source_id": "t07_acct_001",
+      "target_id": "t07_chan_000",
+      "relation": "commented_on",
+      "provenance_id": "prov-0001",
+      "attributes": {
+        "weight": "1"
+      }
+    },
+    {
+      "edge_id": "edge:commented_on:t07_acct_002:t07_chan_000",
+      "source_id": "t07_acct_002",
+      "target_id": "t07_chan_000",
+      "relation": "commented_on",
+      "provenance_id": "prov-0001",
+      "attributes": {
+        "weight": "1"
+      }
+    },
+    {
+      "edge_id": "edge:owns_channel:t07_acct_000:t07_chan_000",
+      "source_id": "t07_acct_000",
+      "target_id": "t07_chan_000",
+      "relation": "owns_channel",
+      "provenance_id": "prov-0001",
+      "attributes": {
+        "weight": "1"
+      }
+    },
+    {
+      "edge_id": "edge:published_on:t07_chan_000:t07_vid_000",
+      "source_id": "t07_chan_000",
+      "target_id": "t07_vid_000",
+      "relation": "published_on",
+      "provenance_id": "prov-0002",
+      "attributes": {}
+    },
+    {
+      "edge_id": "edge:engaged_with:t07_acct_001:t07_vid_000:view",
+      "source_id": "t07_acct_001",
+      "target_id": "t07_vid_000",
+      "relation": "engaged_with",
+      "provenance_id": "prov-0002",
+      "attributes": {
+        "engagement_kind": "view",
+        "event_count": "1"
+      }
+    },
+    {
+      "edge_id": "edge:engaged_with:t07_acct_002:t07_vid_000:view",
+      "source_id": "t07_acct_002",
+      "target_id": "t07_vid_000",
+      "relation": "engaged_with",
+      "provenance_id": "prov-0002",
+      "attributes": {
+        "engagement_kind": "view",
+        "event_count": "1"
+      }
+    },
+    {
+      "edge_id": "edge:shares_infra_signal:t07_acct_001:t07_acct_000:shared_ip_bucket",
+      "source_id": "t07_acct_001",
+      "target_id": "t07_acct_000",
+      "relation": "shares_infra_signal",
+      "provenance_id": "prov-0004",
+      "attributes": {
+        "hint_count": "1",
+        "signal_type": "shared_ip_bucket",
+        "signal_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_infra_signal:t07_acct_001:t07_acct_002:shared_ip_bucket",
+      "source_id": "t07_acct_001",
+      "target_id": "t07_acct_002",
+      "relation": "shares_infra_signal",
+      "provenance_id": "prov-0004",
+      "attributes": {
+        "hint_count": "1",
+        "signal_type": "shared_ip_bucket",
+        "signal_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t07_acct_001:t07_acct_000:signup_ip_bucket",
+      "source_id": "t07_acct_001",
+      "target_id": "t07_acct_000",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0005",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t07_acct_001:t07_acct_002:signup_ip_bucket",
+      "source_id": "t07_acct_001",
+      "target_id": "t07_acct_002",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0005",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_infra_signal:t07_acct_002:t07_acct_000:shared_ip_bucket",
+      "source_id": "t07_acct_002",
+      "target_id": "t07_acct_000",
+      "relation": "shares_infra_signal",
+      "provenance_id": "prov-0006",
+      "attributes": {
+        "hint_count": "1",
+        "signal_type": "shared_ip_bucket",
+        "signal_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_infra_signal:t07_acct_002:t07_acct_001:shared_ip_bucket",
+      "source_id": "t07_acct_002",
+      "target_id": "t07_acct_001",
+      "relation": "shares_infra_signal",
+      "provenance_id": "prov-0006",
+      "attributes": {
+        "hint_count": "1",
+        "signal_type": "shared_ip_bucket",
+        "signal_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t07_acct_002:t07_acct_000:signup_ip_bucket",
+      "source_id": "t07_acct_002",
+      "target_id": "t07_acct_000",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0007",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t07_acct_002:t07_acct_001:signup_ip_bucket",
+      "source_id": "t07_acct_002",
+      "target_id": "t07_acct_001",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0007",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_infra_signal:t07_acct_000:t07_acct_001:shared_ip_bucket",
+      "source_id": "t07_acct_000",
+      "target_id": "t07_acct_001",
+      "relation": "shares_infra_signal",
+      "provenance_id": "prov-0008",
+      "attributes": {
+        "hint_count": "1",
+        "signal_type": "shared_ip_bucket",
+        "signal_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_infra_signal:t07_acct_000:t07_acct_002:shared_ip_bucket",
+      "source_id": "t07_acct_000",
+      "target_id": "t07_acct_002",
+      "relation": "shares_infra_signal",
+      "provenance_id": "prov-0008",
+      "attributes": {
+        "hint_count": "1",
+        "signal_type": "shared_ip_bucket",
+        "signal_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t07_acct_000:t07_acct_001:signup_ip_bucket",
+      "source_id": "t07_acct_000",
+      "target_id": "t07_acct_001",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0009",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t07_shared"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t07_acct_000:t07_acct_002:signup_ip_bucket",
+      "source_id": "t07_acct_000",
+      "target_id": "t07_acct_002",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0009",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t07_shared"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "event_id": "ev:engagement:t07_acct_001:t07_vid_000:view",
+      "kind": "engagement_observed",
+      "node_id": "t07_acct_001",
+      "ts_ist": "2024-02-15T23:53:29+05:30",
+      "provenance_id": "prov-0002"
+    },
+    {
+      "event_id": "ev:engagement:t07_acct_002:t07_vid_000:view",
+      "kind": "engagement_observed",
+      "node_id": "t07_acct_002",
+      "ts_ist": "2024-02-16T00:43:01+05:30",
+      "provenance_id": "prov-0002"
+    },
+    {
+      "event_id": "ev:signal:t07_acct_000:shared_ip_bucket:ipb_t07_shared",
+      "kind": "signal_observed",
+      "node_id": "t07_acct_000",
+      "ts_ist": "2024-02-16T03:10:46+05:30",
+      "provenance_id": "prov-0004"
+    },
+    {
+      "event_id": "ev:signal:t07_acct_002:shared_ip_bucket:ipb_t07_shared",
+      "kind": "signal_observed",
+      "node_id": "t07_acct_002",
+      "ts_ist": "2024-02-16T01:39:37+05:30",
+      "provenance_id": "prov-0004"
+    },
+    {
+      "event_id": "ev:signal:t07_acct_001:shared_ip_bucket:ipb_t07_shared",
+      "kind": "signal_observed",
+      "node_id": "t07_acct_001",
+      "ts_ist": "2024-02-16T03:22:40+05:30",
+      "provenance_id": "prov-0006"
+    }
+  ],
+  "provenance": [
+    {
+      "provenance_id": "prov-0000",
+      "hop_index": 0,
+      "pivot_kind": null,
+      "source_table": "analyst.case_selection",
+      "query_template_id": "analyst.case_selection.v1",
+      "template_sha256": "f2837cdec3e5f88580b37d3e87db762a5dbc88ac02b363208d27dc896b793692",
+      "param_hash": "49141f4f190bf51c614f034632ae69c453ced47f2aa50d1ad3e3200225d3ff12",
+      "params": {
+        "case_id": "case-0001",
+        "subject_id": "t07_chan_000"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.908282+05:30",
+      "row_count": 1
+    },
+    {
+      "provenance_id": "prov-0001",
+      "hop_index": 1,
+      "pivot_kind": "account_link",
+      "source_table": "main.channel",
+      "query_template_id": "pivot.account_link.v1",
+      "template_sha256": "b9d69be140153f360e3312378c51f629d574f9e9e470595a1f3f1c44a989fa57",
+      "param_hash": "72c25f7b39b12e9d14fb6b3e3b90701d6015c01a3caa0336886db06c7a9abad0",
+      "params": {
+        "channel_id": "t07_chan_000",
+        "limit": 25,
+        "min_comments": 1
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.912868+05:30",
+      "row_count": 3
+    },
+    {
+      "provenance_id": "prov-0002",
+      "hop_index": 2,
+      "pivot_kind": "engagement_edge",
+      "source_table": "main.engagement_event",
+      "query_template_id": "pivot.engagement_edge.v1",
+      "template_sha256": "c6b8a85e6438a317a1f8a81a578a5e74006da3e229e71b88c92300c4220a0352",
+      "param_hash": "9d694247a8a5eef8c20f6cce7c7d506972060e017e8c70fa92e43348df0b7cf1",
+      "params": {
+        "channel_id": "t07_chan_000",
+        "kind": "any",
+        "limit": 25,
+        "min_events": 1
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.926836+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0003",
+      "hop_index": 3,
+      "pivot_kind": "infra_overlap",
+      "source_table": "main.infra_hint",
+      "query_template_id": "pivot.infra_overlap.v1",
+      "template_sha256": "57d60a9342d7912fed548149b97d28fbf2a5aa7ffa95e12fb66cfc8e991bc899",
+      "param_hash": "9069352d046a5c632d72e94a9d630d459132e72d326df6f24a8cd36e3d762bb9",
+      "params": {
+        "limit": 25,
+        "signal_type": "any",
+        "subject_id": "t07_chan_000"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.943310+05:30",
+      "row_count": 0
+    },
+    {
+      "provenance_id": "prov-0004",
+      "hop_index": 4,
+      "pivot_kind": "infra_overlap",
+      "source_table": "main.infra_hint",
+      "query_template_id": "pivot.infra_overlap.v1",
+      "template_sha256": "57d60a9342d7912fed548149b97d28fbf2a5aa7ffa95e12fb66cfc8e991bc899",
+      "param_hash": "2b23628700a4d07e2f46ce0c1d056069368ed6e51832fb77a6e1c4dfb66f27ce",
+      "params": {
+        "limit": 25,
+        "signal_type": "any",
+        "subject_id": "t07_acct_001"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.954225+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0005",
+      "hop_index": 5,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "4b32ee95656f607975ec27e05ba9f7025c1349663f714457657de9491c096adb",
+      "params": {
+        "account_id": "t07_acct_001",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.969265+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0006",
+      "hop_index": 6,
+      "pivot_kind": "infra_overlap",
+      "source_table": "main.infra_hint",
+      "query_template_id": "pivot.infra_overlap.v1",
+      "template_sha256": "57d60a9342d7912fed548149b97d28fbf2a5aa7ffa95e12fb66cfc8e991bc899",
+      "param_hash": "ca64b90368e38cfe950f88ac087ae5c73c1f34ba7a9c5480f38580ef7c1c1988",
+      "params": {
+        "limit": 25,
+        "signal_type": "any",
+        "subject_id": "t07_acct_002"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.980813+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0007",
+      "hop_index": 7,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "26950959714cf751f5035778cd11a25bfb20a5c7c6ebe858aca12402f2b82021",
+      "params": {
+        "account_id": "t07_acct_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.995241+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0008",
+      "hop_index": 8,
+      "pivot_kind": "infra_overlap",
+      "source_table": "main.infra_hint",
+      "query_template_id": "pivot.infra_overlap.v1",
+      "template_sha256": "57d60a9342d7912fed548149b97d28fbf2a5aa7ffa95e12fb66cfc8e991bc899",
+      "param_hash": "145eff599e42b514f04f5cb9b621305cef9dd72d65a564433cfe4ecdd7271019",
+      "params": {
+        "limit": 25,
+        "signal_type": "any",
+        "subject_id": "t07_acct_000"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.006621+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0009",
+      "hop_index": 9,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.020433+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0010",
+      "hop_index": 10,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.031464+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0011",
+      "hop_index": 11,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.042378+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0012",
+      "hop_index": 12,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.053592+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0013",
+      "hop_index": 13,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.065176+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0014",
+      "hop_index": 14,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.075961+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0015",
+      "hop_index": 15,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.088062+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0016",
+      "hop_index": 16,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.099726+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0017",
+      "hop_index": 17,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.110898+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0018",
+      "hop_index": 18,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.121363+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0019",
+      "hop_index": 19,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.132720+05:30",
+      "row_count": 2
+    },
+    {
+      "provenance_id": "prov-0020",
+      "hop_index": 20,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "25c1c202d86710d97efd9373098cfa782297a855c48e6358544c245638e505e9",
+      "params": {
+        "account_id": "t07_acct_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:44.144335+05:30",
+      "row_count": 2
+    }
+  ]
+}

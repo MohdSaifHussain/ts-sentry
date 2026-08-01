@@ -1,0 +1,645 @@
+{
+  "case_id": "case-0000",
+  "subject_id": "t02_chan_000_000",
+  "hops": 20,
+  "counts": {
+    "nodes": 5,
+    "edges": 20,
+    "timeline": 6,
+    "provenance": 21
+  },
+  "nodes": [
+    {
+      "node_id": "t02_chan_000_000",
+      "kind": "channel",
+      "provenance_id": "prov-0000",
+      "attributes": {
+        "role": "subject"
+      }
+    },
+    {
+      "node_id": "t02_acct_000_000",
+      "kind": "account",
+      "provenance_id": "prov-0001",
+      "attributes": {}
+    },
+    {
+      "node_id": "t02_acct_000_001",
+      "kind": "account",
+      "provenance_id": "prov-0002",
+      "attributes": {}
+    },
+    {
+      "node_id": "t02_vid_000_000",
+      "kind": "video",
+      "provenance_id": "prov-0002",
+      "attributes": {}
+    },
+    {
+      "node_id": "t02_acct_000_002",
+      "kind": "account",
+      "provenance_id": "prov-0002",
+      "attributes": {}
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "edge:owns_channel:t02_acct_000_000:t02_chan_000_000",
+      "source_id": "t02_acct_000_000",
+      "target_id": "t02_chan_000_000",
+      "relation": "owns_channel",
+      "provenance_id": "prov-0001",
+      "attributes": {
+        "weight": "1"
+      }
+    },
+    {
+      "edge_id": "edge:engaged_with:t02_acct_000_001:t02_chan_000_000:subscribe",
+      "source_id": "t02_acct_000_001",
+      "target_id": "t02_chan_000_000",
+      "relation": "engaged_with",
+      "provenance_id": "prov-0002",
+      "attributes": {
+        "engagement_kind": "subscribe",
+        "event_count": "1"
+      }
+    },
+    {
+      "edge_id": "edge:published_on:t02_chan_000_000:t02_vid_000_000",
+      "source_id": "t02_chan_000_000",
+      "target_id": "t02_vid_000_000",
+      "relation": "published_on",
+      "provenance_id": "prov-0002",
+      "attributes": {}
+    },
+    {
+      "edge_id": "edge:engaged_with:t02_acct_000_001:t02_vid_000_000:view",
+      "source_id": "t02_acct_000_001",
+      "target_id": "t02_vid_000_000",
+      "relation": "engaged_with",
+      "provenance_id": "prov-0002",
+      "attributes": {
+        "engagement_kind": "view",
+        "event_count": "1"
+      }
+    },
+    {
+      "edge_id": "edge:engaged_with:t02_acct_000_001:t02_vid_000_000:like",
+      "source_id": "t02_acct_000_001",
+      "target_id": "t02_vid_000_000",
+      "relation": "engaged_with",
+      "provenance_id": "prov-0002",
+      "attributes": {
+        "engagement_kind": "like",
+        "event_count": "1"
+      }
+    },
+    {
+      "edge_id": "edge:engaged_with:t02_acct_000_002:t02_chan_000_000:subscribe",
+      "source_id": "t02_acct_000_002",
+      "target_id": "t02_chan_000_000",
+      "relation": "engaged_with",
+      "provenance_id": "prov-0002",
+      "attributes": {
+        "engagement_kind": "subscribe",
+        "event_count": "1"
+      }
+    },
+    {
+      "edge_id": "edge:engaged_with:t02_acct_000_002:t02_vid_000_000:like",
+      "source_id": "t02_acct_000_002",
+      "target_id": "t02_vid_000_000",
+      "relation": "engaged_with",
+      "provenance_id": "prov-0002",
+      "attributes": {
+        "engagement_kind": "like",
+        "event_count": "1"
+      }
+    },
+    {
+      "edge_id": "edge:engaged_with:t02_acct_000_002:t02_vid_000_000:view",
+      "source_id": "t02_acct_000_002",
+      "target_id": "t02_vid_000_000",
+      "relation": "engaged_with",
+      "provenance_id": "prov-0002",
+      "attributes": {
+        "engagement_kind": "view",
+        "event_count": "1"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_000:t02_acct_000_001:device_fingerprint_hint",
+      "source_id": "t02_acct_000_000",
+      "target_id": "t02_acct_000_001",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0005",
+      "attributes": {
+        "metadata_field": "device_fingerprint_hint",
+        "shared_value": "devhint_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_000:t02_acct_000_002:device_fingerprint_hint",
+      "source_id": "t02_acct_000_000",
+      "target_id": "t02_acct_000_002",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0005",
+      "attributes": {
+        "metadata_field": "device_fingerprint_hint",
+        "shared_value": "devhint_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_000:t02_acct_000_001:signup_ip_bucket",
+      "source_id": "t02_acct_000_000",
+      "target_id": "t02_acct_000_001",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0005",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_000:t02_acct_000_002:signup_ip_bucket",
+      "source_id": "t02_acct_000_000",
+      "target_id": "t02_acct_000_002",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0005",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_001:t02_acct_000_000:device_fingerprint_hint",
+      "source_id": "t02_acct_000_001",
+      "target_id": "t02_acct_000_000",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0007",
+      "attributes": {
+        "metadata_field": "device_fingerprint_hint",
+        "shared_value": "devhint_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_001:t02_acct_000_002:device_fingerprint_hint",
+      "source_id": "t02_acct_000_001",
+      "target_id": "t02_acct_000_002",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0007",
+      "attributes": {
+        "metadata_field": "device_fingerprint_hint",
+        "shared_value": "devhint_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_001:t02_acct_000_000:signup_ip_bucket",
+      "source_id": "t02_acct_000_001",
+      "target_id": "t02_acct_000_000",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0007",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_001:t02_acct_000_002:signup_ip_bucket",
+      "source_id": "t02_acct_000_001",
+      "target_id": "t02_acct_000_002",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0007",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_002:t02_acct_000_000:device_fingerprint_hint",
+      "source_id": "t02_acct_000_002",
+      "target_id": "t02_acct_000_000",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0009",
+      "attributes": {
+        "metadata_field": "device_fingerprint_hint",
+        "shared_value": "devhint_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_002:t02_acct_000_001:device_fingerprint_hint",
+      "source_id": "t02_acct_000_002",
+      "target_id": "t02_acct_000_001",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0009",
+      "attributes": {
+        "metadata_field": "device_fingerprint_hint",
+        "shared_value": "devhint_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_002:t02_acct_000_000:signup_ip_bucket",
+      "source_id": "t02_acct_000_002",
+      "target_id": "t02_acct_000_000",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0009",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t02_000"
+      }
+    },
+    {
+      "edge_id": "edge:shares_metadata:t02_acct_000_002:t02_acct_000_001:signup_ip_bucket",
+      "source_id": "t02_acct_000_002",
+      "target_id": "t02_acct_000_001",
+      "relation": "shares_metadata",
+      "provenance_id": "prov-0009",
+      "attributes": {
+        "metadata_field": "signup_ip_bucket",
+        "shared_value": "ipb_t02_000"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "event_id": "ev:engagement:t02_acct_000_001:t02_chan_000_000:subscribe",
+      "kind": "engagement_observed",
+      "node_id": "t02_acct_000_001",
+      "ts_ist": "2025-08-09T13:43:14+05:30",
+      "provenance_id": "prov-0002"
+    },
+    {
+      "event_id": "ev:engagement:t02_acct_000_001:t02_vid_000_000:view",
+      "kind": "engagement_observed",
+      "node_id": "t02_acct_000_001",
+      "ts_ist": "2025-08-09T14:31:38+05:30",
+      "provenance_id": "prov-0002"
+    },
+    {
+      "event_id": "ev:engagement:t02_acct_000_001:t02_vid_000_000:like",
+      "kind": "engagement_observed",
+      "node_id": "t02_acct_000_001",
+      "ts_ist": "2025-08-09T14:52:41+05:30",
+      "provenance_id": "prov-0002"
+    },
+    {
+      "event_id": "ev:engagement:t02_acct_000_002:t02_chan_000_000:subscribe",
+      "kind": "engagement_observed",
+      "node_id": "t02_acct_000_002",
+      "ts_ist": "2025-08-09T14:47:29+05:30",
+      "provenance_id": "prov-0002"
+    },
+    {
+      "event_id": "ev:engagement:t02_acct_000_002:t02_vid_000_000:like",
+      "kind": "engagement_observed",
+      "node_id": "t02_acct_000_002",
+      "ts_ist": "2025-08-09T13:55:28+05:30",
+      "provenance_id": "prov-0002"
+    },
+    {
+      "event_id": "ev:engagement:t02_acct_000_002:t02_vid_000_000:view",
+      "kind": "engagement_observed",
+      "node_id": "t02_acct_000_002",
+      "ts_ist": "2025-08-09T14:51:29+05:30",
+      "provenance_id": "prov-0002"
+    }
+  ],
+  "provenance": [
+    {
+      "provenance_id": "prov-0000",
+      "hop_index": 0,
+      "pivot_kind": null,
+      "source_table": "analyst.case_selection",
+      "query_template_id": "analyst.case_selection.v1",
+      "template_sha256": "f2837cdec3e5f88580b37d3e87db762a5dbc88ac02b363208d27dc896b793692",
+      "param_hash": "a20fe93296013e61470757ccc676a6bdd914ec5c9aa0247680575e9bbd33047d",
+      "params": {
+        "case_id": "case-0000",
+        "subject_id": "t02_chan_000_000"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.415415+05:30",
+      "row_count": 1
+    },
+    {
+      "provenance_id": "prov-0001",
+      "hop_index": 1,
+      "pivot_kind": "account_link",
+      "source_table": "main.channel",
+      "query_template_id": "pivot.account_link.v1",
+      "template_sha256": "b9d69be140153f360e3312378c51f629d574f9e9e470595a1f3f1c44a989fa57",
+      "param_hash": "0c86db609de02dbf946528b39d4f77b5bb710d54750241a353041910a7f1b203",
+      "params": {
+        "channel_id": "t02_chan_000_000",
+        "limit": 25,
+        "min_comments": 1
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.420889+05:30",
+      "row_count": 1
+    },
+    {
+      "provenance_id": "prov-0002",
+      "hop_index": 2,
+      "pivot_kind": "engagement_edge",
+      "source_table": "main.engagement_event",
+      "query_template_id": "pivot.engagement_edge.v1",
+      "template_sha256": "c6b8a85e6438a317a1f8a81a578a5e74006da3e229e71b88c92300c4220a0352",
+      "param_hash": "08dc46bfd12fbac571d4b4dab032cd8e9e53f3b6d667aa2ae47b67125bb6c63b",
+      "params": {
+        "channel_id": "t02_chan_000_000",
+        "kind": "any",
+        "limit": 25,
+        "min_events": 1
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.430953+05:30",
+      "row_count": 6
+    },
+    {
+      "provenance_id": "prov-0003",
+      "hop_index": 3,
+      "pivot_kind": "infra_overlap",
+      "source_table": "main.infra_hint",
+      "query_template_id": "pivot.infra_overlap.v1",
+      "template_sha256": "57d60a9342d7912fed548149b97d28fbf2a5aa7ffa95e12fb66cfc8e991bc899",
+      "param_hash": "92ac6abfa5d6b1699ec3f50f123443c6522e5acb7c05e7772212e6be80d27d11",
+      "params": {
+        "limit": 25,
+        "signal_type": "any",
+        "subject_id": "t02_chan_000_000"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.449883+05:30",
+      "row_count": 0
+    },
+    {
+      "provenance_id": "prov-0004",
+      "hop_index": 4,
+      "pivot_kind": "infra_overlap",
+      "source_table": "main.infra_hint",
+      "query_template_id": "pivot.infra_overlap.v1",
+      "template_sha256": "57d60a9342d7912fed548149b97d28fbf2a5aa7ffa95e12fb66cfc8e991bc899",
+      "param_hash": "b712f286e7b41e7dcbb44b482202415e7ffbc8b2636a586d93c5fdf0e54c0e65",
+      "params": {
+        "limit": 25,
+        "signal_type": "any",
+        "subject_id": "t02_acct_000_000"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.461098+05:30",
+      "row_count": 0
+    },
+    {
+      "provenance_id": "prov-0005",
+      "hop_index": 5,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "fc2f7a08fa87c414103ba0f67dcc8e6e5d899089a6fbc6f30b9e63633658404d",
+      "params": {
+        "account_id": "t02_acct_000_000",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.472295+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0006",
+      "hop_index": 6,
+      "pivot_kind": "infra_overlap",
+      "source_table": "main.infra_hint",
+      "query_template_id": "pivot.infra_overlap.v1",
+      "template_sha256": "57d60a9342d7912fed548149b97d28fbf2a5aa7ffa95e12fb66cfc8e991bc899",
+      "param_hash": "16ae543bd2fd4df590305cffc72624a2df1bf9f731daddc5100a4b1744eada1b",
+      "params": {
+        "limit": 25,
+        "signal_type": "any",
+        "subject_id": "t02_acct_000_001"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.483445+05:30",
+      "row_count": 0
+    },
+    {
+      "provenance_id": "prov-0007",
+      "hop_index": 7,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "c67aea206c7afcd4d143b136f248ff35784717b1b8b8b2b1d073af0f6d3e159c",
+      "params": {
+        "account_id": "t02_acct_000_001",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.493823+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0008",
+      "hop_index": 8,
+      "pivot_kind": "infra_overlap",
+      "source_table": "main.infra_hint",
+      "query_template_id": "pivot.infra_overlap.v1",
+      "template_sha256": "57d60a9342d7912fed548149b97d28fbf2a5aa7ffa95e12fb66cfc8e991bc899",
+      "param_hash": "8a201c77c044c8df9c1767f4a2e52993b93e60e2ff9cca7687d5be1037a749fc",
+      "params": {
+        "limit": 25,
+        "signal_type": "any",
+        "subject_id": "t02_acct_000_002"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.505162+05:30",
+      "row_count": 0
+    },
+    {
+      "provenance_id": "prov-0009",
+      "hop_index": 9,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.515623+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0010",
+      "hop_index": 10,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.527440+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0011",
+      "hop_index": 11,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.538823+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0012",
+      "hop_index": 12,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.549648+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0013",
+      "hop_index": 13,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.561389+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0014",
+      "hop_index": 14,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.572817+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0015",
+      "hop_index": 15,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.584642+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0016",
+      "hop_index": 16,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.596095+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0017",
+      "hop_index": 17,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.607970+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0018",
+      "hop_index": 18,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.621514+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0019",
+      "hop_index": 19,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.633863+05:30",
+      "row_count": 4
+    },
+    {
+      "provenance_id": "prov-0020",
+      "hop_index": 20,
+      "pivot_kind": "shared_metadata",
+      "source_table": "main.account_meta",
+      "query_template_id": "pivot.shared_metadata.v1",
+      "template_sha256": "d610cf7477f853ace6822d9f3e77fee0ba80f375157d436bfcec4915afdea060",
+      "param_hash": "016ee49a298b333638862b49ccb83d4eda047b7a6b684cc85f575f01ba9b28bd",
+      "params": {
+        "account_id": "t02_acct_000_002",
+        "limit": 25,
+        "metadata_field": "any"
+      },
+      "retrieval_ts_ist": "2026-08-01T21:07:43.646136+05:30",
+      "row_count": 4
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "manifest_version": "1.0.0",
+  "session_id": "session-122fc6f41755",
+  "analyst_id": "saif",
+  "opened_ts_ist": "2026-08-01T21:07:43.413337+05:30",
+  "closed_ts_ist": "2026-08-01T21:07:43.652553+05:30",
+  "close_reason": "completed",
+  "dataset_digest": "060c60d71ac4acf67046f49e7fb581160937355ce1f88c3a2b3d118f48860e1d",
+  "mandate_set_hash": "e575f98f184a43d2cfa3d449d656430731c65044ee9413537b4502879b2bc10b",
+  "mandate_hashes": {
+    "evidence": "6ac3024705622dc9ef6ae9c3d16369acc44f73de79a3fd5ded64886e5aa135be"
+  },
+  "expected_head": {
+    "count": 122,
+    "entry_hash": "5fe75e17d47c76fc68fc078b8eee19816413ca618306bd4b7c808c18be6c0600"
+  },
+  "event_counts": {
+    "human_decision": 20,
+    "prompt_sent": 20,
+    "session_close": 1,
+    "session_open": 1,
+    "tool_called": 20,
+    "tool_result": 20,
+    "verification_pass": 40
+  },
+  "budgets": {
+    "evidence": {
+      "token_budget": 400000,
+      "tokens_spent": 43032,
+      "max_steps": 20,
+      "steps_taken": 20
+    }
+  },
+  "git_sha": "63565420eb8c48f0c106465e123ac7d10c2b00a9",
+  "artifacts": [
+    {
+      "name": "ledger_jsonl",
+      "path": "ledger.jsonl",
+      "sha256": "baed3ff9a1d9bef7abc403e3a2132de0a7e357711d6b30c30a28be6251346ca1"
+    },
+    {
+      "name": "evidence_pack",
+      "path": "evidence_pack.json",
+      "sha256": "4510f7cebd48419ca7a5ffd5c008e59b6a96d8521e599a6e54b957cb1f2cf777"
+    },
+    {
+      "name": "evidence_graph",
+      "path": "evidence_graph.graphml",
+      "sha256": "3a45def2635fe0aeba93d20bfbf031d262e0e50b9a0e6e49e6654f9e3c473a91"
+    },
+    {
+      "name": "session_events",
+      "path": "session_events.json",
+      "sha256": "bda69d6002bfd30e7c80b03f28ffca2c0cf7a10551019108f1c27688e4e22749"
+    }
+  ],
+  "model_mode": "stub",
+  "stub_mode": "faithful"
+}

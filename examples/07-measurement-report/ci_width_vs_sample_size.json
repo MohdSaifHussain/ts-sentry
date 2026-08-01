@@ -1,0 +1,54 @@
+{
+  "name": "ci_width_vs_sample_size",
+  "note": "Realised widths come from one seed per sample size and scatter around the analytic curve. The analytic series uses the population's true stratum rates, which a real platform could not compute; it is the reference line, not an estimate. Width reaches zero at a census because the finite population correction does.",
+  "points": [
+    {
+      "label": "",
+      "values": {
+        "analytic_half_width": 0.0026779626,
+        "point_estimate": 0.0039940295,
+        "realised_half_width": 0.0054502421,
+        "validity_holds": 0.0
+      },
+      "x": 500.0
+    },
+    {
+      "label": "",
+      "values": {
+        "analytic_half_width": 0.0012815908,
+        "point_estimate": 0.0014992367,
+        "realised_half_width": 0.0016020053,
+        "validity_holds": 0.0
+      },
+      "x": 2000.0
+    },
+    {
+      "label": "",
+      "values": {
+        "analytic_half_width": 0.0004612006,
+        "point_estimate": 0.0009529501,
+        "realised_half_width": 0.0002327149,
+        "validity_holds": 0.0
+      },
+      "x": 9000.0
+    },
+    {
+      "label": "",
+      "values": {
+        "analytic_half_width": 0.0,
+        "point_estimate": 0.0009584665,
+        "realised_half_width": 0.0,
+        "validity_holds": 1.0
+      },
+      "x": 18780.0
+    }
+  ],
+  "series": [
+    "analytic_half_width",
+    "point_estimate",
+    "realised_half_width",
+    "validity_holds"
+  ],
+  "x_label": "views sampled",
+  "y_label": "95% interval half-width (share of views)"
+}

@@ -1,0 +1,141 @@
+{
+  "session_id": "session-a69eea25ee06",
+  "case_id": "case-0000",
+  "events": [
+    {
+      "seq": 0,
+      "event_type": "session_open",
+      "timestamp_ist": "2026-08-01T21:07:43.785975+05:30",
+      "payload": {
+        "session_id": "session-a69eea25ee06",
+        "analyst_id": "saif",
+        "dataset_digest": "060c60d71ac4acf67046f49e7fb581160937355ce1f88c3a2b3d118f48860e1d",
+        "mandate_set_hash": "e575f98f184a43d2cfa3d449d656430731c65044ee9413537b4502879b2bc10b",
+        "mandates": {
+          "evidence": "6ac3024705622dc9ef6ae9c3d16369acc44f73de79a3fd5ded64886e5aa135be",
+          "memo": "4b975931eeaf1b35ccb2b16e4fb5515d5040b21398328e50c589731e0b1fbfba",
+          "prompt_eval": "46bc69be0f774e5f7960385b548084867026bf2e56c2f22c933ee63ecff18b7a",
+          "triage": "c70cce9338d826d31c9c62d4627934bf19677381cf19cdaecdcc97b0f376fcee"
+        },
+        "corpus_version": "1.0.0",
+        "corpus_sha256": "9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2",
+        "model_mode": "stub",
+        "stub_mode": "faithful"
+      }
+    },
+    {
+      "seq": 1,
+      "event_type": "prompt_sent",
+      "timestamp_ist": "2026-08-01T21:07:43.788508+05:30",
+      "payload": {
+        "adapter_id": "stub/faithful",
+        "model_id": "deterministic-stub-v1",
+        "system_prompt_id": "memo.statement.v1",
+        "system_prompt_sha256": "a9f46df7a14e3ca80f51cd09b4e4687b7af100ebea3c01e62e723b65a890d85c",
+        "request_digest": "6d00ae5e1988d419b1ee3eaf2e498d94aca363c84d1a1137de6974ae8fdbd895",
+        "estimated_tokens": 3630,
+        "max_output_tokens": 2048,
+        "firewall": {
+          "pattern_set_version": "1.0.0",
+          "pattern_set_hash": "3fd538cb6c10700d94283263596a42b99eaf93e49d4ce8fcab320b63513035b9",
+          "fence_nonce": "f77b63110fce0878f3db40630d39fa3e",
+          "record_count": 5,
+          "signal_count": 0,
+          "signal_counts": {},
+          "signals": []
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "event_type": "output_proposed",
+      "timestamp_ist": "2026-08-01T21:07:43.790814+05:30",
+      "payload": {
+        "accepted": true,
+        "refusal_code": null,
+        "detail": "4 sentences, measure content_demoted",
+        "memo_id": "memo-0001"
+      }
+    },
+    {
+      "seq": 3,
+      "event_type": "tool_called",
+      "timestamp_ist": "2026-08-01T21:07:43.792677+05:30",
+      "payload": {
+        "tool_id": "resolve_policy_citation",
+        "consequence": "recommend",
+        "granted_scopes": [],
+        "params": {
+          "sentence_index": 1,
+          "content_digest": "86ea53c9b93053c7e053ce3ec65decf54fe28387b489d9fea529582e823ea9a3",
+          "anchor_id": "comment-spam",
+          "excerpt": "Comment spam: Using high-volume,"
+        }
+      }
+    },
+    {
+      "seq": 4,
+      "event_type": "tool_result",
+      "timestamp_ist": "2026-08-01T21:07:43.794382+05:30",
+      "payload": {
+        "tool_id": "resolve_policy_citation",
+        "ok": true,
+        "result_type": "Memo"
+      }
+    },
+    {
+      "seq": 5,
+      "event_type": "verification_pass",
+      "timestamp_ist": "2026-08-01T21:07:43.795868+05:30",
+      "payload": {
+        "consequence": "recommend",
+        "failures": [],
+        "event": "verification_pass"
+      }
+    },
+    {
+      "seq": 6,
+      "event_type": "session_close",
+      "timestamp_ist": "2026-08-01T21:07:43.797813+05:30",
+      "payload": {
+        "session_id": "session-a69eea25ee06",
+        "analyst_id": "saif",
+        "close_reason": "completed",
+        "event_counts": {
+          "session_open": 1,
+          "prompt_sent": 1,
+          "output_proposed": 1,
+          "tool_called": 1,
+          "tool_result": 1,
+          "verification_pass": 1
+        },
+        "budgets": {
+          "evidence": {
+            "token_budget": 400000,
+            "tokens_spent": 0,
+            "max_steps": 20,
+            "steps_taken": 0
+          },
+          "memo": {
+            "token_budget": 200000,
+            "tokens_spent": 1672,
+            "max_steps": 8,
+            "steps_taken": 1
+          },
+          "prompt_eval": {
+            "token_budget": 600000,
+            "tokens_spent": 0,
+            "max_steps": 2,
+            "steps_taken": 0
+          },
+          "triage": {
+            "token_budget": 120000,
+            "tokens_spent": 0,
+            "max_steps": 4,
+            "steps_taken": 0
+          }
+        }
+      }
+    }
+  ]
+}

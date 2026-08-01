@@ -31,7 +31,7 @@ import duckdb
 import pytest
 
 from ts_sentry.data.tz import IST
-from ts_sentry.governance.ledger import EventType, Ledger
+from ts_sentry.governance.ledger import EventType, Ledger, digest_payload
 from ts_sentry.governance.mandate import AgentId, Consequence, Mandate, ToolId
 from ts_sentry.governance.scopes import DataScope
 from ts_sentry.orchestrator.adapter import (
@@ -179,12 +179,14 @@ def test_session_open_carries_the_mode_inside_the_hash_chain(mode: StubMode) -> 
     assert recorded.payload["model_mode"] == "stub"
     assert recorded.payload["stub_mode"] == mode.value
 
-    # And the body genuinely digests to what the chain recorded: `attach_event`
-    # refuses a payload that has drifted, so this is the chain agreeing rather
-    # than the test restating its own input.
-    from ts_sentry.orchestrator.core import digest_payload
-
+    # The field is inside what the hashes cover, not beside it. Recomputing the
+    # digest over the body and matching it against what the chain stored is the
+    # difference between a claim this system protects and one it merely prints:
+    # drop `stub_mode` from the payload and this digest no longer agrees.
     assert digest_payload(recorded.payload) == recorded.entry.payload_digest
+    assert digest_payload({k: v for k, v in recorded.payload.items() if k != "stub_mode"}) != (
+        recorded.entry.payload_digest
+    )
 
 
 def test_a_session_told_nothing_asserts_nothing() -> None:
