@@ -151,7 +151,23 @@ jobs:
           # serial number is for.
           python .github/scripts/stamp_sbom_serial.py "$sbom"
 
-      - name: Attest build provenance for the distributions and the SBOM
+      # Two steps, not one, and this is the fix for a defect v1.0.0-rc.3
+      # shipped: `actions/attest` produces **one** attestation per invocation,
+      # and supplying `sbom-path` makes that one an SBOM attestation rather
+      # than a provenance one. A single step with both inputs therefore
+      # attested the SBOM and no provenance at all, so
+      # `gh attestation verify <wheel>`, which defaults to SLSA provenance,
+      # returned HTTP 404 against artifacts that looked signed.
+      #
+      # Found by running the verification commands against a real published
+      # candidate rather than by reading the workflow. The release notes
+      # documented that exact command.
+      - name: Attest build provenance for the distributions
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: "dist/*.tar.gz, dist/*.whl"
+
+      - name: Attest the SBOM for the distributions
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: "dist/*.tar.gz, dist/*.whl"
@@ -232,5 +248,10 @@ jobs:
             echo
             echo "gh attestation verify ts_sentry-${{ needs.guard.outputs.version }}-py3-none-any.whl \\"
             echo "    --repo ${{ github.repository }}"
+            echo
+            echo "# and the SBOM attestation, which is a different predicate type"
+            echo "gh attestation verify ts_sentry-${{ needs.guard.outputs.version }}-py3-none-any.whl \\"
+            echo "    --repo ${{ github.repository }} \\"
+            echo "    --predicate-type https://cyclonedx.org/bom"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

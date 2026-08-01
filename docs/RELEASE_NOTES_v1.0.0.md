@@ -69,16 +69,31 @@ Every published artifact is signed keylessly through Sigstore using the release
 workflow's own OIDC identity. No PAT, no stored signing key.
 
 ```bash
+# The published image. The digest this reports must match `docker pull`.
 gh attestation verify oci://ghcr.io/mohdsaifhussain/ts-sentry:1.0.0 \
     --repo MohdSaifHussain/ts-sentry
 
+# The distributions: SLSA build provenance.
 gh attestation verify ts_sentry-1.0.0-py3-none-any.whl \
     --repo MohdSaifHussain/ts-sentry
+
+# The same files carry a second, separate attestation over the SBOM.
+gh attestation verify ts_sentry-1.0.0-py3-none-any.whl \
+    --repo MohdSaifHussain/ts-sentry \
+    --predicate-type https://cyclonedx.org/bom
 ```
 
+**Two attestations per artifact, not one, and they are different predicate
+types.** `gh attestation verify` defaults to SLSA provenance, so the SBOM
+attestation needs `--predicate-type` to be found. A release candidate shipped
+with only the SBOM attestation and no provenance, which made the first command
+above return HTTP 404 against artifacts that looked signed; that was found by
+running these commands against a real published candidate rather than by
+reading the workflow.
+
 A CycloneDX 1.6 SBOM ships as a release asset and is itself attested. The
-container image carries its own SBOM and SLSA provenance attestations produced
-by BuildKit.
+container image separately carries its own SBOM and provenance attestations
+produced by BuildKit and pushed to the registry.
 
 **The tag is annotated, not GPG-signed.** Signing a tag in CI needs a private
 key in a secret, which is the credential class this release deliberately avoids.
