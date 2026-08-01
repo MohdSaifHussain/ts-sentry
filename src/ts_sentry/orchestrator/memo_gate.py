@@ -43,36 +43,27 @@ is not a check.
 
 Failures are returned, never raised (DECISIONS 2.4).
 
-Carried to D6: this gate does not check ``memo.status``
----------------------------------------------------------
-HALT-2 review, finding 4, deferred deliberately rather than missed. A memo
-arriving here with ``status`` already ``SIGNED`` passes, and nothing in this
-build can produce one: an agent cannot reach ``governance.signature``, and
-``Memo.with_sentences`` resets a revised memo to ``DRAFT``. So the gap is
-unreachable today and becomes reachable the moment D6 exists.
+A SIGNED memo is refused, and that is not an insult to the memo
+---------------------------------------------------------------
+HALT-2 review, finding 4, deferred to D6 and implemented there. A DRAFT memo is
+what this gate is for: it judges agent output, and agent output is always a
+draft. A SIGNED memo reaching it is a category error, because re-gating answers
+the wrong question. What makes a signed memo trustworthy is that its
+``content_digest`` recomputes and the signature over it verifies, which is
+signature verification rather than claim verification. Accepting one here would
+let a signed memo be re-laundered through the agent path and emerge with a fresh
+``VERIFICATION_PASS`` that says nothing about the signature.
 
-The intended semantics, stated now so D6 implements a decision rather than
-inventing one:
-
-* **A DRAFT memo is what this gate is for.** It judges agent output, and agent
-  output is always a draft.
-* **A SIGNED memo reaching this gate is a category error and must be refused.**
-  Not because the memo is bad, but because re-gating it answers the wrong
-  question. What makes a signed memo trustworthy is that its
-  ``content_digest`` recomputes and the signature over it verifies; that is
-  signature verification, not claim verification. Accepting one here would let
-  a signed memo be re-laundered through the agent path and emerge with a fresh
-  ``VERIFICATION_PASS`` that says nothing about the signature.
-* **Revision of a signed memo is already handled**, by ``with_sentences``
-  returning a DRAFT: the signature was over text that no longer exists, so the
-  revised memo re-enters this gate as the draft it now is.
+Revision of a signed memo needs no special case: ``with_sentences`` returns a
+DRAFT, because the signature was over text that no longer exists, so a revised
+memo re-enters this gate as the draft it has become.
 """
 
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ts_sentry.agents.evidence.pack import EvidencePack
-from ts_sentry.agents.memo.memo import Memo, MemoSentence, SentenceRole
+from ts_sentry.agents.memo.memo import Memo, MemoSentence, MemoStatus, SentenceRole
 from ts_sentry.data.policy_corpus import PolicyCorpus
 from ts_sentry.governance.gates import ArtifactCheck, FailureCode, GateFailure
 from ts_sentry.governance.verifier import Claim, verify_claims
@@ -247,6 +238,22 @@ def memo_check(memo: Memo, pack: EvidencePack, corpus: PolicyCorpus) -> tuple[Ga
     claims verified against the wrong pack would produce failures that describe
     nothing real, and the binding failure is the finding worth acting on.
     """
+    if memo.status is MemoStatus.SIGNED:
+        return (
+            GateFailure(
+                code=FailureCode.SCHEMA_INVALID,
+                detail=(
+                    f"memo {memo.memo_id} is already SIGNED and cannot be re-gated. This gate "
+                    "judges agent output, and agent output is always a draft. What makes a "
+                    "signed memo trustworthy is that its content digest recomputes and the "
+                    "signature over it verifies, which is signature verification rather than "
+                    "claim verification; accepting one here would let a signed memo be "
+                    "re-laundered through the agent path and emerge with a fresh "
+                    "VERIFICATION_PASS that says nothing about the signature"
+                ),
+            ),
+        )
+
     bindings = _check_bindings(memo, pack, corpus)
     if bindings:
         return tuple(bindings)

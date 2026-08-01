@@ -45,6 +45,7 @@ LEGITIMATE_SIGNATURE_CONSUMERS = frozenset(
     {
         f"{PACKAGE}.governance.gates",  # the ENFORCE gate checks the signature
         f"{PACKAGE}.cli.main",  # the human decision boundary
+        f"{PACKAGE}.orchestrator.signing",  # STEP-05 D6: the memo signing path
     }
 )
 """Who may reach the human-only ENFORCE construction path.
@@ -52,6 +53,13 @@ LEGITIMATE_SIGNATURE_CONSUMERS = frozenset(
 An allowlist, per the sealed two-consumer model. ``cli.main`` is listed as the
 analyst-facing boundary; it does not import the module today, and listing it
 in advance is the point of an allowlist rather than a description.
+
+``orchestrator.signing`` was added in STEP-05 D6, and the addition is the
+mechanism working rather than the rule bending: a third consumer required a
+deliberate edit to this named list, in the same commit as the module, instead of
+appearing unnoticed. It is where a memo is finalized under an analyst's
+signature. ``agents.*`` remains unable to reach it, which is asserted separately
+and is the half of the model that actually constrains anything.
 """
 
 FORBIDDEN_FOR_AGENTS = {

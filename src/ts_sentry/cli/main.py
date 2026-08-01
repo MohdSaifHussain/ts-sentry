@@ -33,6 +33,7 @@ from typing import NoReturn
 
 import duckdb
 
+from ts_sentry.agents.memo.memo import Memo, MemoError
 from ts_sentry.data.generator import build_dataset
 from ts_sentry.data.policy_corpus import (
     CorpusError,
@@ -62,11 +63,14 @@ from ts_sentry.governance.scopes import (
     resolve_export_path,
     resolve_scope_by_name,
 )
+from ts_sentry.governance.signature import Decision
 from ts_sentry.orchestrator.adapter import ModelAdapter, ModelMode, Responder, StubAdapter
 from ts_sentry.orchestrator.evidence_turn import stub_evidence_responder
 from ts_sentry.orchestrator.manifest import ManifestError, read_expected_head
+from ts_sentry.orchestrator.memo_export import write_memo_html, write_memo_markdown
+from ts_sentry.orchestrator.memo_gate import memo_check
 from ts_sentry.orchestrator.memo_turn import stub_memo_responder
-from ts_sentry.orchestrator.pack_export import PackReadError
+from ts_sentry.orchestrator.pack_export import PackReadError, read_pack_json
 from ts_sentry.orchestrator.review import (
     AnalystReviewer,
     InteractiveReviewer,
@@ -77,6 +81,7 @@ from ts_sentry.orchestrator.session_runner import (
     run_memo_session,
     run_triage_session,
 )
+from ts_sentry.orchestrator.signing import SigningRefused, sign_memo
 from ts_sentry.orchestrator.subject_check import SubjectNotFound
 from ts_sentry.orchestrator.triage_turn import stub_triage_responder
 from ts_sentry.provenance import DatasetDigestError, git_sha, sha256_file
@@ -523,6 +528,93 @@ def run_run_session(
 
 
 # --------------------------------------------------------------------------
+# STEP-05 D6: sign-memo
+# --------------------------------------------------------------------------
+
+
+def run_sign_memo(
+    session_dir: Path,
+    *,
+    analyst_id: str,
+    decision_value: str,
+    pack_path: Path,
+    policies_dir: Path,
+) -> int:
+    """Finalize a verified memo under an analyst's signature.
+
+    The human decision boundary, and the one verb in this CLI that reaches
+    ``governance.signature``. It reads the clock, like ``fetch-policies`` and
+    unlike everything else, because a signing time is a real-world fact about
+    when a person decided rather than a value a session should reproduce.
+
+    The memo is re-gated before signing, against the pack and corpus named on
+    the command line. That is not a formality: the memo on disk is a JSON file
+    anybody could have edited between the session that produced it and this
+    command, so signing what the session said passed would be signing a claim
+    about a file rather than about its contents.
+    """
+    try:
+        decision = Decision(decision_value)
+    except ValueError:
+        print(f"sign-memo: unknown decision {decision_value!r}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+
+    memo_path = session_dir / "memo.json"
+    if not memo_path.is_file():
+        print(f"sign-memo: no memo.json in {session_dir}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+
+    try:
+        pack = read_pack_json(pack_path)
+        corpus = load_corpus(policies_dir)
+        payload = json.loads(memo_path.read_text(encoding="utf-8"))
+        memo = Memo.from_json_object(payload["turn"]["memo"])
+    except (PackReadError, CorpusError, KeyError, TypeError, ValueError, MemoError) as exc:
+        print(f"sign-memo: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+
+    failures = memo_check(memo, pack, corpus)
+    if failures:
+        print(f"memo:      {memo.memo_id}")
+        print(f"result:    REFUSED, {len(failures)} verification failure(s)")
+        for failure in failures:
+            print(f"  - {failure.code.value}: {failure.detail}")
+        print(
+            "sign-memo: this memo does not pass the RECOMMEND gate and cannot be signed",
+            file=sys.stderr,
+        )
+        return EXIT_INPUT_ERROR
+
+    try:
+        signed = sign_memo(
+            memo,
+            analyst_id=analyst_id,
+            decision=decision,
+            signed_ts=datetime.now(tz=IST),
+            gate_failures=failures,
+        )
+    except SigningRefused as exc:
+        print(f"sign-memo: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+
+    write_memo_markdown(signed.memo, session_dir / "memo.md", signed)
+    write_memo_html(signed.memo, session_dir / "memo.html", signed)
+    (session_dir / "memo_signature.json").write_text(
+        json.dumps(signed.to_json_object(), indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
+
+    print(f"memo:      {signed.memo.memo_id}")
+    print(f"analyst:   {signed.signature.analyst_id}")
+    print(f"decision:  {signed.signature.decision.value}")
+    print(f"digest:    {signed.memo.content_digest}")
+    print(f"signature: {signed.signature.signature_hash}")
+    print(f"status:    {signed.memo.status.value.upper()}")
+    print(f"artifacts: {session_dir}")
+    print("result:    memo finalized; exports re-rendered without the AI-DRAFT watermark")
+    return EXIT_OK
+
+
+# --------------------------------------------------------------------------
 # STEP-02 D6: verify-ledger
 # --------------------------------------------------------------------------
 
@@ -674,8 +766,9 @@ class _RaisingParser(argparse.ArgumentParser):
 VERIFY_LEDGER = "verify-ledger"
 RUN_SESSION = "run-session"
 FETCH_POLICIES = "fetch-policies"
+SIGN_MEMO = "sign-memo"
 
-TRANSLATES_USAGE_ERRORS = frozenset({VERIFY_LEDGER, RUN_SESSION, FETCH_POLICIES})
+TRANSLATES_USAGE_ERRORS = frozenset({VERIFY_LEDGER, RUN_SESSION, FETCH_POLICIES, SIGN_MEMO})
 """Subcommands whose argparse usage errors become ``EXIT_INPUT_ERROR``.
 
 Argparse exits 2 on a usage error, and 2 is ``EXIT_QUALITY_GATE_FAIL`` in this
@@ -796,6 +889,21 @@ def main(argv: list[str] | None = None) -> int:
     session_parser.add_argument("--memo-id", type=str, default="memo-0001")
     session_parser.add_argument("--max-attempts", type=int, default=None)
 
+    sign_parser = subparsers.add_parser(SIGN_MEMO)
+    sign_parser.add_argument("session_dir", type=Path)
+    sign_parser.add_argument("--analyst-id", type=str, required=True)
+    sign_parser.add_argument("--pack", type=Path, required=True)
+    sign_parser.add_argument("--policies", type=Path, default=Path("policies"))
+    sign_parser.add_argument(
+        "--decision",
+        choices=[d.value for d in Decision],
+        default=Decision.APPROVE_ENFORCEMENT.value,
+        help=(
+            "The analyst decision. Only an approval finalizes a memo; a rejection or "
+            "deferral is a real governance event and does not produce a signed memo."
+        ),
+    )
+
     policies_parser = subparsers.add_parser(FETCH_POLICIES)
     policies_parser.add_argument(
         "--out",
@@ -818,6 +926,7 @@ def main(argv: list[str] | None = None) -> int:
         verify_parser: VERIFY_LEDGER,
         session_parser: RUN_SESSION,
         policies_parser: FETCH_POLICIES,
+        sign_parser: SIGN_MEMO,
     }
 
     try:
@@ -860,6 +969,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == FETCH_POLICIES:
         return run_fetch_policies(args.out)
+
+    if args.command == SIGN_MEMO:
+        return run_sign_memo(
+            args.session_dir,
+            analyst_id=args.analyst_id,
+            decision_value=args.decision,
+            pack_path=args.pack,
+            policies_dir=args.policies,
+        )
 
     if args.command == RUN_SESSION:
         if args.agent == MEMO_AGENT:

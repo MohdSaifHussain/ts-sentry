@@ -46,6 +46,7 @@ from ts_sentry.orchestrator.fleet import (
     phase_five_checks,
 )
 from ts_sentry.orchestrator.manifest import ArtifactRecord, SessionManifest
+from ts_sentry.orchestrator.memo_export import write_memo_html, write_memo_markdown
 from ts_sentry.orchestrator.memo_turn import MemoTurn, run_memo_turn
 from ts_sentry.orchestrator.pack_export import read_pack_json, write_pack_graphml, write_pack_json
 from ts_sentry.orchestrator.review import AnalystReviewer
@@ -75,6 +76,8 @@ SESSION_MANIFEST = "session_manifest.json"
 EVIDENCE_PACK = "evidence_pack.json"
 EVIDENCE_GRAPH = "evidence_graph.graphml"
 MEMO_JSON = "memo.json"
+MEMO_MARKDOWN = "memo.md"
+MEMO_HTML = "memo.html"
 
 
 @dataclass(frozen=True, slots=True)
@@ -505,6 +508,8 @@ class MemoArtifacts:
     ledger_jsonl: Path
     ledger_store: Path
     memo_json: Path
+    memo_markdown: Path
+    memo_html: Path
     session_events: Path
     manifest: Path
 
@@ -605,6 +610,15 @@ def run_memo_session(
                 "turn": turn.to_json_object(),
             },
         )
+        # Exports are written whether or not the memo verified, and always
+        # unsigned. A memo that failed verification is still the artifact an
+        # analyst reads to see what was flagged, and an export nobody can look
+        # at because it did not pass is an export that hides its own failure.
+        # No signature exists at drafting time, so every one of these carries
+        # the AI-DRAFT watermark by construction rather than by choice.
+        if turn.memo is not None:
+            write_memo_markdown(turn.memo, out_dir / MEMO_MARKDOWN)
+            write_memo_html(turn.memo, out_dir / MEMO_HTML)
         _write_json(
             out_dir / SESSION_EVENTS,
             {
@@ -628,6 +642,8 @@ def run_memo_session(
             ledger_jsonl=out_dir / LEDGER_JSONL,
             ledger_store=ledger_store,
             memo_json=out_dir / MEMO_JSON,
+            memo_markdown=out_dir / MEMO_MARKDOWN,
+            memo_html=out_dir / MEMO_HTML,
             session_events=out_dir / SESSION_EVENTS,
             manifest=out_dir / SESSION_MANIFEST,
         )

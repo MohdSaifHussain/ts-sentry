@@ -82,7 +82,7 @@ ones, which is the division STEP-04 D4 recorded.
 
 import hashlib
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -512,14 +512,47 @@ class Memo:
     def content_digest(self) -> str:
         """The digest a human signature binds to (STEP-05 D6).
 
-        Covers the whole memo including its bindings and its status, so a
-        signature cannot silently carry over to an edited memo. That property is
-        already documented on ``HumanSignature.subject_hash``; this is the value
-        that makes it true for memos.
+        Covers what the memo *says*: its bindings, its measure, its automated-
+        means disclosure and every sentence. A signature over this cannot carry
+        to an edited memo, which is the property ``HumanSignature.subject_hash``
+        documents and this value is what makes true for memos.
+
+        ``status`` is deliberately **excluded**, and the reason is mechanical
+        rather than aesthetic. Signing sets the status to ``SIGNED``; if that
+        flip changed the digest, the signature would be over a digest the signed
+        memo no longer has, and the artifact would fail its own verification the
+        instant it was produced. Status is workflow state about whether a
+        signature exists, not part of what was signed.
+
+        The consequence is stated rather than left to be discovered: a DRAFT and
+        a SIGNED memo with identical content share a digest. That is correct.
+        What distinguishes them is the existence of a signature, not a different
+        hash of the same words.
         """
+        signable = {key: value for key, value in self.to_json_object().items() if key != "status"}
         return hashlib.sha256(
-            json.dumps(self.to_json_object(), sort_keys=True, separators=(",", ":")).encode("utf-8")
+            json.dumps(signable, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()
+
+    def finalized(self) -> "Memo":
+        """The same memo, marked ``SIGNED``.
+
+        Deliberately not public API for agents: nothing in ``agents.*`` can
+        reach the signature module, so nothing there can obtain a signature to
+        pair with this. It is called by the signing path, which holds one.
+        """
+        return Memo(
+            memo_id=self.memo_id,
+            case_id=self.case_id,
+            subject_id=self.subject_id,
+            pack_digest=self.pack_digest,
+            corpus_version=self.corpus_version,
+            corpus_sha256=self.corpus_sha256,
+            sentences=self.sentences,
+            measure=self.measure,
+            automated_means=self.automated_means,
+            status=MemoStatus.SIGNED,
+        )
 
     def with_sentences(self, sentences: Sequence[MemoSentence]) -> "Memo":
         """A new memo with revised sentences, for the D4 revise loop.
@@ -556,3 +589,57 @@ class Memo:
             "status": self.status.value,
             "sentences": [sentence.to_json_object() for sentence in self.sentences],
         }
+
+    @classmethod
+    def from_json_object(cls, data: Mapping[str, object]) -> "Memo":
+        """Read a memo back from its export.
+
+        Reconstruction goes through the ordinary constructors, so a memo edited
+        on disk is refused by the same invariants that governed it in memory.
+        That matters more here than for the evidence pack: between the session
+        that drafted a memo and the command that signs it, the memo is a JSON
+        file anybody could edit, and a reader that trusted the file would let an
+        edited memo be signed as though the gate had seen it.
+        """
+        means = data["automated_means"]
+        if not isinstance(means, Mapping):
+            raise MemoError("automated_means is missing from this memo export")
+
+        sentences: list[MemoSentence] = []
+        raw_sentences = data["sentences"]
+        if not isinstance(raw_sentences, list):
+            raise MemoError("sentences is missing from this memo export")
+        for item in raw_sentences:
+            citation = item.get("citation")
+            sentences.append(
+                MemoSentence(
+                    index=int(item["index"]),
+                    role=SentenceRole(str(item["role"])),
+                    text=str(item["text"]),
+                    evidence_ids=frozenset(str(i) for i in item["evidence_ids"]),
+                    citation=None
+                    if citation is None
+                    else PolicyCitation(
+                        content_digest=str(citation["content_digest"]),
+                        anchor_id=str(citation["anchor_id"]),
+                        excerpt=str(citation["excerpt"]),
+                    ),
+                )
+            )
+
+        return cls(
+            memo_id=str(data["memo_id"]),
+            case_id=str(data["case_id"]),
+            subject_id=str(data["subject_id"]),
+            pack_digest=str(data["pack_digest"]),
+            corpus_version=str(data["corpus_version"]),
+            corpus_sha256=str(data["corpus_sha256"]),
+            sentences=tuple(sentences),
+            measure=Measure(str(data["measure"])),
+            automated_means=AutomatedMeans(
+                detection_automated=bool(means["detection_automated"]),
+                decision=AutomatedDecision(str(means["decision"])),
+                drafted_by=str(means["drafted_by"]),
+            ),
+            status=MemoStatus(str(data["status"])),
+        )
