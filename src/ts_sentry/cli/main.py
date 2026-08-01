@@ -65,6 +65,26 @@ from ts_sentry.governance.scopes import (
     resolve_scope_by_name,
 )
 from ts_sentry.governance.signature import Decision
+from ts_sentry.measurement.frame import (
+    ARM_A_CLASS_EXPANSION,
+    ARM_B_COMMENT_ATTRIBUTION,
+    build_view_frame,
+)
+from ts_sentry.measurement.plots import render_curves
+from ts_sentry.measurement.raters import perfect_panel
+from ts_sentry.measurement.report import (
+    MeasurementReport,
+    MeasurementStamp,
+    write_measurement_report,
+)
+from ts_sentry.measurement.sensitivity import (
+    Curve,
+    policy_scope_curve,
+    rater_quality_curve,
+    sample_size_curve,
+)
+from ts_sentry.measurement.vvr import MINIMUM_PER_STRATUM, VvrEstimate, measure_vvr
+from ts_sentry.measurement.workflow import AnalystMinutesModel, read_session_counts
 from ts_sentry.orchestrator.adapter import ModelAdapter, ModelMode, Responder, StubAdapter
 from ts_sentry.orchestrator.eval_session import EvalSessionError, run_eval_session
 from ts_sentry.orchestrator.evidence_turn import stub_evidence_responder
@@ -89,7 +109,7 @@ from ts_sentry.orchestrator.signing import SigningRefused, sign_memo
 from ts_sentry.orchestrator.subject_check import SubjectNotFound
 from ts_sentry.orchestrator.triage_turn import stub_triage_responder
 from ts_sentry.prompt_registry.registry import PromptRegistryError
-from ts_sentry.provenance import DatasetDigestError, git_sha, sha256_file
+from ts_sentry.provenance import BUILD_MANIFEST, DatasetDigestError, git_sha, sha256_file
 
 GENERATOR_VERSION = "0.1.0"
 
@@ -778,14 +798,169 @@ class _RaisingParser(argparse.ArgumentParser):
         raise _UsageError(self, message)
 
 
+def run_report(
+    session_dir: Path,
+    *,
+    out_dir: Path,
+    build_dir: Path | None,
+    policies_dir: Path,
+    seed: int,
+    sample_size: int,
+    cases: int,
+) -> int:
+    """STEP-07 D5: a measurement report from session artifacts.
+
+    The workflow lens comes from the session alone, which is what D5 asks for.
+    The platform lens needs the dataset the session ran against, so it is
+    computed when ``--build`` is given and reported as not computed when it is
+    not. Silently omitting a whole lens would let a reader believe a report
+    covered more than it did.
+    """
+    try:
+        counts = read_session_counts(session_dir)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"{REPORT}: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+
+    dataset_digest = "not recorded"
+    dataset_seed: int | None = None
+    dataset_scale: int | None = None
+    manifest_path = session_dir / "session_manifest.json"
+    if manifest_path.is_file():
+        session_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        dataset_digest = str(session_manifest.get("dataset_digest", dataset_digest))
+
+    corpus_version: str | None = None
+    corpus_sha: str | None = None
+    if policies_dir.is_dir():
+        try:
+            corpus = load_corpus(policies_dir)
+        except CorpusError:
+            # A report must still be produced when the corpus is unreadable.
+            # The stamp says "not recorded", which is the honest reading: this
+            # report cannot tell you which policy text was in force.
+            corpus_version = None
+        else:
+            corpus_version = corpus.corpus_version
+            corpus_sha = corpus.corpus_sha256
+
+    # The active prompt version per task, which is D4's "prompt version
+    # pointer". Read from the registry's activation log rather than from the
+    # module constants, because the log is what records which bytes were in
+    # force; a constant records only what this build would use next.
+    prompt_versions: dict[str, str] = {}
+    registry_manifest = Path("prompts") / "manifest.json"
+    if registry_manifest.is_file():
+        try:
+            activations = json.loads(registry_manifest.read_text(encoding="utf-8"))["activations"]
+        except (KeyError, ValueError):
+            prompt_versions = {}
+        else:
+            for entry in sorted(activations, key=lambda item: int(item["seq"])):
+                if entry.get("action") == "activate":
+                    prompt_versions[str(entry["task"])] = str(entry["content_digest"])
+
+    frame = None
+    estimate = None
+    bootstrap = None
+    arms: tuple[VvrEstimate, ...] = ()
+    curves: tuple[Curve, ...] = ()
+    figures: tuple[str, ...] = ()
+
+    connection: duckdb.DuckDBPyConnection | None = None
+    if build_dir is not None:
+        store = build_dir / "build.duckdb"
+        if not store.is_file():
+            print(f"{REPORT}: {store} does not exist", file=sys.stderr)
+            return EXIT_INPUT_ERROR
+        build_manifest = build_dir / BUILD_MANIFEST
+        if build_manifest.is_file():
+            payload = json.loads(build_manifest.read_text(encoding="utf-8"))
+            dataset_seed = int(payload["seed"])
+            dataset_scale = int(payload["scale"])
+        connection = duckdb.connect(str(store), read_only=True)
+
+    try:
+        if connection is not None:
+            frame = build_view_frame(connection)
+            panel = perfect_panel(3)
+            drawn = min(sample_size, frame.size)
+            # A pilot buys optimal allocation, which is the published method's
+            # own design. A fifth of the sample, and never so small that the
+            # allocation it feeds cannot give every non-empty stratum its
+            # minimum.
+            pilot = max(drawn // 5, MINIMUM_PER_STRATUM * len(frame.stratum_sizes()))
+            estimate, bootstrap = measure_vvr(
+                frame,
+                panel,
+                seed=seed,
+                sample_size=drawn,
+                pilot_size=pilot if pilot < drawn else 0,
+            )
+            arm_frames = [
+                build_view_frame(connection, scope=scope)
+                for scope in (ARM_A_CLASS_EXPANSION, ARM_B_COMMENT_ATTRIBUTION)
+            ]
+            arms = tuple(
+                measure_vvr(
+                    arm, panel, seed=seed, sample_size=min(sample_size, arm.size), replicates=2
+                )[0]
+                for arm in arm_frames
+            )
+            curves = (
+                sample_size_curve(frame, seed=seed, sample_sizes=[500, 2000, 9000, frame.size]),
+                rater_quality_curve(
+                    frame,
+                    seed=seed,
+                    specificities=(1.0, 0.999, 0.99, 0.95, 0.9),
+                    sample_size=min(sample_size, frame.size),
+                ),
+                policy_scope_curve(
+                    [frame, *arm_frames],
+                    seed=seed,
+                    sample_size=min(sample_size, frame.size),
+                ),
+            )
+            figures = tuple(path.name for path in render_curves(curves, out_dir))
+    finally:
+        if connection is not None:
+            connection.close()
+
+    report = MeasurementReport(
+        stamp=MeasurementStamp.now(
+            measurement_seed=seed,
+            dataset_digest=dataset_digest,
+            dataset_seed=dataset_seed,
+            dataset_scale=dataset_scale,
+            corpus_version=corpus_version,
+            corpus_sha256=corpus_sha,
+            prompt_versions=prompt_versions,
+        ),
+        governance=counts.governance,
+        minutes=AnalystMinutesModel().evaluate(cases=cases),
+        session_id=counts.session_id or session_dir.name,
+        frame=frame,
+        vvr=estimate,
+        bootstrap=bootstrap,
+        arms=arms,
+        curves=curves,
+        figures=figures,
+    )
+
+    written = write_measurement_report(report, out_dir, curves=curves)
+    print(f"report written: {written[0]}")
+    return EXIT_OK
+
+
 VERIFY_LEDGER = "verify-ledger"
 RUN_SESSION = "run-session"
 FETCH_POLICIES = "fetch-policies"
 SIGN_MEMO = "sign-memo"
 EVAL_PROMPTS = "eval-prompts"
+REPORT = "report"
 
 TRANSLATES_USAGE_ERRORS = frozenset(
-    {VERIFY_LEDGER, RUN_SESSION, FETCH_POLICIES, SIGN_MEMO, EVAL_PROMPTS}
+    {VERIFY_LEDGER, RUN_SESSION, FETCH_POLICIES, SIGN_MEMO, EVAL_PROMPTS, REPORT}
 )
 """Subcommands whose argparse usage errors become ``EXIT_INPUT_ERROR``.
 
@@ -997,6 +1172,25 @@ def main(argv: list[str] | None = None) -> int:
     eval_parser.add_argument("--seed", type=int, default=42)
     eval_parser.add_argument("--session-id", default=None)
 
+    report_parser = subparsers.add_parser(REPORT)
+    report_parser.add_argument("--session", type=Path, required=True)
+    report_parser.add_argument("--out", type=Path, required=True)
+    report_parser.add_argument(
+        "--build",
+        type=Path,
+        default=None,
+        help=(
+            "Build directory for the platform lens. STEP-07 D5 names only --session, "
+            "and the workflow lens needs nothing else; the VVR estimate needs the "
+            "dataset the session ran against. Omitted, the report says the platform "
+            "lens was not computed rather than omitting it silently."
+        ),
+    )
+    report_parser.add_argument("--policies", type=Path, default=Path("policies"))
+    report_parser.add_argument("--seed", type=int, default=42)
+    report_parser.add_argument("--sample-size", type=int, default=9000)
+    report_parser.add_argument("--cases", type=int, default=1)
+
     policies_parser = subparsers.add_parser(FETCH_POLICIES)
     policies_parser.add_argument(
         "--out",
@@ -1021,6 +1215,7 @@ def main(argv: list[str] | None = None) -> int:
         policies_parser: FETCH_POLICIES,
         sign_parser: SIGN_MEMO,
         eval_parser: EVAL_PROMPTS,
+        report_parser: REPORT,
     }
 
     try:
@@ -1063,6 +1258,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == FETCH_POLICIES:
         return run_fetch_policies(args.out)
+
+    if args.command == REPORT:
+        return run_report(
+            args.session,
+            out_dir=args.out,
+            build_dir=args.build,
+            policies_dir=args.policies,
+            seed=args.seed,
+            sample_size=args.sample_size,
+            cases=args.cases,
+        )
 
     if args.command == EVAL_PROMPTS:
         return run_eval_prompts(
