@@ -62,13 +62,14 @@ preserved verbatim inside the JSON encoding rather than stripped.
 
 ## What this deliberately does not claim
 
-- **Zero signals is not evidence the detector works.** It is evidence there was
-  nothing of that kind to find. This corpus is commercial comment spam from 2013
-  to 2015 ("check out my channel", "subscribe me"), collected years before
-  prompt injection against LLM applications existed as a technique. A detector
-  scoring zero on a corpus containing zero instances has demonstrated nothing
-  about its precision or its recall, and reporting the zero as a pass would be
-  exactly the inversion this project keeps refusing.
+> [!IMPORTANT]
+> - **Zero signals is not evidence the detector works.** It is evidence there was
+>   nothing of that kind to find. This corpus is commercial comment spam from 2013
+>   to 2015 ("check out my channel", "subscribe me"), collected years before
+>   prompt injection against LLM applications existed as a technique. A detector
+>   scoring zero on a corpus containing zero instances has demonstrated nothing
+>   about its precision or its recall, and reporting the zero as a pass would be
+>   exactly the inversion this project keeps refusing.
 - **What genuinely was exercised on real text is the structural half**: the
   content-derived fence, the JSON encoding, the line-breaker escaping, the
   record-id uniqueness invariant. Those are the load-bearing controls, and they

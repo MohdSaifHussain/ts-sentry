@@ -58,11 +58,12 @@ prerequisites, or a resolvable environment.
 
 ### The one thing that needs network
 
-`analystkit` backs the data-quality gate, is pinned to an exact git revision,
-and is not published to PyPI. Both paths fetch it from GitHub on first install.
-
-**Everything after install runs offline.** The deterministic stub adapter is the
-default and the CI path. No step below opens a socket.
+> [!NOTE]
+> `analystkit` backs the data-quality gate, is pinned to an exact git revision,
+> and is not published to PyPI. Both paths fetch it from GitHub on first install.
+>
+> **Everything after install runs offline.** The deterministic stub adapter is the
+> default and the CI path. No step below opens a socket.
 
 ## The path
 
@@ -138,11 +139,12 @@ ts-sentry verify-ledger session-evidence/ledger.jsonl \
 Exit 0 means the chain is intact **and** its head matches the anchor the session
 recorded at close.
 
-Try truncating the last line of that `ledger.jsonl` and running it again. The
-bare `verify-ledger` still exits 0, because chain verification cannot see
-entries removed from the end: what remains is a shorter chain whose every link
-still recomputes. The anchor catches it, with exit 6. That limitation is
-asserted as a passing test rather than described.
+> [!WARNING]
+> Try truncating the last line of that `ledger.jsonl` and running it again. The
+> bare `verify-ledger` still exits 0, because chain verification cannot see
+> entries removed from the end: what remains is a shorter chain whose every link
+> still recomputes. The anchor catches it, with exit 6. That limitation is
+> asserted as a passing test rather than described.
 
 ## See it without running it
 
@@ -162,8 +164,9 @@ something, which is the half worth reading first.
 
 ## What you have not proved by doing this
 
-The quickstart shows the pipeline working. It does not show that any agent is
-good at its job. Every model output you just produced came from a deterministic
-stub that cannot be persuaded and cannot reason. See the Honest Limits in
-[README.md](README.md#honest-limits) before drawing conclusions from anything
-above.
+> [!IMPORTANT]
+> The quickstart shows the pipeline working. It does not show that any agent is
+> good at its job. Every model output you just produced came from a deterministic
+> stub that cannot be persuaded and cannot reason. See the Honest Limits in
+> [README.md](README.md#honest-limits) before drawing conclusions from anything
+> above.

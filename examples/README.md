@@ -81,10 +81,11 @@ ts-sentry verify-ledger 01-triage-queue/ledger.jsonl \
     --expect-head-from 01-triage-queue/session_manifest.json
 ```
 
-Truncate any of these ledgers and the bare verify still exits 0, because chain
-verification cannot see entries removed from the end. Only the anchor catches
-it, with exit 6. That limitation is asserted as a passing test rather than
-described, and it has been carried in every phase since STEP-02.
+> [!WARNING]
+> Truncate any of these ledgers and the bare verify still exits 0, because chain
+> verification cannot see entries removed from the end. Only the anchor catches
+> it, with exit 6. That limitation is asserted as a passing test rather than
+> described, and it has been carried in every phase since STEP-02.
 
 ## Third-party data
 

@@ -52,10 +52,11 @@ want artifacts written into there.
 
 ### It runs as uid 10001, and that has one consequence you will hit
 
-The image runs as a non-root user (`analyst`, uid **10001**), because nothing
-it does needs root. A bind mount carries the **host's** ownership through
-unchanged, so if the directory you mount is owned by someone else, the
-container cannot write into it and you get:
+> [!WARNING]
+> The image runs as a non-root user (`analyst`, uid **10001**), because nothing
+> it does needs root. A bind mount carries the **host's** ownership through
+> unchanged, so if the directory you mount is owned by someone else, the
+> container cannot write into it and you get:
 
 ```
 PermissionError: [Errno 13] Permission denied: 'build'
@@ -351,10 +352,11 @@ chain makes any head claim meaningless.
 
 ### What `--expect-head` is, and what it is not
 
-Chain verification detects modification, reordering and interior deletion. It
-**cannot** detect entries removed from the end: what remains is a shorter chain
-whose every link still recomputes, indistinguishable from a session that ended
-earlier. This is asserted by a passing test rather than only documented.
+> [!WARNING]
+> Chain verification detects modification, reordering and interior deletion. It
+> **cannot** detect entries removed from the end: what remains is a shorter chain
+> whose every link still recomputes, indistinguishable from a session that ended
+> earlier. This is asserted by a passing test rather than only documented.
 
 `--expect-head` is a comparison verb, not an anchor system. It compares against
 an expectation the caller already holds. `--expect-head-from` reads that

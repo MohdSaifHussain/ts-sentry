@@ -70,9 +70,10 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
-Requires Python 3.12+. **The install step needs network access** because
-`analystkit`, the data-quality gate dependency, is pinned to a git revision and
-is not on PyPI. Everything after install runs offline.
+> [!NOTE]
+> Requires Python 3.12+. **The install step needs network access** because
+> `analystkit`, the data-quality gate dependency, is pinned to a git revision and
+> is not on PyPI. Everything after install runs offline.
 
 For a reproducible environment rather than a fast one, see
 [QUICKSTART.md](QUICKSTART.md#two-install-paths).
@@ -119,11 +120,12 @@ The deterministic stub adapter is the default and the CI path. A run with no
 environment configured, no credential, and without the optional vendor package
 installed is a complete, valid session.
 
-Live mode requires the intent expressed **twice**: `--llm-mode live` *and*
-`TS_SENTRY_LLM_MODE=live` in the environment, plus `ANTHROPIC_API_KEY`, whose
-value this repository never reads. It only checks the variable exists and lets
-the vendor client read it. A shell alias or a stray argument cannot start
-spending money.
+> [!CAUTION]
+> Live mode requires the intent expressed **twice**: `--llm-mode live` *and*
+> `TS_SENTRY_LLM_MODE=live` in the environment, plus `ANTHROPIC_API_KEY`, whose
+> value this repository never reads. It only checks the variable exists and lets
+> the vendor client read it. A shell alias or a stray argument cannot start
+> spending money.
 
 The full test suite has been run with `socket.connect`,
 `socket.create_connection` and `socket.connect_ex` patched to raise: zero
@@ -144,9 +146,10 @@ notes.
 
 ## Honest Limits
 
-Mandatory and carried forward, per the standing rule. The full standing set is
-[ARCHITECTURE.md Section 12](ARCHITECTURE.md#12-honest-limits-standing-section-carried-into-readme);
-these are the ones a reader should have before anything else.
+> [!IMPORTANT]
+> Mandatory and carried forward, per the standing rule. The full standing set is
+> [ARCHITECTURE.md Section 12](ARCHITECTURE.md#12-honest-limits-standing-section-carried-into-readme);
+> these are the ones a reader should have before anything else.
 
 - **Synthetic data only.** No claim of real-platform efficacy. The one exception
   is [`examples/08-firewall-real-comments`](examples/08-firewall-real-comments/),

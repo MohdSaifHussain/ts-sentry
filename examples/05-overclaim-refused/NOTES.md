@@ -49,12 +49,13 @@ Compare with example 03, the same agent on the faithful path: 1 attempt,
 
 ## What this deliberately does not claim
 
-- **This does not prove the memo agent's real-world error rate, and nothing
-  here estimates one.** The agent was told to cite a nonexistent id by a
-  deterministic stub. What is proven is narrow and worth exactly its own width:
-  **the claim-to-evidence check fires**, it fires on the specific defect, it
-  names the defect by a reason code that can be counted, and the memo is held at
-  DRAFT until it stops firing.
+> [!IMPORTANT]
+> - **This does not prove the memo agent's real-world error rate, and nothing
+>   here estimates one.** The agent was told to cite a nonexistent id by a
+>   deterministic stub. What is proven is narrow and worth exactly its own width:
+>   **the claim-to-evidence check fires**, it fires on the specific defect, it
+>   names the defect by a reason code that can be counted, and the memo is held at
+>   DRAFT until it stops firing.
 - **`distinct_defects_caught` is 1, not 8.** The first version of this metric
   reported 8, counting one unchanged sentence rejected eight times as eight
   corrections, which inflated exactly the number ARCHITECTURE 7.2 showcases.
