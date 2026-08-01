@@ -19,6 +19,7 @@ from typing import Protocol
 
 import duckdb
 
+from ts_sentry.data.policy_corpus import PolicyCorpus
 from ts_sentry.governance.mandate import Consequence, ToolId
 from ts_sentry.governance.scopes import DataScope
 
@@ -34,7 +35,7 @@ __all__ = [
     "resolve_tool_by_name",
 ]
 
-IMPLEMENTATION_PHASE = 4
+IMPLEMENTATION_PHASE = 5
 """The STEP number this build implements.
 
 Bumped by each phase as its first act. It is the countdown test's clock: an
@@ -81,12 +82,22 @@ class ToolResources:
     with an ``isinstance`` check at its own boundary. That check is worth having
     anyway: it is the fail-closed refusal for a caller that lends the wrong
     thing.
+
+    ``memo`` and ``corpus`` arrive in STEP-05 on the same argument. A memo an
+    agent could supply is a memo whose claims could be checked against sentences
+    the agent chose, and a corpus an agent could supply is one it could have
+    written the clauses of, which would make every citation resolve by
+    construction. ``memo`` is ``object`` for the reason ``pack`` is; ``corpus``
+    is typed, because a hashed policy corpus is shared infrastructure rather
+    than any agent's output.
     """
 
     connection: duckdb.DuckDBPyConnection | None = None
     seed: int = 42
     pack: object | None = None
     retrieval_ts: datetime | None = None
+    memo: object | None = None
+    corpus: PolicyCorpus | None = None
 
 
 @dataclass(frozen=True, slots=True)

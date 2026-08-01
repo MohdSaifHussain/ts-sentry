@@ -48,6 +48,7 @@ from collections.abc import Mapping
 
 from ts_sentry.governance.mandate import Consequence, ToolId
 from ts_sentry.governance.scopes import DataScope
+from ts_sentry.orchestrator.citation_tool import resolve_policy_citation
 from ts_sentry.orchestrator.pivot_tool import run_parameterized_pivot
 from ts_sentry.orchestrator.toolspec import (
     IMPLEMENTATION_PHASE,
@@ -106,7 +107,7 @@ TOOL_TABLE: Mapping[ToolId, ToolEntry] = {
         consequence=Consequence.RECOMMEND,
         required_scopes=frozenset(),
         handler_due_step=5,
-        handler=None,
+        handler=resolve_policy_citation,
         summary="Resolve a policy citation against the hashed corpus (ARCHITECTURE 4.3).",
     ),
     ToolId.RUN_PROMPT_EVAL: ToolEntry(

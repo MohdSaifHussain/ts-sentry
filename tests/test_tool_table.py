@@ -48,15 +48,13 @@ def test_the_pending_handler_set_is_pinned() -> None:
     fails when a handler lands (update the list, one line) and equally when
     one silently disappears, which is the direction nobody would notice.
 
-    It has shrunk twice. At STEP-03 D3 the table declared four tools and
+    It has shrunk three times. At STEP-03 D3 the table declared four tools and
     executed none, because dispatch is a mechanism and the first real tool was
     still ahead. STEP-03 D5 landed the triage ranker, taking it to three.
-    STEP-04 D2 landed the pivot handler, taking it to two.
+    STEP-04 D2 landed the pivot handler, taking it to two. STEP-05 D5 landed the
+    citation handler, taking it to one.
     """
-    assert pending_handlers(TOOL_TABLE) == (
-        ToolId.RESOLVE_POLICY_CITATION,
-        ToolId.RUN_PROMPT_EVAL,
-    )
+    assert pending_handlers(TOOL_TABLE) == (ToolId.RUN_PROMPT_EVAL,)
 
 
 def test_nothing_due_this_phase_or_earlier_is_still_pending() -> None:
