@@ -13,6 +13,14 @@ authors = [{ name = "Mohd Saif Hussain" }]
 
 dependencies = [
     "duckdb>=1.5",
+    # STEP-07 D2 renders the sensitivity figures, and STEP-07 D5's `report`
+    # verb renders them at runtime rather than only in tests, which is why
+    # this is a main dependency and not a dev extra. Deliberately no upper
+    # pin: nothing in this project claims PNG bytes are stable across
+    # matplotlib versions, so an upgrade is not expected to break anything.
+    # See docs/DECISIONS.md for the byte-stable-data / hash-stable-in-env-PNG
+    # split, and `measurement.plots` for how determinism is obtained.
+    "matplotlib>=3.8",
     "numpy>=2.0",
     # Used only for the DuckDB bulk-load path (register + INSERT SELECT),
     # which is ~2 orders of magnitude faster than executemany for the
