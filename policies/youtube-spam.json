@@ -1,0 +1,77 @@
+{
+  "doc_id": "youtube-spam",
+  "clauses": [
+    {
+      "anchor_id": "spam-policy",
+      "heading": "Spam Policy",
+      "text": "We do not allow content, metadata, or behavior designed to take advantage of the YouTube community, including spamming users or manipulating the platform in ways that mislead them. We also prohibit misleading viewers to boost content engagement or to flood community spaces with inorganic promotion. If you find content that violates this policy, report it using these instructions for reporting Community Guidelines violations. If you've found a few videos or comments on the same channel that you would like to report, you can report the channel. This policy applies to all types of content on YouTube, including unlisted and private content, comments, links, posts and thumbnails, and coordinated networks of channels.",
+      "ordinal": 0
+    },
+    {
+      "anchor_id": "what-this-policy-means-for-you",
+      "heading": "What this policy means for you",
+      "text": "We recognize that creators use a variety of strategies to promote their channels and reach new audiences. To grow their audience safely and sustainably, creators should avoid practices that rely on artificial engagement, undermine platform integrity and disrupt the overall viewer experience. Examples are included below; this is not a complete list.",
+      "ordinal": 1
+    },
+    {
+      "anchor_id": "engagement-manipulation",
+      "heading": "Engagement manipulation",
+      "text": "Engagement manipulation: Repetitive or templated content aimed at artificially inflating engagement through bots, coercion, or offering rewards in exchange for likes, views, or subscribers. It's okay to ask viewers to like, comment, or subscribe. Example: Using coordinated \"sub-for-sub\" schemes.",
+      "ordinal": 2
+    },
+    {
+      "anchor_id": "fake-engagement",
+      "heading": "Fake engagement",
+      "text": "Fake engagement: Exploiting community features, such as Polls or Image Posts, to force engagement rather than building genuine enthusiasm from your audience or community. Example: Posting high volumes of low-effort, repetitive polls (e.g., \"Click the heart if you like food\") multiple times a day.",
+      "ordinal": 3
+    },
+    {
+      "anchor_id": "comment-spam",
+      "heading": "Comment spam",
+      "text": "Comment spam: Using high-volume, repetitive, or deceptive comments, live chats, or other messages to drive traffic to or engagement with content. Example: Posting identical or similar “check out my channel” messages across hundreds of videos.",
+      "ordinal": 4
+    },
+    {
+      "anchor_id": "off-platform-diversion",
+      "heading": "Off-platform diversion",
+      "text": "Off-platform diversion: Content created solely to drive users off of YouTube to external sites, especially those hosting prohibited material like malware, adult content, or illegal goods/services. Example: A 10-second video promising a \"free unreleased movie\" that directs viewers to a URL in the description which contains malware.",
+      "ordinal": 5
+    },
+    {
+      "anchor_id": "detection-evasion",
+      "heading": "Detection evasion",
+      "text": "Detection evasion: Technical manipulation (such as speeding up audio, heavy filters, cropping) designed to bypass abuse detection. Example: Uploading a television episode that has been mirrored horizontally to avoid detection.",
+      "ordinal": 6
+    },
+    {
+      "anchor_id": "automated-or-synthetic-mass-production",
+      "heading": "Automated or synthetic mass-production",
+      "text": "Automated or synthetic mass-production: Using automated tools or AI to churn out high volumes of similar content with minimal changes. While testing out new creation tools or posting a few variations of a video is ok, we don't allow use of these tools to flood our platform with repetitive content. This includes coordinated mass-production and technical manipulation to bypass filters or trick viewers. Example: Channels that use the exact same background music and repetitive AI generated imagery across many videos, with each video reading out an AI-generated script.",
+      "ordinal": 7
+    },
+    {
+      "anchor_id": "scraped-content",
+      "heading": "Scraped content",
+      "text": "Scraped content: Re-posting material from other websites or platforms, or other videos without adding anything of your own; such as original commentary, educational value, or unique editing. Example: A channel that takes popular clips and re-uploads them in their entirety without any transformative editing, reaction, or educational breakdown.",
+      "ordinal": 8
+    },
+    {
+      "anchor_id": "scams",
+      "heading": "Scams",
+      "text": "Scams: Promoting \"get rich quick\" investment schemes, fake job offers, or sharing fake \"customer support\" contact information to steal private data like bank details, passwords, or government IDs. Example: A video pretending to be a real company or government service that tricks viewers into clicking a link for a \"free payout\" but steals their passwords and bank info.",
+      "ordinal": 9
+    },
+    {
+      "anchor_id": "malicious-clickbait",
+      "heading": "Malicious clickbait",
+      "text": "Malicious clickbait: Using maliciously misleading titles, thumbnails, descriptions, or imagery to trick users into clicking on a video that does not deliver what was promised. Example: Uploading a video for which the title offers a full sports match but the video shows only a clip.",
+      "ordinal": 10
+    },
+    {
+      "anchor_id": "what-happens-if-content-violates-this-policy",
+      "heading": "What happens if content violates this policy",
+      "text": "If your content violates this policy, we may suspend your monetization or terminate your channel or account. Learn more about monetization policies and channel or account terminations. For some violations, we may remove the content and issue a warning or a strike against your channel. If this happens, we’ll send you an email to let you know. You can take an optional policy training to allow the warning to expire after 90 days. However, if your content violates the same policy within that 90 day window, the warning may not expire and your channel may be given a strike. If you violate a different policy after completing the training, you will get another warning. We may prevent repeat offenders from taking policy trainings in the future. If you get 3 strikes within 90 days, your channel may be terminated. Learn more about our strike system.",
+      "ordinal": 11
+    }
+  ]
+}

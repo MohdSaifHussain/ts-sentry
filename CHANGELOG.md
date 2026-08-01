@@ -248,6 +248,30 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   and `--max-hops`. A surface STEP-04 does not enumerate, added because its own
   exit checklist requires a ledgered session to inspect.
 
+- STEP-05 D1: `ts_sentry.data.policy_corpus` - the hashed, anchored policy
+  corpus (ARCHITECTURE 6.2). Anchors derive from clause **headings**, never
+  from position, so inserting a clause cannot renumber the citations below it.
+  Two digests with different jobs: `content_digest` covers what the repository
+  committed and is the identity a memo citation pins; `retrieval_sha256` covers
+  the raw bytes one fetch received and is provenance only. `load_corpus`
+  re-derives both and refuses a corpus that does not match its manifest, so an
+  edited clause file cannot resolve a citation.
+- STEP-05 D1: `ts_sentry.data.policy_fetch` - the fetch-once script. stdlib
+  `urllib.request` and `html.parser`, no new dependency, following STEP-04's
+  hand-written GraphML. Anchors headings *and* labelled list items, because on
+  the YouTube spam page every individual violation type is an `<li><strong>`
+  item inside one 486-word section: heading-only anchoring would have meant a
+  memo about a comment-spam ring could cite nothing narrower than that section.
+  Callouts (`<div class="tip">`) become their own clauses and must be named by
+  the operator; `name_callouts` refuses an unnamed callout, and a title matching
+  zero or several.
+- STEP-05 D2: `policies/` - corpus v1. Three verbatim public YouTube policy
+  documents, 30 clauses, plus `ts_sentry.data.policy_sources` recording which
+  documents, which boilerplate was dropped, and which headings are
+  operator-supplied. **Clause-level text only; whole pages are not committed**,
+  and the manifest carries the fair-use posture and per-document retrieval
+  provenance. `ts-sentry fetch-policies` is the operator verb that produces it;
+  CI never runs it and every test loads the committed corpus offline.
 - STEP-04 follow-up: `ts_sentry.orchestrator.subject_check` - an evidence
   session refuses a `--subject` that does not exist in the dataset, exiting `5`
   and producing no session and no chain. The check runs before the output
@@ -285,6 +309,10 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   `begin_turn`.
 - `EVIDENCE_MANDATE.max_steps` is 20, because STEP-04 3.5 reports recovery at 20
   pivots and a reported budget the mandate forbids is not a measurement.
+- `require_ist_iso` moved from a private helper in `agents.evidence.pack` to
+  `ts_sentry.data.tz`, now that the policy corpus is the second store keeping
+  timestamps as text. Same reason `ist_from_epoch_ms` lives there: a second
+  spelling of the check is a second chance to accept a UTC-rendered timestamp.
 - The bracketed citation syntax moved to `ts_sentry.agents.citations`, now that
   two agents parse it, and is re-exported from `agents.triage.rationale` so
   STEP-03's callers are unchanged. The epoch-to-IST conversion moved to

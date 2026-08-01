@@ -27,15 +27,25 @@ import json
 import sys
 import tempfile
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 from typing import NoReturn
 
 import duckdb
 
 from ts_sentry.data.generator import build_dataset
+from ts_sentry.data.policy_corpus import (
+    PolicyCorpus,
+    PolicyDocument,
+    load_corpus,
+    write_corpus,
+)
+from ts_sentry.data.policy_fetch import FetchError, fetch_document
+from ts_sentry.data.policy_sources import CORPUS_VERSION, POLICY_SOURCES
 from ts_sentry.data.population import BuildConfig
 from ts_sentry.data.quality import QualityGateResult, QualityThresholds, run_quality_gate
 from ts_sentry.data.store import export_dataset, persist_dataset
+from ts_sentry.data.tz import IST
 from ts_sentry.governance.canonical import require_sha256_hex
 from ts_sentry.governance.ledger import (
     ChainHead,
@@ -186,6 +196,68 @@ def run_build_dataset(
         return EXIT_QUALITY_GATE_FAIL
 
     print(f"Build succeeded: {out_dir}")
+    return EXIT_OK
+
+
+# --------------------------------------------------------------------------
+# STEP-05 D1/D2: fetch-policies
+# --------------------------------------------------------------------------
+
+
+def run_fetch_policies(out_dir: Path) -> int:
+    """Fetch the policy corpus and write it to ``out_dir``.
+
+    The one verb in this CLI that reaches the public internet, and the only one
+    that reads the wall clock. Both are deliberate and both are confined here:
+    ``fetch_document`` takes the timestamp rather than finding one, matching how
+    every other component in this system receives its clock, and CI never runs
+    this subcommand.
+
+    It is a fetch-*once* script. The corpus is committed to the repository and
+    every test loads it from there, so a re-run is an explicit act of producing
+    a new corpus version, not part of anybody's build.
+    """
+    fetched_at = datetime.now(tz=IST)
+    documents: list[PolicyDocument] = []
+
+    for source in POLICY_SOURCES:
+        print(f"fetching {source.doc_id} ... ", end="", flush=True)
+        try:
+            document = fetch_document(
+                source.doc_id,
+                source.url,
+                section_filter=source.section_filter,
+                callout_titles=source.callout_titles,
+                fetched_ts_ist=fetched_at,
+            )
+        except FetchError as exc:
+            print("FAILED")
+            print(f"fetch-policies: {exc}", file=sys.stderr)
+            return EXIT_INPUT_ERROR
+        documents.append(document)
+        print(f"{len(document.clauses)} clauses, title {document.title!r}")
+
+    corpus = PolicyCorpus(corpus_version=CORPUS_VERSION, documents=tuple(documents))
+    write_corpus(corpus, out_dir)
+
+    print()
+    print(f"corpus_version: {corpus.corpus_version}")
+    print(f"corpus_sha256:  {corpus.corpus_sha256}")
+    for document in corpus.documents:
+        print(f"  {document.doc_id:26s} content_digest={document.content_digest}")
+    print(f"written to:     {out_dir}")
+
+    # Read it straight back. load_corpus re-derives every digest and refuses a
+    # corpus that does not match its manifest, so a write that produced
+    # something unloadable is caught here rather than by whoever cites it next.
+    reloaded = load_corpus(out_dir)
+    if reloaded.corpus_sha256 != corpus.corpus_sha256:
+        print(
+            "fetch-policies: the corpus did not survive a write/read round trip",
+            file=sys.stderr,
+        )
+        return EXIT_INPUT_ERROR
+    print("result:         written and verified by reload")
     return EXIT_OK
 
 
@@ -517,8 +589,9 @@ class _RaisingParser(argparse.ArgumentParser):
 
 VERIFY_LEDGER = "verify-ledger"
 RUN_SESSION = "run-session"
+FETCH_POLICIES = "fetch-policies"
 
-TRANSLATES_USAGE_ERRORS = frozenset({VERIFY_LEDGER, RUN_SESSION})
+TRANSLATES_USAGE_ERRORS = frozenset({VERIFY_LEDGER, RUN_SESSION, FETCH_POLICIES})
 """Subcommands whose argparse usage errors become ``EXIT_INPUT_ERROR``.
 
 Argparse exits 2 on a usage error, and 2 is ``EXIT_QUALITY_GATE_FAIL`` in this
@@ -530,6 +603,9 @@ defect in a documented contract rather than a stylistic gap.
 ``build-dataset`` is deliberately absent. It has exited 2 on usage errors since
 STEP-01, that is its published contract, and changing it here would alter a
 closed phase's behavior for tidiness.
+
+``fetch-policies`` is included from the start, so it never acquires the defect
+``run-session`` had to have fixed retrospectively.
 """
 
 
@@ -617,6 +693,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     session_parser.add_argument("--max-hops", type=int, default=None)
 
+    policies_parser = subparsers.add_parser(FETCH_POLICIES)
+    policies_parser.add_argument(
+        "--out",
+        type=Path,
+        default=Path("policies"),
+        help=(
+            "Where to write the corpus. The committed corpus lives in policies/; "
+            "point this elsewhere to inspect a re-fetch without overwriting it."
+        ),
+    )
+
     # The root parser has no options of its own, so the first token is the
     # subcommand. Needed because a root-parser error carries no parsed
     # namespace to read the command from.
@@ -627,6 +714,7 @@ def main(argv: list[str] | None = None) -> int:
     parsers: dict[argparse.ArgumentParser, str] = {
         verify_parser: VERIFY_LEDGER,
         session_parser: RUN_SESSION,
+        policies_parser: FETCH_POLICIES,
     }
 
     try:
@@ -666,6 +754,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == VERIFY_LEDGER:
         return run_verify_ledger(args.path, args.expect_head, args.expect_head_from)
+
+    if args.command == FETCH_POLICIES:
+        return run_fetch_policies(args.out)
 
     if args.command == RUN_SESSION:
         if args.agent == EVIDENCE_AGENT:

@@ -1,0 +1,40 @@
+{
+  "corpus_version": "1.0.0",
+  "corpus_sha256": "9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2",
+  "fair_use": "Clause-level excerpts of third-party public policy documents, stored as the citation-resolution target for generated memos. Full pages are not redistributed; only the SHA-256 of each fetched response is recorded, as retrieval provenance. Memos quote at most 15 words of any clause. Rights in this text remain with its publisher.",
+  "documents": [
+    {
+      "doc_id": "youtube-spam",
+      "title": "Spam Policy - YouTube Help",
+      "source_url": "https://support.google.com/youtube/answer/2801973?hl=en&co=GENIE.Platform%3DDesktop",
+      "fetched_ts_ist": "2026-08-01T11:10:46.505389+05:30",
+      "retrieval": "fetched_verified",
+      "retrieval_sha256": "e27166c907fa69cd9a215cbf189dfa208d5dcfcdd6e274aaccae0d04aa32c485",
+      "content_digest": "86ea53c9b93053c7e053ce3ec65decf54fe28387b489d9fea529582e823ea9a3",
+      "clause_file": "youtube-spam.json",
+      "clause_count": 12
+    },
+    {
+      "doc_id": "youtube-fake-engagement",
+      "title": "Fake engagement policy - YouTube Help",
+      "source_url": "https://support.google.com/youtube/answer/3399767?hl=en&co=GENIE.Platform%3DDesktop",
+      "fetched_ts_ist": "2026-08-01T11:10:46.505389+05:30",
+      "retrieval": "fetched_verified",
+      "retrieval_sha256": "8102819cf15c56f9eb3f8e3deba9291e9c99a9abf468866e695263c0bfaf9d04",
+      "content_digest": "e7860e0ec21599bf0aac6eac6ce1c04c32f5c724bca80ccfda25c3334bfacaca",
+      "clause_file": "youtube-fake-engagement.json",
+      "clause_count": 6
+    },
+    {
+      "doc_id": "youtube-genai-disclosure",
+      "title": "Disclosing use of GenAI content - Computer - YouTube Help",
+      "source_url": "https://support.google.com/youtube/answer/14328491?hl=en&co=GENIE.Platform%3DDesktop",
+      "fetched_ts_ist": "2026-08-01T11:10:46.505389+05:30",
+      "retrieval": "fetched_verified",
+      "retrieval_sha256": "6bd051d008dc6bca8289c6ba219ec3a40481bb04acd5ee4b45465fb1e9a72b13",
+      "content_digest": "59b1d124958aaf701a4d3935e8539e65d022710d5c9514f740b621b87c2e98bc",
+      "clause_file": "youtube-genai-disclosure.json",
+      "clause_count": 12
+    }
+  ]
+}

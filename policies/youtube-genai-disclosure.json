@@ -1,0 +1,77 @@
+{
+  "doc_id": "youtube-genai-disclosure",
+  "clauses": [
+    {
+      "anchor_id": "disclosing-use-of-genai-content",
+      "heading": "Disclosing use of GenAI content",
+      "text": "We encourage creators’ innovative and responsible use of content editing or generation tools. At the same time, we recognize that viewers want to know if what they’re watching or listening to is real. To help keep viewers informed about the content they're viewing, we require creators to disclose when they use AI to meaningfully alter or generate photorealistic content. Creators must disclose GenAI content that: Makes a real person appear to say or do something they didn’t do. Alters footage of a real event or place. Generates a realistic scene that didn’t actually occur. This could include content that is fully or partially altered or created using AI tools.",
+      "ordinal": 0
+    },
+    {
+      "anchor_id": "ai-disclosure-requirements-and-examples",
+      "heading": "AI disclosure requirements and examples",
+      "text": "To disclose content that is AI-generated or meaningfully AI-altered, the ‘AI use’ setting is available to creators using YouTube Studio on a computer or mobile device. After a creator selects this field and uploads content, the content will be labeled as AI generated or altered for viewers.",
+      "ordinal": 1
+    },
+    {
+      "anchor_id": "examples-of-genai-content",
+      "heading": "Examples of GenAI content",
+      "text": "The following list includes examples of AI content. AI content can include content that is fully or partially altered or created using any AI audio, video, image creation or editing tools. Realistic AI content and meaningful changes require disclosure, while non-realistic or minor edits don’t. Keep in mind, this isn’t a complete list.",
+      "ordinal": 2
+    },
+    {
+      "anchor_id": "examples-of-content-creators-don-t-have-to-disclose",
+      "heading": "Examples of content creators don’t have to disclose",
+      "text": "Creators don’t need to disclose non-realistic content that’s made with AI, or edits to realistic content that are minor. Minor edits are ones that are primarily aesthetic, and don't alter the content in a way that could mislead the viewer about what actually happened. Examples of content, edits, or video assistance that creators don’t need to disclose: Keep in mind, the above list is not exhaustive.",
+      "ordinal": 3
+    },
+    {
+      "anchor_id": "not-realistic",
+      "heading": "Not realistic",
+      "text": "Not realistic: Someone riding a unicorn through a fantastical world Green screen used to depict someone floating in space Using an AI-generated or altered animation of a missile in a fully animated video",
+      "ordinal": 4
+    },
+    {
+      "anchor_id": "minor",
+      "heading": "Minor",
+      "text": "Minor: Applying beauty filters Color adjustment or lighting filters Special effects filters, like adding background blur or vintage effects Production assistance, like using generative AI tools to create or improve a video outline, script, thumbnail, title, or infographic Caption creation Video sharpening, upscaling or repair and voice or audio repair Idea generation Cloning one’s own voice to create voice overs or dubs Gameplay footage from video games AI generating or extending a backdrop to simulate a moving car Using effects to enhance previously recorded audio",
+      "ordinal": 5
+    },
+    {
+      "anchor_id": "examples-of-content-creators-need-to-disclose",
+      "heading": "Examples of content creators need to disclose",
+      "text": "To help keep viewers informed about the content they're viewing, we require creators to disclose content that is generated or meaningfully altered with AI when it appears realistic. Examples of content, edits, or video assistance that creators need to disclose: AI generated music AI generated extra footage of a real place, like a video of a surfer in Maui for a promotional travel video AI generated realistic videos of a match between two real professional tennis players Making it appear as if someone gave advice that they did not actually give Showing a realistic depiction of a tornado or other weather events moving toward a real city that didn’t actually happen Making it appear as if hospital workers turned away sick or wounded patients Depicting a public figure stealing something they did not steal, or admitting to stealing something when they did not make that admission Making it look like a real person has been arrested or imprisoned Keep in mind, the above list is not exhaustive.",
+      "ordinal": 6
+    },
+    {
+      "anchor_id": "how-to-disclose-genai-content",
+      "heading": "How to disclose GenAI content",
+      "text": "We require creators to disclose AI-generated or altered content that seems realistic. Creators can make this disclosure during the upload process. Go to YouTube Studio. Follow the steps to upload content. Continue to select other video details.",
+      "ordinal": 7
+    },
+    {
+      "anchor_id": "labels-for-ai-content",
+      "heading": "Labels for AI content",
+      "text": "If creators select “Yes” to indicate that their content is realistic and generated by AI or meaningfully altered with AI, we’ll add a label to their video.",
+      "ordinal": 8
+    },
+    {
+      "anchor_id": "label-on-the-video-player-for-photorealistic-ai-content",
+      "heading": "Label on the video player for photorealistic AI content",
+      "text": "For AI content that is photorealistic, a label in the video player may also appear.",
+      "ordinal": 9
+    },
+    {
+      "anchor_id": "label-in-the-expanded-description-field",
+      "heading": "Label in the expanded description field",
+      "text": "Labels may appear in the expanded description for AI content that is non-photorealistic or animated. Automatic detection of AI content YouTube may automatically apply an AI label on the video player or in the expanded description for: Content made using YouTube's GenAI tools Content that contains C2PA metadata Content that our internal systems detect is Al generated or altered If our systems make an error, creators will have the ability to change AI disclosure in most cases by selecting No in the AI disclosure survey under “Attributes” in YouTube Studio. However, content made with YouTube’s AI tools, content containing C2PA metadata, or content labeled after manual review can not be adjusted. Risks of not disclosing Creators who consistently choose not to disclose this information may be subject to manual application of a label, or penalties from YouTube, including removal of content or suspension from the YouTube Partner Program. Remember, we apply our Community Guidelines to all content on YouTube, including content that is AI generated or altered using AI.",
+      "ordinal": 10
+    },
+    {
+      "anchor_id": "disclosure-and-monetization",
+      "heading": "Disclosure and monetization",
+      "text": "Note: Disclosing AI content won’t limit a video’s audience or impact its eligibility to earn money.",
+      "ordinal": 11
+    }
+  ]
+}
