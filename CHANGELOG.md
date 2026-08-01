@@ -210,8 +210,74 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   apart from one where nobody ran the pivot. Carries a documented W3C PROV
   mapping (records as `Entity`, one pivot execution as `Activity`, agency left
   to the ledger) without claiming PROV conformance.
+- STEP-04 D2: the evidence agent (`ts_sentry.agents.evidence`) and the ledgered
+  approve/reject loop. The agent proposes `(pivot_kind, params, reason citing
+  pack record ids)`; `orchestrator.proposal_check` verifies the citation with
+  STEP-02's symbolic verifier and the parameters with the D1 bounds checker;
+  `orchestrator.review` is the analyst boundary; `orchestrator.pivot_tool`
+  executes; `orchestrator.evidence_turn` sequences them. All checks run
+  *before* the analyst is asked, so an unsupported or malformed proposal never
+  reaches a human. Rejection is terminal for a proposal and the agent may
+  propose an alternative; proposals are bounded by the mandate's `max_steps`,
+  and a rejected proposal costs a step exactly as an approved one does.
+  `SessionState.AWAITING_ANALYST` gets its first driver.
+- STEP-04 D2: `reviewer_kind` is recorded **inside** the ledgered
+  `HUMAN_DECISION` payload, so the hash chain covers it and a body edited
+  afterwards no longer digests to the entry already in the chain.
+  `ScriptedReviewer` is the deterministic CI path and says so in every record
+  it produces; `InteractiveReviewer` prompts a real person, is marked
+  `no-cover`, and has not been run. No rendering anywhere shows an approval
+  without showing what made it.
+- STEP-04 D4: `ts_sentry.orchestrator.pack_gate` - the ASSEMBLE gate's checker,
+  filling the `ArtifactCheck` STEP-02 shipped and deliberately left
+  unimplemented. Runs over the whole pack after every hop. Adds three checks
+  the type cannot make: the artifact is a pack, every cited query template
+  exists in this build with the exact text the pack recorded, and hop indices
+  are contiguous from zero.
+- STEP-04 D5: `ts_sentry.measurement.recovery` - ground-truth network recovery
+  at a pivot budget, computed measurement-side with sealed-label access and
+  outside every agent mandate. Reports the structural ceiling alongside the raw
+  fraction, because a ring that is mostly comments cannot be fully recovered
+  into a pack however well the agent performs. Cases whose subject carries no
+  planted ring are counted separately rather than folded in as zeros.
+- STEP-04 D6: `ts_sentry.orchestrator.pack_export` - GraphML and JSON export.
+  Written with `xml.etree.ElementTree` rather than a graph library, against the
+  GraphML specification. Every node and edge carries its provenance id.
+- STEP-04 D6: `ts-sentry run-session --agent evidence --subject ID` runs an
+  evidence session end to end, with `--case`, `--review scripted|interactive`
+  and `--max-hops`. A surface STEP-04 does not enumerate, added because its own
+  exit checklist requires a ledgered session to inspect.
 
 ### Changed
+
+- **`dataset_digest` now derives from the build manifest's `table_hashes`**
+  rather than from `sha256(build.duckdb)`, closing the gap STEP-03 recorded and
+  carried. The store is not byte-stable across rebuilds even when its contents
+  are, so session ids changed on every rebuild of the same seed; the Parquet
+  exports the manifest hashes are byte-stable, which STEP-01 verified and CI
+  re-verifies. Carries a `v2` domain separator, so a pre-fix and a post-fix
+  identity for one build cannot collide. **Session ids from before this change
+  are not comparable with ones after it.** A build without a
+  `build_manifest.json` is now an input error; there is deliberately no
+  fallback to hashing the store, because a silent fallback would restore the
+  defect in the case where it is hardest to notice.
+- `derive_session_id` takes discriminators, so a triage session and an evidence
+  session over one dataset no longer share an id. Found by running the CLI: with
+  one kind of session in the world, analyst plus dataset identified a session,
+  and with two it stopped doing so.
+- `BudgetTracker.check` takes `require_step`, so a turn is not refused for the
+  step `begin_turn` already booked. Every mandate's last step was unusable and
+  `max_steps` quietly meant one fewer than it said; one turn per session hid it
+  for the whole of STEP-03. The step ceiling is unchanged and still enforced at
+  `begin_turn`.
+- `EVIDENCE_MANDATE.max_steps` is 20, because STEP-04 3.5 reports recovery at 20
+  pivots and a reported budget the mandate forbids is not a measurement.
+- The bracketed citation syntax moved to `ts_sentry.agents.citations`, now that
+  two agents parse it, and is re-exported from `agents.triage.rationale` so
+  STEP-03's callers are unchanged. The epoch-to-IST conversion moved to
+  `data.tz` for the same reason.
+- `fleet.PHASE_THREE_CHECKS` is now `PHASE_FOUR_CHECKS`, with a real ASSEMBLE
+  checker. RECOMMEND still fails closed until the memo agent needs it.
 
 - `ChainHead` and `chain_head` moved from `ts_sentry.cli.main` to
   `ts_sentry.governance.ledger`. No behavior change: the session manifest and

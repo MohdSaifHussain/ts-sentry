@@ -113,20 +113,34 @@ Opens an analyst session, runs one agent turn under a mandate, closes with an
 anchored manifest, and writes the session artifacts (STEP-03 D6).
 
 ```
-ts-sentry run-session --agent triage --seed-dataset PATH [--out DIR]
+ts-sentry run-session --agent triage|evidence --seed-dataset PATH [--out DIR]
                       [--analyst-id ID] [--llm-mode stub|live]
                       [--limit N] [--seed N] [--session-id ID]
+                      [--case ID] [--subject ID] [--review scripted|interactive]
+                      [--max-hops N]
 ```
 
 | Argument | Required | Meaning |
 |---|---|---|
-| `--agent triage` | yes | The only agent this build has. Evidence, memo, and prompt-eval arrive in STEP-04 to STEP-06. |
-| `--seed-dataset PATH` | yes | A `build-dataset` output directory, or the `build.duckdb` inside it. Opened **read-only**: a triage session is OBSERVE by mandate. |
+| `--agent` | yes | `triage` or `evidence`. Memo and prompt-eval arrive in STEP-05 and STEP-06. |
+| `--seed-dataset PATH` | yes | A `build-dataset` output directory, or the `build.duckdb` inside it. Opened **read-only** for both agents: a triage session is OBSERVE by mandate, and an ASSEMBLE ceiling is authority to assemble evidence from the platform, not to change it. |
 | `--out DIR` | no | Where artifacts are written. Defaults to `session`. |
 | `--llm-mode` | no | `stub` (default) or `live`. See below. |
+| `--subject ID` | evidence only | The entity to investigate, typically a channel id taken from a triage session's `ranked_queue.json`. |
+| `--case ID` | no | Case id for an evidence session. Defaults to `case-0000`. |
+| `--review` | no | Where analyst decisions come from: `scripted` (default) or `interactive`. See below. |
+| `--max-hops N` | no | Pivot ceiling for one evidence turn. Defaults to the mandate's `max_steps`. |
 
-Artifacts: `ledger.jsonl`, `ledger.duckdb`, `ranked_queue.json`,
+Artifacts, triage: `ledger.jsonl`, `ledger.duckdb`, `ranked_queue.json`,
 `session_events.json`, `session_manifest.json`.
+
+Artifacts, evidence: `ledger.jsonl`, `ledger.duckdb`, `evidence_pack.json`,
+`evidence_graph.graphml`, `session_events.json`, `session_manifest.json`.
+
+`--seed-dataset` requires the build's `build_manifest.json` to be present
+beside the store. A session's dataset identity comes from the manifest's
+Parquet table hashes, and there is deliberately no fallback to hashing
+`build.duckdb`: see "Session ids and dataset identity" below.
 
 Exit codes:
 
@@ -172,6 +186,48 @@ queue comes from a deterministic stub standing in for the enterprise detector
 that would sit upstream in a real deployment. It reads only allowlisted tables,
 has no access to the sealed ground truth (direct or derived), and has no
 measured precision or recall. It must never be read as detection performance.
+
+#### The evidence session, hop by hop (STEP-04)
+
+An evidence session investigates one case. The agent proposes a pivot from a
+fixed vocabulary of five, the orchestrator checks it, the analyst approves or
+rejects, and only then does a query run. Every hop is a ledgered
+`HUMAN_DECISION`.
+
+The agent never writes SQL. Each pivot is a reviewed, parameterized DuckDB
+template; the agent chooses which one runs next and on what, its parameters are
+typed and bounds-checked, and any entity id it supplies must already be in the
+evidence pack, so an investigation expands from the analyst's chosen seed rather
+than reaching anywhere it likes.
+
+`evidence_pack.json` is the full artifact: entity graph, timeline, and a
+provenance record per hop naming the source table, the query template, that
+template's digest, the parameter hash and the retrieval timestamp.
+`evidence_graph.graphml` is the entity graph for a drawing tool, and it carries
+each element's provenance id too, because an export that dropped provenance
+would be a picture rather than evidence.
+
+**Who approves matters, and the ledger records which.** `--review scripted` is
+the default and the CI path: decisions are declared before the session runs and
+every ledgered decision says `"reviewer_kind": "scripted"`, inside the payload
+the hash chain covers. `--review interactive` prompts a real person. No output
+of this system renders a scripted approval as a human one. The interactive path
+is written and documented but **has not been run**; see Honest Limits.
+
+#### Session ids and dataset identity
+
+A session id is a function of the analyst, the dataset's content, the agent,
+and (for evidence) the case and subject. It is never random and never derived
+from the clock.
+
+The dataset's identity comes from the build manifest's `table_hashes`, which are
+the digests of the Parquet exports STEP-01 verified byte-stable. It was
+previously the SHA-256 of `build.duckdb`, which is **not** byte-stable across
+rebuilds even when its contents are, so session ids changed every time anyone
+rebuilt the same seed. That is fixed as of STEP-04, and the digest carries a `v2`
+domain separator so a pre-fix and a post-fix identity for the same build cannot
+be mistaken for each other. Session ids from before that change are not
+comparable with ones after it.
 
 ### Quality gate (STEP-01 D6)
 

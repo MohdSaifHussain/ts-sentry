@@ -29,18 +29,41 @@ from ts_sentry.cli.main import (
     EXIT_QUALITY_GATE_FAIL,
     main,
 )
-from ts_sentry.data.store import persist_dataset
+from ts_sentry.data.store import export_dataset, persist_dataset
+from ts_sentry.governance.scopes import DataScope, resolve_export_path
 from ts_sentry.orchestrator.session_runner import derive_session_id
+from ts_sentry.provenance import BUILD_MANIFEST, dataset_digest_from_manifest, sha256_file
 
 
 @pytest.fixture
 def dataset_dir(tmp_path: Path) -> Path:
-    """A small real dataset, persisted the way ``build-dataset`` would."""
+    """A small real dataset, persisted and exported the way ``build-dataset`` would.
+
+    The Parquet exports and the build manifest are written too, and that stopped
+    being optional in STEP-04. A session's ``dataset_digest`` now derives from
+    the manifest's table hashes rather than from ``build.duckdb``, because the
+    store is not byte-stable across rebuilds and the Parquet exports are. A
+    fixture that skipped them was a fixture describing a build that
+    ``build-dataset`` cannot produce.
+    """
     out = tmp_path / "build"
     out.mkdir()
     con = duckdb.connect(str(out / "build.duckdb"))
     persist_dataset(con, _dataset())
+    export_dataset(con, out)
     con.close()
+    (out / BUILD_MANIFEST).write_text(
+        json.dumps(
+            {
+                "seed": 42,
+                "scale": 1,
+                "table_hashes": {
+                    scope.value: sha256_file(resolve_export_path(scope, out)) for scope in DataScope
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
     return out
 
 
@@ -299,13 +322,20 @@ def test_two_runs_of_one_dataset_produce_the_same_queue(dataset_dir: Path, tmp_p
 
 def test_the_session_id_is_derived_from_its_inputs(dataset_dir: Path, tmp_path: Path) -> None:
     """Not random and not the clock, so two runs of the same inputs are
-    comparable rather than merely similar."""
+    comparable rather than merely similar.
+
+    The agent is part of the derivation as of STEP-04. With one kind of session
+    in the world, analyst plus dataset identified a session; with two, an
+    evidence session came back carrying the same id as the triage session before
+    it. See ``tests/test_evidence_session_cli.py`` for that case.
+    """
     out = tmp_path / "session"
     _run_session(dataset_dir, out)
 
     manifest = json.loads((out / "session_manifest.json").read_text(encoding="utf-8"))
     assert manifest["session_id"].startswith("session-")
-    assert manifest["session_id"] == derive_session_id("saif", manifest["dataset_digest"])
+    assert manifest["session_id"] == derive_session_id("saif", manifest["dataset_digest"], "triage")
+    assert manifest["dataset_digest"] == dataset_digest_from_manifest(dataset_dir)
 
 
 def test_an_explicit_session_id_is_honoured(dataset_dir: Path, tmp_path: Path) -> None:

@@ -26,6 +26,7 @@ import duckdb
 import numpy as np
 
 from ts_sentry.agents.triage.scorer import WEIGHTS_VERSION, weights_hash
+from ts_sentry.data.enums import EntityKind
 from ts_sentry.governance.canonical import digest_fields
 from ts_sentry.governance.ledger import ChainVerification, Ledger
 from ts_sentry.governance.mandate import AgentId
@@ -37,19 +38,32 @@ from ts_sentry.orchestrator.adapter import (
 )
 from ts_sentry.orchestrator.core import Clock, CloseReason, Session, SystemClock
 from ts_sentry.orchestrator.detection_stub import DETECTOR_VERSION
+from ts_sentry.orchestrator.evidence_turn import EvidenceTurn, run_evidence_turn
 from ts_sentry.orchestrator.fleet import PHASE_FOUR_CHECKS, default_mandates
 from ts_sentry.orchestrator.manifest import ArtifactRecord, SessionManifest
+from ts_sentry.orchestrator.pack_export import write_pack_graphml, write_pack_json
+from ts_sentry.orchestrator.review import AnalystReviewer
 from ts_sentry.orchestrator.toolspec import ToolResources
 from ts_sentry.orchestrator.triage_turn import TriageTurn, run_triage_turn
-from ts_sentry.provenance import git_sha, sha256_file
+from ts_sentry.provenance import dataset_digest_from_manifest, git_sha
 
-__all__ = ["SessionArtifacts", "SessionRun", "derive_session_id", "run_triage_session"]
+__all__ = [
+    "EvidenceArtifacts",
+    "EvidenceRun",
+    "SessionArtifacts",
+    "SessionRun",
+    "derive_session_id",
+    "run_evidence_session",
+    "run_triage_session",
+]
 
 LEDGER_JSONL = "ledger.jsonl"
 LEDGER_STORE = "ledger.duckdb"
 RANKED_QUEUE = "ranked_queue.json"
 SESSION_EVENTS = "session_events.json"
 SESSION_MANIFEST = "session_manifest.json"
+EVIDENCE_PACK = "evidence_pack.json"
+EVIDENCE_GRAPH = "evidence_graph.graphml"
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,15 +93,39 @@ class SessionRun:
         return self.verification.intact
 
 
-def derive_session_id(analyst_id: str, dataset_digest: str) -> str:
+def derive_session_id(analyst_id: str, dataset_digest: str, *discriminators: str) -> str:
     """A session id that is a function of its inputs.
 
-    Not random, and not the clock. STEP-01's no-time-based-entropy rule is
-    about reproducibility, and an id derived from who ran the session against
-    what makes two runs of the same inputs comparable instead of merely
-    similar.
+    Not random, and not the clock. STEP-01's no-time-based-entropy rule is about
+    reproducibility, and an id derived from who ran the session against what
+    data makes two runs of the same inputs comparable instead of merely similar.
+
+    Stated at its now-true width. Until STEP-04 this claim was wider than the
+    behaviour: ``dataset_digest`` was the SHA-256 of ``build.duckdb``, whose
+    internal layout is not byte-stable even when its contents are, so the id
+    held for two runs against one build directory and *not* across rebuilds.
+    The digest now derives from the build manifest's Parquet table hashes, which
+    STEP-01 verified byte-stable, so two rebuilds of the same seed and scale
+    produce the same id and the claim holds as written.
+
+    ``discriminators`` name what else makes this session *this* session. They
+    exist because the first evidence session run through the CLI came back
+    carrying the same id as the triage session before it: with one session type
+    in the world, analyst plus dataset identified a session, and with two it
+    stopped doing so. Two different sessions sharing an id is not a cosmetic
+    problem. Session ids appear in the ``OrchestratorToken``, in every manifest
+    and in every artifact directory, and an id that does not distinguish
+    sessions makes an audit trail ambiguous exactly where it is supposed to be
+    decisive.
+
+    It does not survive a change of *content*. A different seed, scale or
+    generator version yields different table hashes and therefore a different
+    id, which is the property that makes the id worth having.
     """
-    return "session-" + digest_fields("ts-sentry/session-id/v1", analyst_id, dataset_digest)[:12]
+    return (
+        "session-"
+        + digest_fields("ts-sentry/session-id/v1", analyst_id, dataset_digest, *discriminators)[:12]
+    )
 
 
 def _dataset_path(seed_dataset: Path) -> Path:
@@ -95,6 +133,15 @@ def _dataset_path(seed_dataset: Path) -> Path:
     if seed_dataset.is_dir():
         return seed_dataset / "build.duckdb"
     return seed_dataset
+
+
+def _build_dir(seed_dataset: Path) -> Path:
+    """The directory holding the build, given either it or the store inside it.
+
+    The manifest lives beside the store, so accepting both spellings of
+    ``--seed-dataset`` costs one line and keeps the STEP-03 CLI contract intact.
+    """
+    return seed_dataset if seed_dataset.is_dir() else seed_dataset.parent
 
 
 def run_triage_session(
@@ -119,8 +166,10 @@ def run_triage_session(
     if not store_path.is_file():
         raise FileNotFoundError(f"no dataset store at {store_path}")
 
-    dataset_digest = sha256_file(store_path)
-    resolved_session_id = session_id or derive_session_id(analyst_id, dataset_digest)
+    dataset_digest = dataset_digest_from_manifest(_build_dir(seed_dataset))
+    resolved_session_id = session_id or derive_session_id(
+        analyst_id, dataset_digest, AgentId.TRIAGE.value
+    )
 
     out_dir.mkdir(parents=True, exist_ok=True)
     ledger_store = out_dir / LEDGER_STORE
@@ -243,3 +292,176 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
         encoding="utf-8",
         newline="\n",
     )
+
+
+# --------------------------------------------------------------------------
+# STEP-04: the evidence session
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class EvidenceArtifacts:
+    """Where a finished evidence session left its files."""
+
+    out_dir: Path
+    ledger_jsonl: Path
+    ledger_store: Path
+    evidence_pack: Path
+    evidence_graph: Path
+    session_events: Path
+    manifest: Path
+
+
+@dataclass(frozen=True, slots=True)
+class EvidenceRun:
+    """What an evidence session produced, including whether its chain held."""
+
+    artifacts: EvidenceArtifacts
+    turn: EvidenceTurn
+    close_reason: CloseReason
+    verification: ChainVerification
+    manifest: SessionManifest
+
+    @property
+    def intact(self) -> bool:
+        return self.verification.intact
+
+
+def run_evidence_session(
+    seed_dataset: Path,
+    out_dir: Path,
+    adapter: ModelAdapter,
+    *,
+    case_id: str,
+    subject_id: str,
+    reviewer: AnalystReviewer,
+    analyst_id: str,
+    session_id: str | None = None,
+    max_hops: int | None = None,
+    seed: int = 42,
+    subject_kind: EntityKind = EntityKind.CHANNEL,
+    clock: Clock | None = None,
+    sleeper: Sleeper | None = None,
+) -> EvidenceRun:
+    """Open a session, investigate one case, close, and write the artifacts.
+
+    The dataset is opened **read-only**, as the triage session opens it. An
+    ASSEMBLE ceiling is authority to *assemble evidence from* the platform, not
+    authority to change it, and a connection that could write would leave that
+    distinction resting on every future author's care rather than on the
+    connection.
+    """
+    store_path = _dataset_path(seed_dataset)
+    if not store_path.is_file():
+        raise FileNotFoundError(f"no dataset store at {store_path}")
+
+    dataset_digest = dataset_digest_from_manifest(_build_dir(seed_dataset))
+    resolved_session_id = session_id or derive_session_id(
+        analyst_id, dataset_digest, AgentId.EVIDENCE.value, case_id, subject_id
+    )
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ledger_store = out_dir / LEDGER_STORE
+    ledger_store.unlink(missing_ok=True)
+
+    dataset = duckdb.connect(str(store_path), read_only=True)
+    ledger_connection = duckdb.connect(str(ledger_store))
+    try:
+        session = Session(
+            session_id=resolved_session_id,
+            analyst_id=analyst_id,
+            ledger=Ledger(ledger_connection),
+            clock=clock or SystemClock(),
+            mandates=default_mandates(),
+            dataset_digest=dataset_digest,
+        )
+        session.open()
+
+        turn = run_evidence_turn(
+            session,
+            adapter,
+            case_id=case_id,
+            subject_id=subject_id,
+            reviewer=reviewer,
+            resources=ToolResources(connection=dataset, seed=seed),
+            checks=PHASE_FOUR_CHECKS,
+            policy=RetryPolicy(),
+            rng=np.random.default_rng(seed),
+            sleeper=sleeper or RealSleeper(),
+            subject_kind=subject_kind,
+            max_hops=max_hops,
+        )
+
+        close_reason = turn.close_reason or CloseReason.COMPLETED
+        closed = session.close(close_reason)
+
+        session.ledger.export_jsonl(out_dir / LEDGER_JSONL)
+        write_pack_json(turn.pack, out_dir / EVIDENCE_PACK)
+        write_pack_graphml(turn.pack, out_dir / EVIDENCE_GRAPH)
+        _write_json(
+            out_dir / SESSION_EVENTS,
+            {
+                "session_id": resolved_session_id,
+                "case_id": case_id,
+                "reviewer_kind": reviewer.reviewer_kind.value,
+                "turn": turn.to_json_object(),
+                "events": [
+                    {
+                        "seq": recorded.entry.seq,
+                        "event_type": recorded.entry.event_type.value,
+                        "timestamp_ist": recorded.entry.timestamp_iso,
+                        "payload": dict(recorded.payload),
+                    }
+                    for recorded in session.recorded_events
+                ],
+            },
+        )
+
+        verification = session.ledger.verify()
+        artifacts = EvidenceArtifacts(
+            out_dir=out_dir,
+            ledger_jsonl=out_dir / LEDGER_JSONL,
+            ledger_store=ledger_store,
+            evidence_pack=out_dir / EVIDENCE_PACK,
+            evidence_graph=out_dir / EVIDENCE_GRAPH,
+            session_events=out_dir / SESSION_EVENTS,
+            manifest=out_dir / SESSION_MANIFEST,
+        )
+
+        assert session.opened_ts is not None and session.closed_ts is not None
+        manifest = SessionManifest(
+            session_id=resolved_session_id,
+            analyst_id=analyst_id,
+            opened_ts_iso=session.opened_ts.isoformat(),
+            closed_ts_iso=session.closed_ts.isoformat(),
+            close_reason=close_reason,
+            dataset_digest=dataset_digest,
+            mandate_set_hash=session.mandate_set_hash,
+            mandate_hashes={
+                AgentId.EVIDENCE.value: session.binding(AgentId.EVIDENCE).hash,
+            },
+            expected_head=closed.head,
+            event_counts=session.event_counts(),
+            budgets={
+                AgentId.EVIDENCE.value: session.budget(AgentId.EVIDENCE).snapshot(),
+            },
+            git_sha=git_sha(),
+            artifacts=[
+                ArtifactRecord.of("ledger_jsonl", artifacts.ledger_jsonl, relative_to=out_dir),
+                ArtifactRecord.of("evidence_pack", artifacts.evidence_pack, relative_to=out_dir),
+                ArtifactRecord.of("evidence_graph", artifacts.evidence_graph, relative_to=out_dir),
+                ArtifactRecord.of("session_events", artifacts.session_events, relative_to=out_dir),
+            ],
+        )
+        manifest.write(artifacts.manifest)
+
+        return EvidenceRun(
+            artifacts=artifacts,
+            turn=turn,
+            close_reason=close_reason,
+            verification=verification,
+            manifest=manifest,
+        )
+    finally:
+        dataset.close()
+        ledger_connection.close()

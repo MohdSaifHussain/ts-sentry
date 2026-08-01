@@ -51,11 +51,17 @@ from ts_sentry.governance.scopes import (
     resolve_export_path,
     resolve_scope_by_name,
 )
-from ts_sentry.orchestrator.adapter import ModelAdapter, ModelMode, StubAdapter
+from ts_sentry.orchestrator.adapter import ModelAdapter, ModelMode, Responder, StubAdapter
+from ts_sentry.orchestrator.evidence_turn import stub_evidence_responder
 from ts_sentry.orchestrator.manifest import ManifestError, read_expected_head
-from ts_sentry.orchestrator.session_runner import run_triage_session
+from ts_sentry.orchestrator.review import (
+    AnalystReviewer,
+    InteractiveReviewer,
+    ScriptedReviewer,
+)
+from ts_sentry.orchestrator.session_runner import run_evidence_session, run_triage_session
 from ts_sentry.orchestrator.triage_turn import stub_triage_responder
-from ts_sentry.provenance import git_sha, sha256_file
+from ts_sentry.provenance import DatasetDigestError, git_sha, sha256_file
 
 GENERATOR_VERSION = "0.1.0"
 
@@ -187,9 +193,13 @@ def run_build_dataset(
 # --------------------------------------------------------------------------
 
 TRIAGE_AGENT = "triage"
+EVIDENCE_AGENT = "evidence"
+
+SCRIPTED_REVIEW = "scripted"
+INTERACTIVE_REVIEW = "interactive"
 
 
-def _build_adapter(mode: str) -> ModelAdapter:
+def _build_adapter(mode: str, responder: Responder = stub_triage_responder) -> ModelAdapter:
     """Resolve the adapter, defaulting to the offline stub.
 
     ``live`` is refused here unless the environment also says live. The flag
@@ -198,7 +208,7 @@ def _build_adapter(mode: str) -> ModelAdapter:
     expressed twice, in two different places.
     """
     if mode != ModelMode.LIVE.value:
-        return StubAdapter(responder=stub_triage_responder)
+        return StubAdapter(responder=responder)
 
     from ts_sentry.orchestrator.adapter import LiveAdapter, resolve_mode
 
@@ -208,6 +218,94 @@ def _build_adapter(mode: str) -> ModelAdapter:
             "The stub adapter is the default and runs a complete session offline"
         )
     return LiveAdapter()
+
+
+def _build_reviewer(review_mode: str, analyst_id: str) -> AnalystReviewer:
+    """Resolve the analyst decision boundary.
+
+    ``scripted`` is the default and the CI path: deterministic, declared before
+    the session runs, and recorded as scripted in every ledger entry it
+    produces. ``interactive`` puts a real person at the prompt. Neither can be
+    mistaken for the other after the fact, because ``reviewer_kind`` is inside
+    the hash-covered ``HUMAN_DECISION`` payload.
+    """
+    if review_mode == INTERACTIVE_REVIEW:
+        return InteractiveReviewer(reviewer_id=analyst_id)
+    return ScriptedReviewer(reviewer_id=analyst_id)
+
+
+def run_evidence_session_command(
+    seed_dataset: Path,
+    out_dir: Path,
+    *,
+    case_id: str,
+    subject_id: str | None,
+    analyst_id: str,
+    llm_mode: str,
+    review_mode: str,
+    max_hops: int | None,
+    seed: int,
+    session_id: str | None,
+) -> int:
+    """Run one evidence session and report where it left its artifacts."""
+    if subject_id is None:
+        print(
+            "run-session: --agent evidence requires --subject naming the entity to investigate",
+            file=sys.stderr,
+        )
+        return EXIT_INPUT_ERROR
+
+    try:
+        adapter = _build_adapter(llm_mode, stub_evidence_responder)
+        run = run_evidence_session(
+            seed_dataset,
+            out_dir,
+            adapter,
+            case_id=case_id,
+            subject_id=subject_id,
+            reviewer=_build_reviewer(review_mode, analyst_id),
+            analyst_id=analyst_id,
+            session_id=session_id,
+            max_hops=max_hops,
+            seed=seed,
+        )
+    except InputError as exc:
+        print(f"run-session: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    except DatasetDigestError as exc:
+        print(f"run-session: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    except (FileNotFoundError, duckdb.Error) as exc:
+        print(f"run-session: could not open the dataset: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+
+    turn = run.turn
+    print(f"session:   {run.manifest.session_id}")
+    print(f"analyst:   {run.manifest.analyst_id}")
+    print(f"adapter:   {adapter.adapter_id} ({adapter.model_id})")
+    print(f"case:      {case_id} (subject {subject_id})")
+    print(f"close:     {run.close_reason.value}")
+    print(f"hops:      {len(turn.hops)} attempted, {turn.executed_hops} executed")
+    print(f"rejected:  {turn.rejected_hops} by the analyst")
+    print(f"pack:      {len(turn.pack.nodes)} entities, {len(turn.pack.edges)} relations")
+    for hop in turn.hops:
+        if hop.attribution is not None:
+            print(f"  hop {hop.hop_index}: {hop.pivot_kind} - {hop.attribution}")
+    if turn.injection_signals:
+        print(f"injection: {turn.injection_signals} signal(s) in pack content")
+    print(f"head:      {run.manifest.expected_head.render()}")
+    print(f"artifacts: {run.artifacts.out_dir}")
+
+    if not run.intact:
+        print(
+            f"run-session: the session produced a broken chain at seq "
+            f"{run.verification.first_broken_seq}",
+            file=sys.stderr,
+        )
+        return EXIT_BROKEN_CHAIN
+
+    print("result:    session closed with an intact chain")
+    return EXIT_OK
 
 
 def run_run_session(
@@ -233,6 +331,9 @@ def run_run_session(
             seed=seed,
         )
     except InputError as exc:
+        print(f"run-session: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    except DatasetDigestError as exc:
         print(f"run-session: {exc}", file=sys.stderr)
         return EXIT_INPUT_ERROR
     except (FileNotFoundError, duckdb.Error) as exc:
@@ -475,7 +576,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     session_parser = subparsers.add_parser(RUN_SESSION)
-    session_parser.add_argument("--agent", choices=[TRIAGE_AGENT], required=True)
+    session_parser.add_argument("--agent", choices=[TRIAGE_AGENT, EVIDENCE_AGENT], required=True)
     session_parser.add_argument("--seed-dataset", type=Path, required=True)
     session_parser.add_argument("--out", type=Path, default=Path("session"))
     session_parser.add_argument("--analyst-id", type=str, default="analyst")
@@ -491,6 +592,32 @@ def main(argv: list[str] | None = None) -> int:
     session_parser.add_argument("--limit", type=int, default=25)
     session_parser.add_argument("--seed", type=int, default=42)
     session_parser.add_argument("--session-id", type=str, default=None)
+    session_parser.add_argument(
+        "--case",
+        type=str,
+        default="case-0000",
+        help="Case id for an evidence session. Ignored by the triage agent.",
+    )
+    session_parser.add_argument(
+        "--subject",
+        type=str,
+        default=None,
+        help=(
+            "Entity the evidence session investigates, typically a channel id taken from a "
+            "triage session's ranked_queue.json. Required with --agent evidence."
+        ),
+    )
+    session_parser.add_argument(
+        "--review",
+        choices=[SCRIPTED_REVIEW, INTERACTIVE_REVIEW],
+        default=SCRIPTED_REVIEW,
+        help=(
+            "Where analyst decisions come from. The scripted reviewer is deterministic and "
+            "records itself as scripted in every ledgered decision; interactive prompts a "
+            "real person."
+        ),
+    )
+    session_parser.add_argument("--max-hops", type=int, default=None)
 
     # The root parser has no options of its own, so the first token is the
     # subcommand. Needed because a root-parser error carries no parsed
@@ -543,6 +670,19 @@ def main(argv: list[str] | None = None) -> int:
         return run_verify_ledger(args.path, args.expect_head, args.expect_head_from)
 
     if args.command == RUN_SESSION:
+        if args.agent == EVIDENCE_AGENT:
+            return run_evidence_session_command(
+                args.seed_dataset,
+                args.out,
+                case_id=args.case,
+                subject_id=args.subject,
+                analyst_id=args.analyst_id,
+                llm_mode=args.llm_mode,
+                review_mode=args.review,
+                max_hops=args.max_hops,
+                seed=args.seed,
+                session_id=args.session_id,
+            )
         return run_run_session(
             args.seed_dataset,
             args.out,
