@@ -31,6 +31,7 @@ for budget exhaustion and the same reasoning covers the rest: losing the next
 hop must not lose the hops already gathered and gated.
 """
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -155,20 +156,47 @@ def stub_evidence_responder(request: ModelRequest, mode: StubMode) -> str:
     machinery is right and the product finds nothing.
 
     So the strategy is the one an analyst actually uses: reach the accounts
-    first with ``ACCOUNT_LINK``, then pivot on the accounts. The stub reads
-    which of those it is in from the prompt, the way a model would.
+    first with ``ACCOUNT_LINK``, then pivot on what that reaches.
 
-    It also has to *advance*, which was a second finding of the same kind. A
-    stub that pivoted on ``accounts[0]`` every hop re-asked one question
-    forever, so recovery at 5, 10 and 20 pivots came out identical and the
-    budget axis of the STEP-04 3.5 table carried no information at all. A table
-    whose columns cannot differ is not a measurement. So the stub walks the
-    accounts it has found and alternates the two pivots that apply to an
-    account, which is the least an exploration can do and still be one.
+    Traversal, which is what STEP-07 owed
+    -------------------------------------
+    The STEP-04 close recorded two defects here, and DECISIONS carried them into
+    this phase as its headline obligation: the strategy repeated one identical
+    pivot instead of feeding entities found at hop N into hop N+1, and it had no
+    fallback to a different pivot kind when one returned empty. Recovery at 5,
+    10 and 20 pivots therefore came out identical for every threat class, so the
+    budget axis of the STEP-04 3.5 table carried no information.
+
+    Both are fixed by one construction rather than by two special cases. A work
+    list of ``(pivot, entity)`` pairs is built from the pack **in pack order**,
+    covering every pivot that applies to each entity's kind, and hop ``h`` takes
+    ``work[h]``. Three properties follow, and they are the whole design:
+
+    * **It chains.** The pack grows as pivots land, so entities discovered at
+      hop N appear in the work list and are pivoted from at a later hop. A
+      channel reached through an account becomes a new ``ACCOUNT_LINK`` seed.
+    * **It varies pivot kind.** Each entity contributes every pivot its kind
+      supports, so consecutive hops on one entity ask different questions.
+    * **An empty pivot needs no special handling.** A pivot that returns nothing
+      adds nothing to the pack, so the work list does not grow, and ``work[h+1]``
+      is simply the next pair, which is a different pivot or a different entity.
+      The fallback the STEP-04 finding asked for is structural rather than a
+      branch someone has to remember to write.
+
+    Pack order is what makes ``work[h]`` stable: nodes are appended, never
+    reordered, so the prefix of the work list does not change as the pack grows
+    and a session still replays identically under one seed.
+
+    ``TEMPORAL_CORRELATION`` is deliberately absent from the work list. It
+    requires an ``anchor_epoch_ms``, and no timestamp appears anywhere in the
+    prompt this stub reads, so a stub proposing it would be inventing a
+    parameter rather than deriving one. Recorded rather than worked around: the
+    pivot vocabulary is not fully exercised by the offline path, and saying so
+    is cheaper than a fabricated anchor.
     """
     subject = ""
     hops = 0
-    accounts: list[str] = []
+    entities: list[tuple[str, str]] = []
     citable: list[str] = []
     for raw in request.user_content.splitlines():
         line = raw.strip()
@@ -185,40 +213,102 @@ def stub_evidence_responder(request: ModelRequest, mode: StubMode) -> str:
             inner = line[1:-1]
             record_id = inner.split(" ", 1)[0]
             citable.append(record_id)
-            if inner.endswith("(account)"):
-                accounts.append(record_id)
+            # The same rendering also carries provenance ids, edge relations and
+            # timeline event kinds. Only entity kinds seed a pivot; pivoting
+            # from an edge relation would be pivoting from something that is not
+            # an entity.
+            kind = inner.rsplit("(", 1)[-1].rstrip(")") if inner.endswith(")") else ""
+            if kind in _KIND_PIVOTS:
+                entities.append((record_id, kind))
 
     citation = (
         "prov-9999" if mode is StubMode.OVERCLAIM else (citable[0] if citable else "prov-0000")
     )
 
-    if not accounts:
-        return "\n".join(
-            (
-                f"PIVOT: {PivotKind.ACCOUNT_LINK.value}",
-                f"PARAMS: channel_id={subject}; min_comments=1; limit=25",
-                f"REASON: the accounts touching this channel are not yet in the pack [{citation}]",
-            )
+    work = _pivot_work_list(subject, entities)
+    if not work:
+        return _proposal(
+            PivotKind.ACCOUNT_LINK,
+            f"channel_id={subject}; min_comments=1; limit=25",
+            "the accounts touching this channel are not yet in the pack",
+            citation,
         )
 
-    # Walk the accounts found so far, alternating the two pivots that apply to
-    # an account. Deterministic in the hop count, so a session still replays
-    # identically; it explores rather than repeating.
-    account = accounts[(hops // 2) % len(accounts)]
-    if hops % 2 == 0:
-        return "\n".join(
-            (
-                f"PIVOT: {PivotKind.INFRA_OVERLAP.value}",
-                f"PARAMS: subject_id={account}; signal_type=any; limit=25",
-                f"REASON: this account may share infrastructure with others [{citation}]",
-            )
-        )
+    kind, target = work[min(hops, len(work) - 1)]
+    return _proposal(kind, _params_for(kind, target), _reason_for(kind), citation)
+
+
+_KIND_PIVOTS: Mapping[str, tuple[PivotKind, ...]] = {
+    "channel": (PivotKind.ACCOUNT_LINK, PivotKind.ENGAGEMENT_EDGE, PivotKind.INFRA_OVERLAP),
+    "account": (PivotKind.INFRA_OVERLAP, PivotKind.SHARED_METADATA),
+}
+"""Which pivots apply to which entity kind, in the order they are asked.
+
+Channels lead with ``ACCOUNT_LINK`` because it is the pivot that reaches the
+accounts every other channel-side question depends on.
+
+Videos and comments are absent, and their absence is the membership test above:
+every pivot in the vocabulary takes a channel id or an account id, so a video id
+handed to ``ACCOUNT_LINK(channel_id=...)`` would be a well-formed proposal that
+resolves to nothing. That is the failure mode this rewrite exists to remove, and
+reintroducing it through the entity filter would be an unusually quiet way to do
+it.
+"""
+
+
+def _pivot_work_list(
+    subject: str, entities: Sequence[tuple[str, str]]
+) -> tuple[tuple[PivotKind, str], ...]:
+    """Every ``(pivot, entity)`` pair the pack currently supports, in pack order.
+
+    Deduplicated on the entity, so one appearing twice in the rendering does not
+    buy itself a second round of the same questions. The subject leads, because
+    an investigation starts where the analyst pointed it.
+    """
+    ordered: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for entity_id, kind in [(subject, "channel"), *entities]:
+        if entity_id and entity_id not in seen:
+            seen.add(entity_id)
+            ordered.append((entity_id, kind))
+
+    work: list[tuple[PivotKind, str]] = []
+    for entity_id, kind in ordered:
+        work.extend((pivot, entity_id) for pivot in _KIND_PIVOTS.get(kind, ()))
+    return tuple(work)
+
+
+def _params_for(kind: PivotKind, target: str) -> str:
+    match kind:
+        case PivotKind.ACCOUNT_LINK:
+            return f"channel_id={target}; min_comments=1; limit=25"
+        case PivotKind.ENGAGEMENT_EDGE:
+            return f"channel_id={target}; kind=any; min_events=1; limit=25"
+        case PivotKind.INFRA_OVERLAP:
+            return f"subject_id={target}; signal_type=any; limit=25"
+        case PivotKind.SHARED_METADATA:
+            return f"account_id={target}; metadata_field=any; limit=25"
+        case _:  # pragma: no cover - TEMPORAL_CORRELATION is in no work list
+            raise AssertionError(f"the stub proposes no parameters for {kind}")
+
+
+def _reason_for(kind: PivotKind) -> str:
+    match kind:
+        case PivotKind.ACCOUNT_LINK:
+            return "the accounts touching this channel are not yet in the pack"
+        case PivotKind.ENGAGEMENT_EDGE:
+            return "accounts engaging heavily with this channel may be coordinated"
+        case PivotKind.INFRA_OVERLAP:
+            return "this entity may share infrastructure with others"
+        case PivotKind.SHARED_METADATA:
+            return "this account may share registration metadata with others"
+        case _:  # pragma: no cover - TEMPORAL_CORRELATION is in no work list
+            raise AssertionError(f"the stub gives no reason for {kind}")
+
+
+def _proposal(kind: PivotKind, params: str, reason: str, citation: str) -> str:
     return "\n".join(
-        (
-            f"PIVOT: {PivotKind.SHARED_METADATA.value}",
-            f"PARAMS: account_id={account}; metadata_field=any; limit=25",
-            f"REASON: this account may share registration metadata with others [{citation}]",
-        )
+        (f"PIVOT: {kind.value}", f"PARAMS: {params}", f"REASON: {reason} [{citation}]")
     )
 
 

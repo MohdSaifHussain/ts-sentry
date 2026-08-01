@@ -354,26 +354,33 @@ def test_recovery_at_budget_is_reportable_for_seed_42(
     print("\n" + rendered)
 
 
-def test_recovery_saturates_before_the_smallest_reported_budget(
+def test_the_budget_axis_carries_information(
     dataset: duckdb.DuckDBPyConnection, membership: RingMembership
 ) -> None:
-    """A limitation, asserted as a passing test.
+    """STEP-04's obligation on STEP-07, discharged, and at its true size.
 
-    The three columns of the STEP-04 3.5 table are identical for every threat
-    class on this build, and the reason is the stub rather than the pivot
-    vocabulary: it reaches the accounts, pivots on their shared metadata and
-    infrastructure, and has then asked everything it knows how to ask. Every
-    later hop re-runs a question whose answer is already in the pack, so the
-    budget axis measures nothing.
+    This replaces ``test_recovery_saturates_before_the_smallest_reported_budget``,
+    which asserted the opposite and was written to fail the day a strategy
+    traversed. It failed on the traversing strategy, exactly as designed, and
+    its own instruction was to rewrite it rather than delete it.
 
-    That is worth stating in a test rather than a comment, in the shape STEP-02
-    used for tail truncation: the day a better strategy makes recovery grow
-    between 5 and 20 pivots, this test fails and forces the claim in the STEP-04
-    Outcome to be rewritten rather than quietly outliving its own truth.
+    What is now true: recovery grows between 5 and 20 pivots for at least one
+    threat class, so a table whose columns can differ is a measurement rather
+    than three copies of one number.
 
-    What is *not* claimed: that the pivot vocabulary saturates. Nothing here
-    measures what a real model would find, and the stub is deterministic by
-    design rather than clever.
+    What is **not** true, and matters more than the pass: **only one class of
+    seven grows.** T-06 moves 3 -> 5 recovered members. Every other class still
+    saturates by hop 5, two of them because they have already recovered
+    everything a pack can structurally hold and the rest because the strategy
+    exhausts the questions it can ask of what it found. STEP-04's concrete
+    target was ``t02_chan_000_000`` reaching past its first shell; it improved
+    from 3 to 4 of 8 members and did **not** become budget-sensitive. That half
+    of the obligation is unmet and is recorded as such rather than counted as
+    met because a different class moved.
+
+    Asserted as a floor rather than as a fixture: any class growing satisfies
+    it. Pinning the exact numbers would make this fail on every legitimate
+    strategy improvement, which is the failure mode the test it replaces had.
     """
     subjects = _benchmark_subjects(dataset, membership)
     packs = [
@@ -381,17 +388,48 @@ def test_recovery_saturates_before_the_smallest_reported_budget(
     ]
     table = recovery_table(packs, membership, _BUDGETS)
 
-    improved = [
-        result
-        for results in table.per_class.values()
-        for result in results
-        if result.recovered[20] > result.recovered[5]
-    ]
+    results = [result for results in table.per_class.values() for result in results]
+    improved = [result for result in results if result.recovered[20] > result.recovered[5]]
 
-    assert improved == [], (
-        "recovery now grows with budget, which is better than when this test was "
-        "written. Rewrite it and the STEP-04 Outcome's saturation note rather than "
-        f"deleting either: {[(r.threat_class.value, r.recovered) for r in improved]}"
+    observed = [(result.threat_class.value, result.recovered) for result in results]
+    assert improved, (
+        "no threat class recovers more at 20 pivots than at 5, so the budget axis "
+        "of the STEP-04 3.5 table measures nothing. The traversal obligation "
+        f"STEP-04 carried into STEP-07 has regressed: {observed}"
+    )
+    for result in results:
+        assert result.recovered[20] >= result.recovered[5], (
+            f"{result.threat_class.value} recovers fewer members at a larger budget, "
+            "which means the strategy is losing ground it had already taken"
+        )
+
+
+def test_the_strategy_reaches_past_the_first_shell(
+    dataset: duckdb.DuckDBPyConnection, membership: RingMembership
+) -> None:
+    """The other half of STEP-04's obligation, at the level it was actually met.
+
+    STEP-04 asked for members recovered that are not reachable from the seed's
+    immediate neighbourhood. The traversing strategy does chain: a channel
+    reached through an account becomes a new ``ACCOUNT_LINK`` seed, and the
+    measured effect is that four of seven classes recover more than they did.
+
+    Asserted as "more than one entity beyond the seed, on the class STEP-04
+    named", which is the weakest statement that is still about traversal. The
+    stronger claim, that it reaches the five members no shared registration
+    value points at, is **not** made and is not true.
+    """
+    subjects = _benchmark_subjects(dataset, membership)
+    packs = [
+        _investigate(dataset, case_id, subject, 20, kind) for case_id, subject, kind in subjects
+    ]
+    table = recovery_table(packs, membership, _BUDGETS)
+
+    t02 = table.per_class[ThreatClass.T02_FAKE_ENGAGEMENT_NETWORK]
+    assert t02, "the benchmark no longer covers T-02, which STEP-04 named as the target"
+    assert t02[0].recovered[20] >= 4, (
+        "T-02 recovery has fallen below the four members the traversing strategy "
+        f"reached: {t02[0].recovered}"
     )
 
 

@@ -37,6 +37,14 @@ CI-stamped report with 95% CI and sensitivity plots.
 ## 4. Out of Scope
 - Real-user timing studies; dashboards (roadmap: static html is v1).
 
+## 4a. Review Stop
+- Halt after D1+D2 (the statistical core), before D3. D2's curves are computed
+  from D1's estimator, so the two are one reviewable unit, and the statistical
+  validity is where review attention is worth spending; D3-D5 consume a
+  validated core. Added to this contract during the phase, after the stop was
+  agreed and observed in session; recorded here so the halt is contractual
+  rather than only instructed. Saif, 1 August 2026.
+
 ## 5. Exit Checklist
 - [ ] VVR estimate + 95% CI reproduces exactly under fixed seed
 - [ ] Bootstrap cross-check within documented tolerance of analytic CI

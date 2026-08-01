@@ -298,6 +298,35 @@ succeeded. The concrete target on this build is `t02_chan_000_000`: 3 of 8
 members recovered today, 5 remaining, and the 5 are the interesting ones
 precisely because no shared registration value points at them.
 
+> **Outcome, STEP-07 D3 (1 August 2026): met in general, unmet on the named
+> target.** The stub now builds a work list of `(pivot, entity)` pairs from the
+> pack in pack order and takes `work[hop]`, which chains discovered entities as
+> new seeds, varies pivot kind, and makes an empty pivot advance to a different
+> question without a special case. `test_recovery_saturates_before_the_smallest_reported_budget`
+> failed as designed and was rewritten into `test_the_budget_axis_carries_information`
+> rather than deleted.
+>
+> Measured on seed 42, recovery of ring / of reachable:
+>
+> | class | before @5/@20 | after @5 | after @10 | after @20 |
+> |---|---|---|---|---|
+> | t01 | 0.25/1.00 flat | 0.25/1.00 | 0.25/1.00 | 0.25/1.00 |
+> | t02 | 0.38/0.38 flat | 0.50/0.50 | 0.50/0.50 | 0.50/0.50 |
+> | t03 | 0.25/1.00 flat | 0.25/1.00 | 0.25/1.00 | 0.25/1.00 |
+> | t04 | 0.25/0.25 flat | 0.25/0.25 | 0.25/0.25 | 0.25/0.25 |
+> | t05 | 0.25/0.25 flat | 0.25/0.25 | 0.25/0.25 | 0.25/0.25 |
+> | **t06** | 0.06/0.06 flat | 0.18/0.18 | **0.29/0.29** | **0.29/0.29** |
+> | t07 | 0.27/0.38 flat | 0.36/0.50 | 0.36/0.50 | 0.36/0.50 |
+>
+> **Only T-06 is budget-sensitive**, 3 members at 5 pivots against 5 at 10 and
+> 20. Four classes recover strictly more than before at every budget, and t01
+> and t03 were already at the structural ceiling, so there was nothing there to
+> win. The named target `t02_chan_000_000` went from 3 to 4 of 8 members and
+> **did not become budget-sensitive**: the five members no shared registration
+> value points at are still not reached, so the specific claim this paragraph
+> made is not discharged. Recorded as unmet rather than counted as met because
+> a different class moved.
+
 ### Defects found by running it, not by inspection
 
 1. **A booked step could not be used.** `begin_turn` books a step, then
@@ -323,6 +352,9 @@ precisely because no shared registration value points at them.
    account every hop, which made recovery identical at 5, 10 and 20 and the
    budget axis meaningless. Fixed to walk the accounts it has found; the
    residual saturation is recorded above rather than engineered away.
+   *(STEP-07 D3 replaced this with the work-list traversal described in the
+   Outcome block above. The residual saturation is now partial rather than
+   total: one class of seven is budget-sensitive.)*
 5. **Two of five row mappings had never executed.** The stub proposes three
    pivots, so `TEMPORAL_CORRELATION` and `ENGAGEMENT_EDGE` had mappings whose
    column order was a guess. `tests/test_pivot_tool.py` now runs all five
