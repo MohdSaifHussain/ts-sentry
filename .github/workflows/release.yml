@@ -135,9 +135,21 @@ jobs:
         # same environment yields the same document.
         run: |
           pip install cyclonedx-bom
+          sbom="dist/ts-sentry-${{ needs.guard.outputs.version }}.cdx.json"
           cyclonedx-py environment .venv \
-            --of JSON --sv 1.6 --output-reproducible \
-            -o dist/ts-sentry-${{ needs.guard.outputs.version }}.cdx.json
+            --of JSON --sv 1.6 --output-reproducible -o "$sbom"
+
+          # --output-reproducible strips the serial number, because a CycloneDX
+          # serialNumber is normally a fresh random UUID per document. But
+          # actions/attest detects CycloneDX by requiring bomFormat AND
+          # serialNumber AND specVersion, so a reproducible document is not
+          # recognised as an SBOM at all. v1.0.0-rc.2 failed on exactly that.
+          #
+          # The two requirements only conflict if the serial has to be random.
+          # A UUIDv5 over the document's own content is stable for identical
+          # content and differs when the inventory differs, which is what a
+          # serial number is for.
+          python .github/scripts/stamp_sbom_serial.py "$sbom"
 
       - name: Attest build provenance for the distributions and the SBOM
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
@@ -160,6 +172,14 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The runner's default buildx driver is `docker`, which cannot produce
+      # attestations at all: v1.0.0-rc.2 failed with "Attestation is not
+      # supported for the docker driver". A container driver can, and creating
+      # one is what makes the `sbom:` and `provenance:` inputs below mean
+      # anything rather than silently doing nothing.
+      - name: Set up a buildx builder that supports attestations
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Log in to the container registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
