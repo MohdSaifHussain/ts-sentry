@@ -34,7 +34,12 @@ test.
 from dataclasses import dataclass
 from enum import StrEnum
 
-from ts_sentry.agents.memo.memo import MAX_EXCERPT_WORDS, PolicyCitation, excerpt_word_count
+from ts_sentry.agents.memo.memo import (
+    MAX_EXCERPT_WORDS,
+    MIN_EXCERPT_WORDS,
+    PolicyCitation,
+    excerpt_word_count,
+)
 from ts_sentry.data.policy_corpus import PolicyCorpus
 
 __all__ = [
@@ -58,6 +63,10 @@ class CitationFailure(StrEnum):
     PHANTOM_ANCHOR = "phantom_anchor"
     EXCERPT_NOT_IN_CLAUSE = "excerpt_not_in_clause"
     EXCERPT_TOO_LONG = "excerpt_too_long"
+    EXCERPT_TOO_SHORT = "excerpt_too_short"
+    """Added at the HALT-2 review, finding 2. Distinct from
+    ``EXCERPT_NOT_IN_CLAUSE`` because a too-short excerpt is a *true* quotation
+    that identifies nothing, which is a different failure from a false one."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,20 +102,41 @@ class CitationResolution:
         }
 
 
-def _normalise(text: str) -> str:
-    """Collapse whitespace for substring comparison.
+def _words(text: str) -> list[str]:
+    """Split on whitespace, and normalise nothing else.
 
-    An excerpt is checked as a *contiguous* quotation of the clause, but a model
-    that wraps a line differently has not misquoted anything. The corpus already
-    stores clauses whitespace-collapsed, so this only has to do the same to the
-    excerpt for the two to be comparable at all.
+    Case, punctuation and curly quotes are left alone deliberately: "we do not
+    allow" and "We Do Not Allow" are different quotations of a policy document,
+    and a resolver that smoothed that over would be accepting a paraphrase as a
+    quotation. Splitting is the only transformation applied to either side.
 
-    Nothing else is normalised. Case, punctuation and curly quotes are left
-    alone deliberately: "we do not allow" and "We Do Not Allow" are different
-    quotations of a policy document, and a resolver that smoothed that over
-    would be accepting a paraphrase as a quotation.
+    A model that wraps a line differently has not misquoted anything, which is
+    the one thing this does forgive.
     """
-    return " ".join(text.split())
+    return text.split()
+
+
+def _is_contiguous_quotation(excerpt: str, clause_text: str) -> bool:
+    """Whether ``excerpt`` appears in ``clause_text`` as whole words, in order.
+
+    A word-sequence search rather than a substring search, from the HALT-2
+    review, finding 3. Plain substring containment matched mid-word: ``"omment
+    spam"`` is a contiguous substring of ``"Comment spam: Using..."`` and would
+    have resolved, which is a quotation of something the clause does not say.
+
+    Comparing word lists makes alignment structural rather than something a
+    regex has to be trusted to get right, and it keeps the check exactly as
+    strict as it was in every other respect: the words must match, in order,
+    with nothing between them.
+    """
+    needle = _words(excerpt)
+    haystack = _words(clause_text)
+    if not needle or len(needle) > len(haystack):
+        return False
+    return any(
+        haystack[start : start + len(needle)] == needle
+        for start in range(len(haystack) - len(needle) + 1)
+    )
 
 
 def resolve_citation(citation: PolicyCitation, corpus: PolicyCorpus) -> CitationResolution:
@@ -161,7 +191,21 @@ def resolve_citation(citation: PolicyCitation, corpus: PolicyCorpus) -> Citation
             heading=clause.heading,
         )
 
-    if _normalise(citation.excerpt) not in _normalise(clause.text):
+    if words < MIN_EXCERPT_WORDS:
+        return CitationResolution(
+            resolved=False,
+            citation=citation,
+            code=CitationFailure.EXCERPT_TOO_SHORT,
+            detail=(
+                f"excerpt is {words} words and at least {MIN_EXCERPT_WORDS} are needed to "
+                "identify a rule; a one-word quotation of a policy clause is true and "
+                "says nothing about which ground is relied on"
+            ),
+            doc_id=document.doc_id,
+            heading=clause.heading,
+        )
+
+    if not _is_contiguous_quotation(citation.excerpt, clause.text):
         return CitationResolution(
             resolved=False,
             citation=citation,

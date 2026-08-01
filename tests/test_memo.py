@@ -338,7 +338,11 @@ def test_a_real_citation_resolves(corpus: PolicyCorpus, spam_citation: PolicyCit
 
 
 def test_an_unknown_document_is_refused(corpus: PolicyCorpus) -> None:
-    citation = PolicyCitation(content_digest="d" * 64, anchor_id="comment-spam", excerpt="spam")
+    citation = PolicyCitation(
+        content_digest="d" * 64,
+        anchor_id="comment-spam",
+        excerpt="Comment spam: Using high-volume,",
+    )
 
     resolution = resolve_citation(citation, corpus)
 
@@ -415,8 +419,11 @@ def test_the_resolver_accepts_rewrapped_whitespace_and_not_a_paraphrase(
 def test_the_resolver_is_total(corpus: PolicyCorpus) -> None:
     """Pure and total: no exception on any input, so the gate never degrades a
     precise finding into a generic CHECKER_ERROR."""
-    for anchor, excerpt in (("", "x"), ("comment-spam", "x"), ("a" * 500, "y")):
-        citation = PolicyCitation(content_digest="e" * 64, anchor_id=anchor or "x", excerpt=excerpt)
+    for anchor, excerpt in (
+        ("comment-spam", "four whole words here"),
+        ("a" * 500, "another four word excerpt"),
+    ):
+        citation = PolicyCitation(content_digest="e" * 64, anchor_id=anchor, excerpt=excerpt)
         assert resolve_citation(citation, corpus).code is not None
 
 
@@ -648,7 +655,7 @@ def test_the_handler_attaches_a_citation_and_returns_the_memo(
             sentence_index=1,
             content_digest=spam_citation.content_digest,
             anchor_id="scams",
-            excerpt="Scams: Promoting",
+            excerpt='Scams: Promoting "get rich',
         )
     )
 
@@ -705,7 +712,7 @@ def test_the_handler_refuses_a_memo_or_corpus_it_was_not_lent(
         "sentence_index": 1,
         "content_digest": spam_citation.content_digest,
         "anchor_id": "comment-spam",
-        "excerpt": "Comment spam: Using",
+        "excerpt": "Comment spam: Using high-volume,",
     }
 
     with pytest.raises(ToolViolation, match="needs the draft memo"):
@@ -738,7 +745,7 @@ def test_the_handler_refuses_a_sentence_index_that_locates_nothing(
                 sentence_index=index,
                 content_digest=spam_citation.content_digest,
                 anchor_id="comment-spam",
-                excerpt="Comment spam: Using",
+                excerpt="Comment spam: Using high-volume,",
             )
         )
 
@@ -755,7 +762,7 @@ def test_the_handler_refuses_to_cite_anything_but_a_policy_ground(
                 sentence_index=2,  # the MEASURE sentence
                 content_digest=spam_citation.content_digest,
                 anchor_id="comment-spam",
-                excerpt="Comment spam: Using",
+                excerpt="Comment spam: Using high-volume,",
             )
         )
 
@@ -791,9 +798,169 @@ def test_the_handler_refuses_a_missing_or_blank_parameter(
         "sentence_index": 1,
         "content_digest": spam_citation.content_digest,
         "anchor_id": "comment-spam",
-        "excerpt": "Comment spam: Using",
+        "excerpt": "Comment spam: Using high-volume,",
     }
     args[missing] = "   "
 
     with pytest.raises(ToolViolation, match=missing):
         resolve_policy_citation(_context(_memo(pack, corpus, spam_citation), corpus, **args))
+
+
+# ---------------------------------------------------------------------------
+# HALT-2 review findings 1-3
+# ---------------------------------------------------------------------------
+
+
+def _bypass_constructor(memo: Memo, sentences: tuple[MemoSentence, ...]) -> Memo:
+    """Build a Memo without running ``__post_init__``.
+
+    The same instrument ``test_pack_gate`` uses against ``EvidencePack``, and
+    for the same reason: the gate's job is to be what remains when the type has
+    stopped being a guarantee, and that cannot be tested through a constructor
+    that refuses to produce the malformed artifact.
+    """
+    forged = object.__new__(Memo)
+    for field, value in (
+        ("memo_id", memo.memo_id),
+        ("case_id", memo.case_id),
+        ("subject_id", memo.subject_id),
+        ("pack_digest", memo.pack_digest),
+        ("corpus_version", memo.corpus_version),
+        ("corpus_sha256", memo.corpus_sha256),
+        ("sentences", sentences),
+        ("measure", memo.measure),
+        ("automated_means", memo.automated_means),
+        ("status", memo.status),
+    ):
+        object.__setattr__(forged, field, value)
+    return forged
+
+
+def _bypass_sentence(index: int, role: SentenceRole, text: str) -> MemoSentence:
+    forged = object.__new__(MemoSentence)
+    for field, value in (
+        ("index", index),
+        ("role", role),
+        ("text", text),
+        ("evidence_ids", frozenset()),
+        ("citation", None),
+    ):
+        object.__setattr__(forged, field, value)
+    return forged
+
+
+def test_the_gate_fails_a_policy_ground_that_reaches_it_with_no_citation(
+    pack: EvidencePack, corpus: PolicyCorpus, spam_citation: PolicyCitation
+) -> None:
+    """HALT-2 review, finding 1.
+
+    Unreachable through the constructor, which refuses a POLICY_GROUND without a
+    citation, and kept for the reason ``pack_gate`` keeps its two unreachable
+    checks. The first version of ``_check_citations`` iterated sentences
+    *carrying* a citation, so a POLICY_GROUND without one was silently skipped
+    and the memo passed while asserting a ground it never cited.
+    """
+    good = _memo(pack, corpus, spam_citation)
+    forged = _bypass_constructor(
+        good,
+        (
+            good.sentences[0],
+            _bypass_sentence(1, SentenceRole.POLICY_GROUND, "This breaches the spam policy."),
+            good.sentences[2],
+            good.sentences[3],
+        ),
+    )
+
+    failures = memo_check(forged, pack, corpus)
+
+    assert len(failures) == 1
+    assert failures[0].code is FailureCode.UNVERIFIED_CLAIM
+    assert "sentence 1" in failures[0].detail
+    assert "carrying no citation" in failures[0].detail
+
+
+def test_a_one_word_excerpt_cannot_satisfy_the_policy_ground(corpus: PolicyCorpus) -> None:
+    """HALT-2 review, finding 2.
+
+    ``"spam"`` is a perfectly true substring of the comment-spam clause and
+    identifies no rule at all. The ceiling had no counterpart, so a memo could
+    satisfy Article 17(3)(e) with one common word.
+    """
+    document = corpus.document("youtube-spam")
+    assert document is not None
+
+    with pytest.raises(ValueError, match="at least"):
+        PolicyCitation(
+            content_digest=document.content_digest, anchor_id="comment-spam", excerpt="spam"
+        )
+
+
+def test_the_resolver_reports_a_too_short_excerpt_with_its_own_code(
+    corpus: PolicyCorpus,
+) -> None:
+    """Reported as well as refused, for the reason ``EXCERPT_TOO_LONG`` is:
+    the type makes it unconstructible, and the gate has to be able to *say* so
+    for a citation built by a route that bypassed the constructor."""
+    document = corpus.document("youtube-spam")
+    assert document is not None
+    forged = object.__new__(PolicyCitation)
+    for field, value in (
+        ("content_digest", document.content_digest),
+        ("anchor_id", "comment-spam"),
+        ("excerpt", "spam"),
+    ):
+        object.__setattr__(forged, field, value)
+
+    resolution = resolve_citation(forged, corpus)
+
+    assert resolution.code is CitationFailure.EXCERPT_TOO_SHORT
+
+
+def test_an_excerpt_must_align_on_word_boundaries(corpus: PolicyCorpus) -> None:
+    """HALT-2 review, finding 3.
+
+    ``"omment spam: Using high-volume,"`` is a contiguous *substring* of the
+    clause and is a quotation of something the clause does not say. Word-sequence
+    matching makes alignment structural rather than something a regex has to be
+    trusted to get right.
+    """
+    document = corpus.document("youtube-spam")
+    assert document is not None
+
+    aligned = PolicyCitation(
+        content_digest=document.content_digest,
+        anchor_id="comment-spam",
+        excerpt="Comment spam: Using high-volume,",
+    )
+    mid_word = PolicyCitation(
+        content_digest=document.content_digest,
+        anchor_id="comment-spam",
+        excerpt="omment spam: Using high-volume,",
+    )
+
+    assert resolve_citation(aligned, corpus).resolved
+    assert resolve_citation(mid_word, corpus).code is CitationFailure.EXCERPT_NOT_IN_CLAUSE
+
+
+def test_word_boundary_matching_still_forgives_only_whitespace(corpus: PolicyCorpus) -> None:
+    """The property finding 3 must not have broken: rewrapping still passes,
+    and a changed word still fails."""
+    document = corpus.document("youtube-spam")
+    assert document is not None
+    clause = document.clause("comment-spam")
+    assert clause is not None
+    words = clause.text.split()[:6]
+
+    rewrapped = PolicyCitation(
+        content_digest=document.content_digest,
+        anchor_id="comment-spam",
+        excerpt="\n  ".join(words),
+    )
+    changed = PolicyCitation(
+        content_digest=document.content_digest,
+        anchor_id="comment-spam",
+        excerpt=" ".join(words).replace("Using", "Employing"),
+    )
+
+    assert resolve_citation(rewrapped, corpus).resolved
+    assert resolve_citation(changed, corpus).code is CitationFailure.EXCERPT_NOT_IN_CLAUSE

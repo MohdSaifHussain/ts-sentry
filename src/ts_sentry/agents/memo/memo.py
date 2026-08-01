@@ -91,6 +91,7 @@ from ts_sentry.governance.canonical import require_sha256_hex
 
 __all__ = [
     "MAX_EXCERPT_WORDS",
+    "MIN_EXCERPT_WORDS",
     "AutomatedDecision",
     "AutomatedMeans",
     "Measure",
@@ -109,6 +110,21 @@ MAX_EXCERPT_WORDS = 15
 A memo cites a clause by anchor and quotes at most this many words of it. The
 limit is enforced by the type rather than requested in a prompt, because a
 fair-use posture a model can exceed is not a posture.
+"""
+
+MIN_EXCERPT_WORDS = 4
+"""The excerpt floor. Added at the HALT-2 review, finding 2.
+
+The ceiling had no counterpart, and that was a hole rather than an omission: an
+excerpt of ``"spam"`` is a perfectly true substring of the comment-spam clause
+and identifies no rule at all, so a memo could satisfy Article 17(3)(e)'s
+"reference to the contractual ground relied on" with one common word. A citation
+has to quote enough of the clause to say *which* rule is being relied on.
+
+Four is a judgment, and a small one: it is enough that a quotation is
+recognisably of a particular clause, and short enough that a genuine short
+clause can still be cited. It is not derived from anything, and saying so is
+better than implying a provenance it does not have.
 """
 
 
@@ -238,10 +254,15 @@ class PolicyCitation:
                 "a citation quotes the clause it relies on; an empty excerpt cites a "
                 "location without saying what is there"
             )
-        if excerpt_word_count(self.excerpt) > MAX_EXCERPT_WORDS:
+        words = excerpt_word_count(self.excerpt)
+        if words > MAX_EXCERPT_WORDS:
             raise ValueError(
-                f"excerpt is {excerpt_word_count(self.excerpt)} words; the fair-use "
-                f"ceiling is {MAX_EXCERPT_WORDS}"
+                f"excerpt is {words} words; the fair-use ceiling is {MAX_EXCERPT_WORDS}"
+            )
+        if words < MIN_EXCERPT_WORDS:
+            raise ValueError(
+                f"excerpt is {words} words; a citation quotes at least "
+                f"{MIN_EXCERPT_WORDS} so it identifies which rule is relied on"
             )
 
     def to_json_object(self) -> dict[str, object]:

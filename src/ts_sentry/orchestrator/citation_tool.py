@@ -62,6 +62,15 @@ def _require_str(context: ToolContext, name: str) -> str:
 def resolve_policy_citation(context: ToolContext, /) -> object:
     """Attach one policy citation to the draft memo and return the memo.
 
+    **The name is the tool's, and the verb is wrong.** This function attaches; it
+    does not resolve. It takes its name from ``ToolId.RESOLVE_POLICY_CITATION``,
+    which is fixed in the enum and predates this handler, and it deliberately
+    has no access to ``citation_resolver``: a grep of this module for
+    ``resolve_citation`` finds nothing, which is what makes "the handler cannot
+    decide whether a citation is good" a structural fact rather than a promise.
+    Noted at the HALT-2 review, because a reader who trusted the name would
+    expect a verdict this function is incapable of producing.
+
     Returns a ``Memo`` because that is what the memo mandate declares as its
     ``output_schema``, so dispatch's schema check and the RECOMMEND gate both
     see the whole artifact rather than a fragment of it.

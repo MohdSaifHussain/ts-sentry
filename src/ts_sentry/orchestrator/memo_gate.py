@@ -42,6 +42,30 @@ that resolves an agent's claims against a set the agent could have influenced
 is not a check.
 
 Failures are returned, never raised (DECISIONS 2.4).
+
+Carried to D6: this gate does not check ``memo.status``
+---------------------------------------------------------
+HALT-2 review, finding 4, deferred deliberately rather than missed. A memo
+arriving here with ``status`` already ``SIGNED`` passes, and nothing in this
+build can produce one: an agent cannot reach ``governance.signature``, and
+``Memo.with_sentences`` resets a revised memo to ``DRAFT``. So the gap is
+unreachable today and becomes reachable the moment D6 exists.
+
+The intended semantics, stated now so D6 implements a decision rather than
+inventing one:
+
+* **A DRAFT memo is what this gate is for.** It judges agent output, and agent
+  output is always a draft.
+* **A SIGNED memo reaching this gate is a category error and must be refused.**
+  Not because the memo is bad, but because re-gating it answers the wrong
+  question. What makes a signed memo trustworthy is that its
+  ``content_digest`` recomputes and the signature over it verifies; that is
+  signature verification, not claim verification. Accepting one here would let
+  a signed memo be re-laundered through the agent path and emerge with a fresh
+  ``VERIFICATION_PASS`` that says nothing about the signature.
+* **Revision of a signed memo is already handled**, by ``with_sentences``
+  returning a DRAFT: the signature was over text that no longer exists, so the
+  revised memo re-enters this gate as the draft it now is.
 """
 
 from collections.abc import Sequence
@@ -139,11 +163,37 @@ def _check_claims(sentences: Sequence[MemoSentence], pack: EvidencePack) -> list
 
 
 def _check_citations(sentences: Sequence[MemoSentence], corpus: PolicyCorpus) -> list[GateFailure]:
-    """Every policy citation resolves to a real clause, quoted accurately."""
+    """Every POLICY_GROUND carries a citation, and every citation resolves.
+
+    The missing-citation branch is **unreachable through the constructor**,
+    which refuses a POLICY_GROUND without one, and it is kept for the reason
+    ``pack_gate`` keeps its two unreachable checks: this gate receives an
+    ``object`` from a tool handler, not a guaranteed memo. If a future change
+    ever builds one by a route that skips ``__post_init__``, the type stops
+    being a guarantee and the gate is what remains.
+
+    Found at the HALT-2 review, finding 1. The first version iterated sentences
+    carrying a citation and would have *silently skipped* a POLICY_GROUND
+    without one, which passed a memo asserting a ground it never cited. The two
+    sets happen to be equal through the constructor, and writing the check
+    against the coincidence rather than the requirement is what left the hole.
+    """
     failures: list[GateFailure] = []
 
     for sentence in sentences:
         if sentence.citation is None:
+            if sentence.role is SentenceRole.POLICY_GROUND:
+                failures.append(
+                    GateFailure(
+                        code=FailureCode.UNVERIFIED_CLAIM,
+                        detail=(
+                            f"sentence {sentence.index} is a POLICY_GROUND carrying no "
+                            "citation; DSA Article 17(3)(e) requires a reference to the "
+                            "contractual ground relied on, and a ground nobody can look "
+                            "up is an assertion"
+                        ),
+                    )
+                )
             continue
         resolution = resolve_citation(sentence.citation, corpus)
         if resolution.resolved:

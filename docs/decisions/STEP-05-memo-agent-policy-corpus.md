@@ -41,7 +41,40 @@ a final memo.
 ## 4. Out of Scope
 - Prompt registry lifecycle (STEP-06); any automatic enforcement.
 
-## 5. Exit Checklist
+## 5. Review findings (HALT 2), carried into the Outcome
+
+Saif's review of the memo model, the citation resolver and the RECOMMEND gate
+checker, before D4 or D6 existed. The three guarantees under review were proved
+from quoted code: `verify_claims` is STEP-02's reused function against
+`pack.record_ids` and not a reimplementation, `pack_digest` is checked first and
+suppresses the rest on mismatch, and the excerpt match is whitespace-normalised
+only, so a paraphrase cannot pass.
+
+Four findings, surfaced by reviewing the code adversarially against its own
+claims rather than by any test.
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 | `_check_citations` iterated sentences *carrying* a citation, not POLICY_GROUND sentences. The sets are equal through the constructor, so a POLICY_GROUND reaching the gate without a citation on a constructor-bypassed memo was **silently skipped** and the memo passed while asserting a ground it never cited. This broke the `pack_gate` precedent, which keeps unreachable checks precisely because the gate receives an `object` rather than a guaranteed artifact. | **Fixed** |
+| 2 | The excerpt ceiling had no floor. `excerpt="spam"` is a true substring of the comment-spam clause and identifies no rule, so a memo could satisfy Article 17(3)(e) with one common word. | **Fixed**: `MIN_EXCERPT_WORDS = 4` with its own `EXCERPT_TOO_SHORT` code, distinct because a too-short excerpt is a *true* quotation that identifies nothing, which is a different failure from a false one. |
+| 3 | Substring matching was not word-aligned: `"omment spam: Using high-volume,"` is contiguous in the clause and is a quotation of something it does not say. | **Fixed**: word-sequence matching, so alignment is structural rather than something a regex is trusted to get right. Rewrapping still passes and a changed word still fails, both pinned. |
+| 4 | The gate never checks `memo.status`, so a `SIGNED` memo would pass the RECOMMEND gate. | **Deferred to D6**, deliberately: unreachable in this build, since an agent cannot reach `governance.signature` and `with_sentences` resets a revised memo to DRAFT. Intended semantics recorded in `orchestrator/memo_gate.py`. |
+
+The intended D6 semantics, recorded so that phase implements a decision rather
+than inventing one: a DRAFT memo is what this gate is for, because it judges
+agent output. A SIGNED memo reaching it must be **refused** as a category error,
+not because the memo is bad but because re-gating answers the wrong question:
+what makes a signed memo trustworthy is that its `content_digest` recomputes and
+the signature over it verifies, which is signature verification rather than claim
+verification. Accepting one would let a signed memo be re-laundered through the
+agent path and emerge with a fresh `VERIFICATION_PASS` that says nothing about
+the signature.
+
+Also applied: `resolve_policy_citation`'s docstring now states that the name is
+the tool's and the verb is wrong. It attaches; it does not resolve, and it has no
+access to `citation_resolver` at all.
+
+## 6. Exit Checklist
 - [ ] Overclaim fixtures: every planted defect caught, correct reason codes
 - [ ] Citation resolver rejects phantom anchors and overrun excerpts
 - [ ] Signed vs draft rendering verified; signature path requires analyst id
