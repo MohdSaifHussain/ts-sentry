@@ -140,7 +140,7 @@ notes.
 | Coverage | 93.16% against a 90% floor enforced in CI |
 | Types | `mypy --strict` clean on 164 files |
 | Lint and format | `ruff` clean |
-| Example ledgers | All seven verify, and match their stored anchors |
+| Example ledgers | All **six** verify, and match their stored anchors |
 
 ## Honest Limits
 

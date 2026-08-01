@@ -6,8 +6,10 @@ input firewall. Full artifacts committed.
 
 Every directory carries an `inputs.json` saying what produced it and a
 `NOTES.md` stating what the example demonstrates **and what it deliberately does
-not claim**. The seven session examples also carry a ledger that `verify-ledger`
-accepts; example 08 does not, for a reason given below.
+not claim**. The **six** session examples also carry a ledger that
+`verify-ledger` accepts. Example 07 produces a measurement report rather than a
+session, and example 08 runs no session at all; neither has a ledger, and the
+reasons differ and are given below.
 
 Three of the eight exist to show something being refused. That is the point of
 them: a control that has never fired is a control nobody has tested.
