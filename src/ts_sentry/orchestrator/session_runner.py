@@ -27,6 +27,7 @@ import numpy as np
 
 from ts_sentry.agents.triage.scorer import WEIGHTS_VERSION, weights_hash
 from ts_sentry.data.enums import EntityKind
+from ts_sentry.data.policy_corpus import load_corpus
 from ts_sentry.governance.canonical import digest_fields
 from ts_sentry.governance.ledger import ChainVerification, Ledger
 from ts_sentry.governance.mandate import AgentId
@@ -39,9 +40,14 @@ from ts_sentry.orchestrator.adapter import (
 from ts_sentry.orchestrator.core import Clock, CloseReason, Session, SystemClock
 from ts_sentry.orchestrator.detection_stub import DETECTOR_VERSION
 from ts_sentry.orchestrator.evidence_turn import EvidenceTurn, run_evidence_turn
-from ts_sentry.orchestrator.fleet import PHASE_FOUR_CHECKS, default_mandates
+from ts_sentry.orchestrator.fleet import (
+    PHASE_FOUR_CHECKS,
+    default_mandates,
+    phase_five_checks,
+)
 from ts_sentry.orchestrator.manifest import ArtifactRecord, SessionManifest
-from ts_sentry.orchestrator.pack_export import write_pack_graphml, write_pack_json
+from ts_sentry.orchestrator.memo_turn import MemoTurn, run_memo_turn
+from ts_sentry.orchestrator.pack_export import read_pack_json, write_pack_graphml, write_pack_json
 from ts_sentry.orchestrator.review import AnalystReviewer
 from ts_sentry.orchestrator.subject_check import require_subject
 from ts_sentry.orchestrator.toolspec import ToolResources
@@ -51,10 +57,13 @@ from ts_sentry.provenance import dataset_digest_from_manifest, git_sha
 __all__ = [
     "EvidenceArtifacts",
     "EvidenceRun",
+    "MemoArtifacts",
+    "MemoRun",
     "SessionArtifacts",
     "SessionRun",
     "derive_session_id",
     "run_evidence_session",
+    "run_memo_session",
     "run_triage_session",
 ]
 
@@ -65,6 +74,7 @@ SESSION_EVENTS = "session_events.json"
 SESSION_MANIFEST = "session_manifest.json"
 EVIDENCE_PACK = "evidence_pack.json"
 EVIDENCE_GRAPH = "evidence_graph.graphml"
+MEMO_JSON = "memo.json"
 
 
 @dataclass(frozen=True, slots=True)
@@ -480,3 +490,176 @@ def run_evidence_session(
         dataset.close()
         if ledger_connection is not None:
             ledger_connection.close()
+
+
+# --------------------------------------------------------------------------
+# STEP-05: the memo session
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class MemoArtifacts:
+    """Where a finished memo session left its files."""
+
+    out_dir: Path
+    ledger_jsonl: Path
+    ledger_store: Path
+    memo_json: Path
+    session_events: Path
+    manifest: Path
+
+
+@dataclass(frozen=True, slots=True)
+class MemoRun:
+    """What a memo session produced, including whether its chain held."""
+
+    artifacts: MemoArtifacts
+    turn: MemoTurn
+    close_reason: CloseReason
+    verification: ChainVerification
+    manifest: SessionManifest
+
+    @property
+    def intact(self) -> bool:
+        return self.verification.intact
+
+
+def run_memo_session(
+    seed_dataset: Path,
+    pack_path: Path,
+    out_dir: Path,
+    adapter: ModelAdapter,
+    *,
+    analyst_id: str,
+    policies_dir: Path,
+    session_id: str | None = None,
+    memo_id: str = "memo-0001",
+    max_attempts: int | None = None,
+    seed: int = 42,
+    clock: Clock | None = None,
+    sleeper: Sleeper | None = None,
+) -> MemoRun:
+    """Open a session, draft one memo from an accepted pack, close, write.
+
+    The dataset is opened only to derive the dataset digest, and **never
+    queried**: ``MEMO_MANDATE`` grants no data scopes at all, so there is
+    nothing the memo agent could ask of it. The connection is not lent to the
+    turn, which is the structural version of that statement rather than a
+    promise about what the turn happens to do.
+
+    The pack and the corpus are both loaded here and handed to the turn, for the
+    reason ``ToolResources`` exists: an agent that could name either could
+    supply one it had written.
+    """
+    store_path = _dataset_path(seed_dataset)
+    if not store_path.is_file():
+        raise FileNotFoundError(f"no dataset store at {store_path}")
+
+    pack = read_pack_json(pack_path)
+    corpus = load_corpus(policies_dir)
+    dataset_digest = dataset_digest_from_manifest(_build_dir(seed_dataset))
+    resolved_session_id = session_id or derive_session_id(
+        analyst_id, dataset_digest, AgentId.MEMO.value, pack.case_id, pack.subject_id
+    )
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ledger_store = out_dir / LEDGER_STORE
+    ledger_store.unlink(missing_ok=True)
+    ledger_connection = duckdb.connect(str(ledger_store))
+    try:
+        session = Session(
+            session_id=resolved_session_id,
+            analyst_id=analyst_id,
+            ledger=Ledger(ledger_connection),
+            clock=clock or SystemClock(),
+            mandates=default_mandates(),
+            dataset_digest=dataset_digest,
+            corpus=corpus,
+        )
+        session.open()
+
+        turn = run_memo_turn(
+            session,
+            adapter,
+            pack=pack,
+            corpus=corpus,
+            checks=phase_five_checks(pack, corpus),
+            policy=RetryPolicy(),
+            rng=np.random.default_rng(seed),
+            sleeper=sleeper or RealSleeper(),
+            memo_id=memo_id,
+            max_attempts=max_attempts,
+        )
+
+        close_reason = turn.close_reason or CloseReason.COMPLETED
+        closed = session.close(close_reason)
+
+        session.ledger.export_jsonl(out_dir / LEDGER_JSONL)
+        _write_json(
+            out_dir / MEMO_JSON,
+            {
+                "session_id": resolved_session_id,
+                "corpus_version": corpus.corpus_version,
+                "corpus_sha256": corpus.corpus_sha256,
+                "pack_digest": pack.content_digest,
+                "turn": turn.to_json_object(),
+            },
+        )
+        _write_json(
+            out_dir / SESSION_EVENTS,
+            {
+                "session_id": resolved_session_id,
+                "case_id": pack.case_id,
+                "events": [
+                    {
+                        "seq": recorded.entry.seq,
+                        "event_type": recorded.entry.event_type.value,
+                        "timestamp_ist": recorded.entry.timestamp_iso,
+                        "payload": dict(recorded.payload),
+                    }
+                    for recorded in session.recorded_events
+                ],
+            },
+        )
+
+        verification = session.ledger.verify()
+        artifacts = MemoArtifacts(
+            out_dir=out_dir,
+            ledger_jsonl=out_dir / LEDGER_JSONL,
+            ledger_store=ledger_store,
+            memo_json=out_dir / MEMO_JSON,
+            session_events=out_dir / SESSION_EVENTS,
+            manifest=out_dir / SESSION_MANIFEST,
+        )
+
+        assert session.opened_ts is not None and session.closed_ts is not None
+        manifest = SessionManifest(
+            session_id=resolved_session_id,
+            analyst_id=analyst_id,
+            opened_ts_iso=session.opened_ts.isoformat(),
+            closed_ts_iso=session.closed_ts.isoformat(),
+            close_reason=close_reason,
+            dataset_digest=dataset_digest,
+            mandate_set_hash=session.mandate_set_hash,
+            mandate_hashes={AgentId.MEMO.value: session.binding(AgentId.MEMO).hash},
+            expected_head=closed.head,
+            event_counts=session.event_counts(),
+            budgets={AgentId.MEMO.value: session.budget(AgentId.MEMO).snapshot()},
+            git_sha=git_sha(),
+            artifacts=[
+                ArtifactRecord.of("ledger_jsonl", artifacts.ledger_jsonl, relative_to=out_dir),
+                ArtifactRecord.of("memo", artifacts.memo_json, relative_to=out_dir),
+                ArtifactRecord.of("session_events", artifacts.session_events, relative_to=out_dir),
+            ],
+        )
+        manifest.write(artifacts.manifest)
+
+        return MemoRun(
+            artifacts=artifacts,
+            turn=turn,
+            close_reason=close_reason,
+            verification=verification,
+            manifest=manifest,
+        )
+    finally:
+        ledger_connection.close()

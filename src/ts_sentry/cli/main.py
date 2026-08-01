@@ -35,6 +35,7 @@ import duckdb
 
 from ts_sentry.data.generator import build_dataset
 from ts_sentry.data.policy_corpus import (
+    CorpusError,
     PolicyCorpus,
     PolicyDocument,
     load_corpus,
@@ -64,12 +65,18 @@ from ts_sentry.governance.scopes import (
 from ts_sentry.orchestrator.adapter import ModelAdapter, ModelMode, Responder, StubAdapter
 from ts_sentry.orchestrator.evidence_turn import stub_evidence_responder
 from ts_sentry.orchestrator.manifest import ManifestError, read_expected_head
+from ts_sentry.orchestrator.memo_turn import stub_memo_responder
+from ts_sentry.orchestrator.pack_export import PackReadError
 from ts_sentry.orchestrator.review import (
     AnalystReviewer,
     InteractiveReviewer,
     ScriptedReviewer,
 )
-from ts_sentry.orchestrator.session_runner import run_evidence_session, run_triage_session
+from ts_sentry.orchestrator.session_runner import (
+    run_evidence_session,
+    run_memo_session,
+    run_triage_session,
+)
 from ts_sentry.orchestrator.subject_check import SubjectNotFound
 from ts_sentry.orchestrator.triage_turn import stub_triage_responder
 from ts_sentry.provenance import DatasetDigestError, git_sha, sha256_file
@@ -267,6 +274,7 @@ def run_fetch_policies(out_dir: Path) -> int:
 
 TRIAGE_AGENT = "triage"
 EVIDENCE_AGENT = "evidence"
+MEMO_AGENT = "memo"
 
 SCRIPTED_REVIEW = "scripted"
 INTERACTIVE_REVIEW = "interactive"
@@ -361,6 +369,82 @@ def run_evidence_session_command(
     for hop in turn.hops:
         if hop.attribution is not None:
             print(f"  hop {hop.hop_index}: {hop.pivot_kind} - {hop.attribution}")
+    if turn.injection_signals:
+        print(f"injection: {turn.injection_signals} signal(s) in pack content")
+    print(f"head:      {run.manifest.expected_head.render()}")
+    print(f"artifacts: {run.artifacts.out_dir}")
+
+    if not run.intact:
+        print(
+            f"run-session: the session produced a broken chain at seq "
+            f"{run.verification.first_broken_seq}",
+            file=sys.stderr,
+        )
+        return EXIT_BROKEN_CHAIN
+
+    print("result:    session closed with an intact chain")
+    return EXIT_OK
+
+
+def run_memo_session_command(
+    seed_dataset: Path,
+    out_dir: Path,
+    *,
+    pack_path: Path | None,
+    policies_dir: Path,
+    analyst_id: str,
+    llm_mode: str,
+    memo_id: str,
+    max_attempts: int | None,
+    seed: int,
+    session_id: str | None,
+) -> int:
+    """Draft one memo from an accepted evidence pack, and report where it landed."""
+    if pack_path is None:
+        print(
+            "run-session: --agent memo requires --pack naming an evidence_pack.json "
+            "written by a previous evidence session",
+            file=sys.stderr,
+        )
+        return EXIT_INPUT_ERROR
+
+    try:
+        adapter = _build_adapter(llm_mode, stub_memo_responder)
+        run = run_memo_session(
+            seed_dataset,
+            pack_path,
+            out_dir,
+            adapter,
+            analyst_id=analyst_id,
+            policies_dir=policies_dir,
+            session_id=session_id,
+            memo_id=memo_id,
+            max_attempts=max_attempts,
+            seed=seed,
+        )
+    except (InputError, DatasetDigestError, PackReadError, CorpusError) as exc:
+        print(f"run-session: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    except (FileNotFoundError, duckdb.Error) as exc:
+        print(f"run-session: could not open the dataset: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+
+    turn = run.turn
+    print(f"session:   {run.manifest.session_id}")
+    print(f"analyst:   {run.manifest.analyst_id}")
+    print(f"adapter:   {adapter.adapter_id} ({adapter.model_id})")
+    print(f"close:     {run.close_reason.value}")
+    print(f"attempts:  {len(turn.attempts)} drafting attempt(s)")
+    print(f"rejected:  {turn.rejected_attempts} by the verifier")
+    print(f"defects:   {turn.distinct_defects} distinct, caught before human review")
+    print(f"revised:   {turn.revised} (did the agent change its output when told)")
+    for record in turn.attempts:
+        print(f"  attempt {record.attempt}: {record.outcome} - {record.detail}")
+    if turn.memo is not None:
+        print(f"memo:      {turn.memo.memo_id}, {len(turn.memo.sentences)} sentences")
+        print(f"measure:   {turn.memo.measure.value}")
+        print(f"status:    {turn.memo.status.value.upper()}")
+    print(f"verified:  {turn.verified}")
     if turn.injection_signals:
         print(f"injection: {turn.injection_signals} signal(s) in pack content")
     print(f"head:      {run.manifest.expected_head.render()}")
@@ -650,7 +734,9 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     session_parser = subparsers.add_parser(RUN_SESSION)
-    session_parser.add_argument("--agent", choices=[TRIAGE_AGENT, EVIDENCE_AGENT], required=True)
+    session_parser.add_argument(
+        "--agent", choices=[TRIAGE_AGENT, EVIDENCE_AGENT, MEMO_AGENT], required=True
+    )
     session_parser.add_argument("--seed-dataset", type=Path, required=True)
     session_parser.add_argument("--out", type=Path, default=Path("session"))
     session_parser.add_argument("--analyst-id", type=str, default="analyst")
@@ -692,6 +778,23 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     session_parser.add_argument("--max-hops", type=int, default=None)
+    session_parser.add_argument(
+        "--pack",
+        type=Path,
+        default=None,
+        help=(
+            "evidence_pack.json from a previous evidence session. Required with "
+            "--agent memo, which drafts from an accepted pack and queries nothing."
+        ),
+    )
+    session_parser.add_argument(
+        "--policies",
+        type=Path,
+        default=Path("policies"),
+        help="The hashed policy corpus a memo's citations resolve against.",
+    )
+    session_parser.add_argument("--memo-id", type=str, default="memo-0001")
+    session_parser.add_argument("--max-attempts", type=int, default=None)
 
     policies_parser = subparsers.add_parser(FETCH_POLICIES)
     policies_parser.add_argument(
@@ -759,6 +862,19 @@ def main(argv: list[str] | None = None) -> int:
         return run_fetch_policies(args.out)
 
     if args.command == RUN_SESSION:
+        if args.agent == MEMO_AGENT:
+            return run_memo_session_command(
+                args.seed_dataset,
+                args.out,
+                pack_path=args.pack,
+                policies_dir=args.policies,
+                analyst_id=args.analyst_id,
+                llm_mode=args.llm_mode,
+                memo_id=args.memo_id,
+                max_attempts=args.max_attempts,
+                seed=args.seed,
+                session_id=args.session_id,
+            )
         if args.agent == EVIDENCE_AGENT:
             return run_evidence_session_command(
                 args.seed_dataset,

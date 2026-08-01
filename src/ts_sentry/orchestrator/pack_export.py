@@ -39,14 +39,37 @@ import json
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
-from ts_sentry.agents.evidence.pack import EvidencePack
+from ts_sentry.agents.evidence.pack import (
+    EdgeRelation,
+    EvidenceEdge,
+    EvidenceNode,
+    EvidencePack,
+    PackError,
+    Provenance,
+    TimelineEvent,
+    TimelineKind,
+)
+from ts_sentry.data.enums import EntityKind
+from ts_sentry.orchestrator.pivots import PivotKind
 
 __all__ = [
     "GRAPHML_NS",
+    "PackReadError",
     "graphml_document",
+    "read_pack_json",
     "write_pack_graphml",
     "write_pack_json",
 ]
+
+
+class PackReadError(Exception):
+    """Raised when an evidence pack cannot be read back from disk.
+
+    Distinct from ``PackError``, which is a malformed pack. This is a file that
+    is not a pack export at all, which is an input problem for whoever named the
+    path rather than a finding about an artifact.
+    """
+
 
 GRAPHML_NS = "http://graphml.graphdrawing.org/xmlns"
 _XSI_NS = "http://www.w3.org/2001/XMLSchema-instance"
@@ -157,6 +180,82 @@ def write_pack_graphml(pack: EvidencePack, path: Path) -> None:
         encoding="utf-8",
         newline="\n",
     )
+
+
+def read_pack_json(path: Path) -> EvidencePack:
+    """Read a pack back from its JSON export.
+
+    STEP-04 wrote packs and never read one, because nothing consumed a pack
+    until the memo agent did. This is the inverse of ``write_pack_json``, and it
+    round-trips: a pack written and read back has the same ``content_digest``,
+    which is the property the memo's ``pack_digest`` binding depends on. A memo
+    drafted in one session and verified in another would otherwise fail its own
+    binding check for no reason but serialization.
+
+    Reconstruction goes through the ordinary constructors, so a tampered export
+    is refused by ``EvidencePack.__post_init__`` exactly as a malformed pack
+    built in memory would be. There is no bypass here for the convenience of
+    reading.
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise PackReadError(f"could not read an evidence pack from {path}: {exc}") from exc
+
+    try:
+        return EvidencePack(
+            case_id=str(data["case_id"]),
+            subject_id=str(data["subject_id"]),
+            nodes=tuple(
+                EvidenceNode(
+                    node_id=str(item["node_id"]),
+                    kind=EntityKind(str(item["kind"])),
+                    provenance_id=str(item["provenance_id"]),
+                    attributes={str(k): str(v) for k, v in item["attributes"].items()},
+                )
+                for item in data["nodes"]
+            ),
+            edges=tuple(
+                EvidenceEdge(
+                    edge_id=str(item["edge_id"]),
+                    source_id=str(item["source_id"]),
+                    target_id=str(item["target_id"]),
+                    relation=EdgeRelation(str(item["relation"])),
+                    provenance_id=str(item["provenance_id"]),
+                    attributes={str(k): str(v) for k, v in item["attributes"].items()},
+                )
+                for item in data["edges"]
+            ),
+            timeline=tuple(
+                TimelineEvent(
+                    event_id=str(item["event_id"]),
+                    kind=TimelineKind(str(item["kind"])),
+                    node_id=str(item["node_id"]),
+                    ts_ist=str(item["ts_ist"]),
+                    provenance_id=str(item["provenance_id"]),
+                )
+                for item in data["timeline"]
+            ),
+            provenance=tuple(
+                Provenance(
+                    provenance_id=str(item["provenance_id"]),
+                    hop_index=int(item["hop_index"]),
+                    pivot_kind=None
+                    if item["pivot_kind"] is None
+                    else PivotKind(item["pivot_kind"]),
+                    source_table=str(item["source_table"]),
+                    query_template_id=str(item["query_template_id"]),
+                    template_sha256=str(item["template_sha256"]),
+                    param_hash=str(item["param_hash"]),
+                    params=dict(item["params"]),
+                    retrieval_ts_ist=str(item["retrieval_ts_ist"]),
+                    row_count=int(item["row_count"]),
+                )
+                for item in data["provenance"]
+            ),
+        )
+    except (KeyError, TypeError, ValueError, PackError) as exc:
+        raise PackReadError(f"{path} is not a well-formed evidence pack: {exc}") from exc
 
 
 def write_pack_json(pack: EvidencePack, path: Path) -> None:

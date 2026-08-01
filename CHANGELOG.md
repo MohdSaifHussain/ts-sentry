@@ -309,6 +309,23 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   accepted Evidence Pack and the hashed corpus, both lent by the orchestrator.
   `RESOLVE_POLICY_CITATION` has its handler, so the pending-handler set shrinks
   from two to one and `IMPLEMENTATION_PHASE` is 5.
+- STEP-05 D4: the memo agent (`ts_sentry.agents.memo.draft`, `.prompts`) and its
+  turn (`orchestrator.draft_check`, `orchestrator.memo_turn`). Flat prefixed
+  lines, one sentence per line, for the reason STEP-04 chose them over JSON. The
+  agent names an **anchor** and never a document digest: the orchestrator
+  resolves which document carries the anchor, because a digest the agent
+  supplied would let it point a citation at a document nobody checked it
+  against. An anchor two documents share is refused rather than resolved to the
+  first, which is a real case in corpus v1.
+- STEP-05 D4: the memo goes through `dispatch(RESOLVE_POLICY_CITATION)` rather
+  than calling the gate directly, so the mandate check, `TOOL_CALLED`, the
+  schema check and the RECOMMEND gate all run on the governed path. No analyst
+  decision is taken during drafting: a pivot acts and a draft does not, and the
+  analyst's decision on a memo is the signature.
+- STEP-05 D4: `ts-sentry run-session --agent memo --pack PATH` and
+  `orchestrator.pack_export.read_pack_json`. STEP-04 wrote packs and never read
+  one; the round trip preserves `content_digest`, which the memo's `pack_digest`
+  binding depends on.
 - STEP-04 follow-up: `ts_sentry.orchestrator.subject_check` - an evidence
   session refuses a `--subject` that does not exist in the dataset, exiting `5`
   and producing no session and no chain. The check runs before the output
