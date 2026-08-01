@@ -1,0 +1,31 @@
+# Everything the image does not need. Keeping this tight is what makes the
+# build context small and stops local state (a .venv, a build directory, Saif's
+# verification artifacts) from ever reaching a published layer.
+
+.git/
+.github/
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Datasets and session output are produced at runtime, never baked in.
+build/
+build_*/
+session_*/
+report_*/
+
+# Committed examples are documentation. A reader gets them from the repository,
+# and 5 MB of ledgers and CSVs has no business in a runtime image.
+examples/
+tests/
+docs/
+*.md
+!README.md

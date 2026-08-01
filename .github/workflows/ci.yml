@@ -1,3 +1,14 @@
+# SPDX-License-Identifier: MIT
+#
+# Actions are pinned by commit SHA with the version in a trailing comment. A
+# tag can be moved and a SHA cannot, which is the same argument that pinned the
+# analystkit dependency to a commit in STEP-08. The version comment is what
+# Dependabot reads when it proposes an update.
+#
+# Versions resolved from each action's own repository on 2 August 2026. The
+# checkout and setup-python bumps also clear the deprecated-runtime annotation
+# CI has printed since Phase 4.
+
 name: CI
 
 on:
@@ -5,13 +16,17 @@ on:
     branches: [main]
   pull_request:
 
+# Least privilege by default. Any job needing more says so for itself.
+permissions:
+  contents: read
+
 jobs:
   lint-type-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
 
@@ -30,13 +45,94 @@ jobs:
       - name: pytest (coverage floor enforced via pyproject.toml)
         run: pytest --cov
 
+  lockfile:
+    # The lockfile is only a reproducibility guarantee while it agrees with
+    # pyproject.toml. `uv lock --check` fails rather than silently re-resolving.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: uv.lock is current with pyproject.toml
+        run: uv lock --check
+
+  examples:
+    # STEP-08's exit checklist: "verify-ledger green across every example in CI".
+    #
+    # This job checks the committed artifacts a reader downloads, which is a
+    # different thing from the unit suite checking the code that produced them.
+    # It deliberately does NOT regenerate and diff: only ranked_queue.json is
+    # byte-identical across runs, because every other artifact carries real
+    # timestamps, and a ledger that was byte-stable would be a worse artifact
+    # rather than a better one.
+    runs-on: ubuntu-latest
+    needs: lint-type-test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Every example chain verifies, and matches its stored anchor
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          found=0
+          for ledger in examples/*/ledger.jsonl; do
+            directory="$(dirname "$ledger")"
+            echo "::group::$directory"
+            ts-sentry verify-ledger "$ledger"
+            ts-sentry verify-ledger "$ledger" \
+              --expect-head-from "$directory/session_manifest.json"
+            echo "::endgroup::"
+            found=$((found + 1))
+          done
+          # A loop over a glob that matched nothing would pass silently, which
+          # is the shape of a check that stops checking without anyone noticing.
+          if [ "$found" -ne 6 ]; then
+            echo "expected 6 example ledgers, found $found"
+            exit 1
+          fi
+
+      - name: A truncated example is caught only by the anchor
+        run: |
+          set -euo pipefail
+          cp examples/01-triage-queue/ledger.jsonl /tmp/truncated.jsonl
+          sed -i '$d' /tmp/truncated.jsonl
+
+          # Bare verification accepts it: what remains is a shorter chain whose
+          # every link still recomputes. This is a passing result that confirms
+          # a real limitation, carried since STEP-02.
+          ts-sentry verify-ledger /tmp/truncated.jsonl
+
+          # The anchor refuses it. Exit 6, asserted rather than assumed.
+          set +e
+          ts-sentry verify-ledger /tmp/truncated.jsonl \
+            --expect-head-from examples/01-triage-queue/session_manifest.json
+          code=$?
+          set -e
+          if [ "$code" -ne 6 ]; then
+            echo "expected exit 6 from the anchor comparison, got $code"
+            exit 1
+          fi
+
   rebuild-determinism:
     runs-on: ubuntu-latest
     needs: lint-type-test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
 
@@ -65,3 +161,34 @@ jobs:
               sys.exit(1)
           print("Rebuild is byte-stable: row counts and table hashes match.")
           PY
+
+  docker:
+    # The Dockerfile mirrors CI, so CI is where it gets proven. Built on every
+    # push rather than only at release: a release that discovers its own image
+    # does not build is a release finding out too late.
+    runs-on: ubuntu-latest
+    needs: lint-type-test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build the image
+        run: docker build -t ts-sentry:ci .
+
+      - name: It runs a complete session offline, as a non-root user
+        run: |
+          set -euo pipefail
+          mkdir -p out
+
+          docker run --rm ts-sentry:ci --help > /dev/null
+
+          # --network none is the real check. The default path must not need a
+          # socket, a credential, or the vendor package.
+          docker run --rm --network none -v "$PWD/out:/work" ts-sentry:ci \
+            build-dataset --seed 42 --scale 1 --out build
+          docker run --rm --network none -v "$PWD/out:/work" ts-sentry:ci \
+            run-session --agent triage --seed-dataset build --out session
+          docker run --rm --network none -v "$PWD/out:/work" ts-sentry:ci \
+            verify-ledger session/ledger.jsonl \
+            --expect-head-from session/session_manifest.json
+
+          test "$(docker run --rm --entrypoint id ts-sentry:ci -u)" = "10001"

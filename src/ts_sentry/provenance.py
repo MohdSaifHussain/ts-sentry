@@ -111,10 +111,32 @@ its provenance stamp is worse than one that says it could not take it."""
 
 
 def git_sha() -> str:
-    """Current ``HEAD`` SHA, or ``UNKNOWN_GIT_SHA`` if git cannot answer."""
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False
-    )
+    """Current ``HEAD`` SHA, or ``UNKNOWN_GIT_SHA`` if git cannot answer.
+
+    "Cannot answer" covers git being **absent**, not only git returning
+    nonzero. That distinction was a claim wider than the behaviour until
+    STEP-08: this docstring and ``UNKNOWN_GIT_SHA``'s both said an unavailable
+    git was handled, while ``subprocess.run`` raises ``FileNotFoundError`` when
+    the executable does not exist, so the process died instead.
+
+    It survived seven phases because every environment this had ever run in had
+    git installed. The published container image is the first that does not,
+    deliberately: the runtime stage carries no git, no compiler and no uv. The
+    defect surfaced the first time a session was run inside it, as a crash in
+    ``build-dataset`` rather than as a missing provenance field.
+
+    Fixed in the code rather than in the docstring, because a released
+    container is exactly the environment where a build manifest should record
+    that it could not take a provenance stamp, and carry on.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False
+        )
+    except OSError:
+        # FileNotFoundError when git is not installed; PermissionError when it
+        # is present and not executable. Both mean the same thing to a caller.
+        return UNKNOWN_GIT_SHA
     return result.stdout.strip() if result.returncode == 0 else UNKNOWN_GIT_SHA
 
 

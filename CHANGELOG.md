@@ -7,7 +7,52 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.0.0] - 2026-08-02
+
 ### Added
+
+- **STEP-08 D1: eight curated example runs** in `examples/`, with full
+  artifacts committed. Three of them exist to show something being refused:
+  the memo gate rejecting an overclaiming agent (8 attempts, 8
+  `gate_rejection` + 8 `verification_fail`, memo held at DRAFT), the
+  regression gate refusing a degraded prompt (exit 7, four per-class recall
+  breaches plus macro-F1), and the input firewall refusing a real published
+  corpus on duplicate record ids. Each directory carries an inputs manifest
+  and a `NOTES.md` stating what it demonstrates **and what it deliberately
+  does not claim**. `examples/regenerate.py` rebuilds them from the shipped
+  CLI verbs.
+- **STEP-08 D1: the only third-party data in this repository.** The UCI
+  YouTube Spam Collection (CC BY 4.0, DOI 10.24432/C58885), 1,956 real
+  YouTube comments, redistributed unmodified and attributed, read by example
+  08 and by nothing else.
+- **STEP-08 D2: the documentation set.** `README.md` rewritten (it was stale
+  at "Phase 3 complete" and documented four of the eight verbs), plus
+  `QUICKSTART.md`, `docs/USER_GUIDE.md`, `docs/model-card.md`,
+  `docs/diagrams.md` (three Mermaid diagrams), and `docs/quickstart-timing.md`.
+- **STEP-08 D6: `docs/POSITIONING.md`**, a capability traceability matrix.
+  Five capabilities have no honest artifact and get rows saying so.
+- **STEP-08 D4: the release workflow.** `release.yml` builds the sdist and
+  wheel, generates a CycloneDX 1.6 SBOM from the locked runtime environment,
+  publishes the container image to GHCR, and attests build provenance for the
+  distributions, the SBOM and the image digest through Sigstore. GITHUB_TOKEN
+  only; no PAT and no stored signing key.
+- **STEP-08 D4: `Dockerfile`**, two-stage so the runtime image carries no git,
+  no compiler and no uv, running as a non-root user and installing from
+  `uv.lock`. CI builds it on every push and runs a complete session inside it
+  with `--network none`.
+- **`run-session --stub-mode {faithful,overclaim}`**, and the chosen mode is
+  provenance rather than a hidden switch: it binds into the hash-chained
+  `SESSION_OPEN` entry and is stamped in the session manifest, read off the
+  adapter that actually served the calls so a declaration cannot disagree with
+  what ran.
+- **Supply chain.** `uv.lock` (50 packages, 802 recorded sha256 hashes, the
+  git dependency pinned to its resolved commit), the AnalystKit pin tightened
+  from a tag to commit `ab98ee6a`, every GitHub Action pinned by commit SHA,
+  Dependabot on three ecosystems, and CodeQL with `security-extended`.
+- **Community and repository metadata.** `SECURITY.md`, `CONTRIBUTING.md`,
+  `CODE_OF_CONDUCT.md`, `CITATION.cff`, issue and pull-request templates.
 - Project scaffolding: `pyproject.toml` (hatchling, Python 3.12+), `LICENSE`
   (MIT), GitHub Actions CI (lint, type, test, rebuild-determinism job),
   `src/ts_sentry` package layout.
@@ -714,3 +759,6 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   (seed, generator version, git SHA, row counts, per-table SHA-256) and a
   build-time leakage self-check. Exit codes: 0 pass, 2 quality-gate fail,
   3 leakage fail.
+
+[Unreleased]: https://github.com/MohdSaifHussain/ts-sentry/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/MohdSaifHussain/ts-sentry/releases/tag/v1.0.0

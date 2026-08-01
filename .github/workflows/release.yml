@@ -1,0 +1,174 @@
+# SPDX-License-Identifier: MIT
+#
+# STEP-08 D4. Triggered by a published GitHub Release, which is created from an
+# annotated tag.
+#
+# GITHUB_TOKEN only. No PAT, no long-lived secret, no signing key. Everything
+# signed here is signed keylessly through Sigstore using the workflow's own OIDC
+# identity, which is why `id-token: write` appears and why nothing needs to be
+# stored anywhere.
+#
+# What is NOT achievable this way, stated rather than implied: a GPG-signed git
+# tag or a GPG-signed release needs a private key in a secret, which is the
+# credential class D4 exists to avoid. D3 requires an *annotated* tag, and
+# annotated is not signed. The verifiable signing this release offers is the
+# Sigstore attestations below, checked with `gh attestation verify`.
+#
+# Actions pinned by commit SHA, versions resolved from each action's own
+# repository on 2 August 2026.
+
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  guard:
+    # The one check that has to happen before anything is published: the tag and
+    # the package version must agree. Publishing a wheel that calls itself
+    # 1.0.0 from a tag that says v1.0.1 is the kind of mismatch nobody notices
+    # until someone is debugging the wrong source.
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - id: check
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(python -c 'import tomllib,pathlib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
+          echo "tag=$tag package=$version"
+          if [ "$tag" != "$version" ]; then
+            echo "tag $GITHUB_REF_NAME does not match pyproject version $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  distributions:
+    needs: guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # upload assets onto the release
+      id-token: write        # mint the OIDC token Sigstore signs against
+      attestations: write    # record the attestation
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist and wheel
+        run: |
+          pip install build
+          python -m build
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: A runtime environment from the lockfile, to describe in the SBOM
+        # `--no-dev` on purpose: the SBOM should inventory what ships, not what
+        # the tests needed. A bill of materials listing pytest would be a bill
+        # of materials for the wrong thing.
+        run: uv sync --frozen --no-dev
+
+      - name: Generate the CycloneDX SBOM
+        # Closes the "No SBOM" gap docs/DECISIONS.md has listed since it was
+        # written: "a reviewer cannot get a machine-readable inventory of what
+        # ships". --output-reproducible drops the generation timestamp, so the
+        # same environment yields the same document.
+        run: |
+          pip install cyclonedx-bom
+          cyclonedx-py environment .venv \
+            --of JSON --sv 1.6 --output-reproducible \
+            -o dist/ts-sentry-${{ needs.guard.outputs.version }}.cdx.json
+
+      - name: Attest build provenance for the distributions and the SBOM
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: "dist/*.tar.gz, dist/*.whl"
+          sbom-path: dist/ts-sentry-${{ needs.guard.outputs.version }}.cdx.json
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+
+  image:
+    needs: guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write        # publish to GHCR
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Log in to the container registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # A pre-release must not move `latest`. metadata-action's semver
+          # handling already excludes pre-releases from the `latest` tag, and
+          # this makes the intent explicit rather than inherited.
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
+
+      - id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # BuildKit produces both attestations itself, so no third-party SBOM
+          # action enters the release path. Chosen over anchore/sbom-action for
+          # exactly that reason: the fewer parties inside the chain of custody,
+          # the fewer a reviewer has to trust.
+          sbom: true
+          provenance: mode=max
+
+      - name: Attest build provenance for the pushed image
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Report how to verify what was just published
+        run: |
+          {
+            echo "### Verifying this release"
+            echo
+            echo '```bash'
+            echo "gh attestation verify oci://${REGISTRY}/${IMAGE_NAME}@${{ steps.build.outputs.digest }} \\"
+            echo "    --repo ${{ github.repository }}"
+            echo
+            echo "gh attestation verify ts_sentry-${{ needs.guard.outputs.version }}-py3-none-any.whl \\"
+            echo "    --repo ${{ github.repository }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

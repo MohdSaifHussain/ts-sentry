@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ts-sentry"
-version = "0.1.0"
+version = "1.0.0"
 description = "Trust & Safety Sentry: a governed agentic workbench for scaled-abuse analysis"
 readme = "README.md"
 license = { text = "MIT" }

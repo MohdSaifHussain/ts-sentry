@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+#
+# Closes the "no dependency vulnerability scanning in CI (no pip-audit, no
+# Dependabot)" gap docs/DECISIONS.md has listed since it was written.
+#
+# Three ecosystems because this project pins in three places, and a pin that
+# nothing watches is a pin that quietly goes stale.
+
+version: 2
+updates:
+  # uv.lock and pyproject.toml. The `uv` ecosystem rather than `pip`, because
+  # the lockfile is the reproducibility guarantee and it is what has to move.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build(deps)"
+      prefix-development: "build(deps-dev)"
+    groups:
+      # One pull request for the dev toolchain rather than five. A ruff bump and
+      # a mypy bump do not need to be reviewed separately.
+      dev-tooling:
+        patterns: ["ruff", "mypy", "pytest*", "hypothesis", "pandas-stubs"]
+
+  # The workflows. Actions here are pinned by commit SHA with the version in a
+  # trailing comment, which is the form Dependabot reads and updates.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # The Dockerfile's base image. Named with an explicit distro
+  # (python:3.12-slim-bookworm) precisely so a change is a visible edit, and
+  # this is what proposes it.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "build(docker)"

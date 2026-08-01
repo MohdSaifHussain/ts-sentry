@@ -13,6 +13,7 @@ suspicion.
 """
 
 import json
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -206,6 +207,39 @@ def test_git_sha_is_a_value_rather_than_an_omission() -> None:
     that says it could not take it."""
     sha = git_sha()
     assert sha == UNKNOWN_GIT_SHA or len(sha) == 40
+
+
+def test_git_sha_survives_git_being_absent_entirely(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Not the same case as git returning nonzero, and it used to crash.
+
+    ``subprocess.run`` raises ``FileNotFoundError`` when the executable does
+    not exist, so for seven phases ``git_sha`` returned ``UNKNOWN_GIT_SHA``
+    when git said no and died when git was not there, while its own docstring
+    promised both. It survived that long because every environment it had run
+    in had git installed.
+
+    The published container image is the first that does not, deliberately: its
+    runtime stage carries no git, no compiler and no uv. The defect surfaced as
+    a crash in ``build-dataset`` the first time a session was run inside it,
+    which is a strange way to be told that a provenance field is unavailable.
+
+    ``PermissionError`` is covered too, because a git that is present and not
+    executable means the same thing to a caller.
+    """
+
+    def _missing(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        raise FileNotFoundError(2, "No such file or directory: 'git'")
+
+    monkeypatch.setattr(subprocess, "run", _missing)
+    assert git_sha() == UNKNOWN_GIT_SHA
+
+    def _not_executable(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        raise PermissionError(13, "Permission denied: 'git'")
+
+    monkeypatch.setattr(subprocess, "run", _not_executable)
+    assert git_sha() == UNKNOWN_GIT_SHA
 
 
 def _manifest(**overrides: object) -> SessionManifest:

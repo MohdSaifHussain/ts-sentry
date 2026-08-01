@@ -360,7 +360,7 @@ and written now**, not recovered from a prior discussion.
 
 | Dependency | Constraint | Why |
 |---|---|---|
-| `analystkit` | `@ git+...@v2.1.0`, an **exact git tag** | The tightest pin in the project, and deliberately so. v2.1.0 is the first release with the Parquet support the D6 quality gate depends on, and it is not on PyPI, so a direct reference is the only way. Requires `allow-direct-references` in hatchling. |
+| `analystkit` | `@ git+...@ab98ee6a...`, an **exact commit SHA** | The tightest pin in the project, and deliberately so. v2.1.0 is the first release with the Parquet support the D6 quality gate depends on, and it is not on PyPI, so a direct reference is the only way. Requires `allow-direct-references` in hatchling. Tightened from the tag to the commit in STEP-08; verified with `git ls-remote` that `refs/tags/v2.1.0^{}` dereferences to exactly that commit, so nothing installed changed. |
 | `duckdb` | `>=1.5` | A floor, not a pin. Behavior verified against 1.5.5 (entries 2.3, 3.9). |
 | `numpy` | `>=2.0` | A floor. |
 | `pandas` | `>=2.0` | A floor. Promoted to a direct dependency for a measured reason (1.8). |
@@ -381,27 +381,57 @@ The model boundary is the one place a vendor client appears, and it is
 imported *inside the call* so an offline install never loads it. A test parses
 every module with `ast` and fails on any module-scope import of it.
 
-### Recorded gaps, not hidden ones
+### Recorded gaps: four closed in STEP-08, three still open
 
-- **No SBOM.** Nothing generates a CycloneDX or SPDX bill of materials. A
-  reviewer cannot get a machine-readable inventory of what ships.
-- **No hash-locked lockfile.** There is no `requirements.lock`,
-  `poetry.lock`, or `uv.lock` with hashes. Floors like `duckdb>=1.5` mean two
-  installs a month apart can resolve to different versions, so **the
-  environment is not reproducible even though the dataset is.** This is the
-  most substantive gap on the list: reproducibility is a stated optimization
-  target, and it currently holds for data and not for dependencies.
+This list was written when none of them were closed, and it said so. Four were
+closed at release and the entries are kept rather than deleted, because a gap
+list that only shows what is currently broken teaches nothing about how the
+posture got here.
+
+**Closed.**
+
+- ~~**No SBOM.**~~ A CycloneDX 1.6 document is generated from the locked
+  runtime environment at release, attested through Sigstore, and uploaded as a
+  release asset. Generated with `--output-reproducible`, so the timestamp does
+  not make two runs of one environment differ. The container image carries its
+  own SBOM attestation, produced by BuildKit rather than by a third-party
+  action. Measured on the development environment before it was wired up: 63
+  components, `analystkit` present.
+- ~~**No hash-locked lockfile.**~~ `uv.lock`, and it was the most substantive
+  item on this list. Measured rather than taken from the documentation, which
+  does not state it: 50 packages, of which 48 come from PyPI carrying **802
+  recorded sha256 hashes**, one is the project itself, and one is the git
+  dependency pinned to its resolved commit. `uv lock --check` runs in CI, so
+  the lockfile cannot silently drift from `pyproject.toml`.
+- ~~**No dependency vulnerability scanning.**~~ Dependabot on three ecosystems
+  (`uv`, `github-actions`, `docker`) plus CodeQL with `security-extended`,
+  configured as a workflow rather than through repository settings so the
+  configuration is reviewable in a pull request.
+- ~~**The AnalystKit pin is a git tag, not a commit SHA.**~~ Now
+  `ab98ee6a3c309f57134d48787aa604b1d1044f62`. The tag was verified to
+  dereference to exactly that commit before the change, so this tightened the
+  pin without changing a byte of what installs. Worth noting why it mattered:
+  at the time of the change that tag also pointed at the remote's `main` HEAD,
+  which is the situation where a tag is cheapest to move.
+
+Every GitHub Action is pinned by commit SHA with the version in a trailing
+comment, on the same "a tag can be moved" argument.
+
+**Still open, and stated as such.**
+
 - **No upper bounds.** A major release of duckdb, numpy, or pandas is
-  installable and would be picked up silently.
-- **No dependency vulnerability scanning** in CI (no `pip-audit`, no
-  Dependabot).
-- **The AnalystKit pin is a git tag, not a commit SHA or hash.** A tag can be
-  moved. A SHA cannot.
-- **The `live` extra is unpinned and unexercised.** See the entry above and
-  the STEP-03 Honest Limits: `LiveAdapter.complete` has never been run.
-
-None of these are hard to close, and none are closed. They are listed here so
-that "reproducible" is never read as a claim about the environment.
+  installable and would be picked up silently. The lockfile makes this
+  survivable rather than fixed: `uv sync --frozen` is unaffected, but
+  `pip install -e .` still resolves freely, and the two paths are documented as
+  two for this reason among others.
+- **The `live` extra is unpinned and unexercised.** `LiveAdapter.complete` has
+  never been run, so the `anthropic` version actually exercised is unknown, and
+  asserting a floor nobody checked is the guess the official-sources rule
+  exists to prevent.
+- **The SBOM describes the Python environment, not the whole image.** The
+  image's own SBOM attestation covers its layers; the CycloneDX document
+  attached to the release covers the locked Python dependencies. Two documents
+  for two artifacts, and neither is a substitute for the other.
 
 ---
 
