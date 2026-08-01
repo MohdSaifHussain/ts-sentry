@@ -461,6 +461,36 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 - STEP-06 3.3: `tolerances_sha256` binds into `SESSION_OPEN` rather than
   becoming a twelfth `EventType`, on DECISIONS 5.8's precedent for corpus
   updates. ARCHITECTURE 3.2's eleven event types stay a closed surface.
+- STEP-07 D1: the VVR lens. `ts_sentry.measurement.frame` (the view frame,
+  risk-proxy strata and the sealed truth join), `.raters` (a confusion matrix
+  per simulated reviewer, with panel aggregation) and `.vvr` (stratified
+  SRSWOR sampling with a finite population correction, the 95%
+  normal-approximation interval, checked validity conditions, and a stratified
+  bootstrap cross-check). The sampling unit is the **view**, strata are bands
+  of an observable risk proxy plus a "no score available" stratum, and
+  allocation is **optimal rather than proportional**.
+- STEP-07 D1: allocation and variance validated against **external published
+  reference numbers**, not against our own expectations. Barnett's Table 2B
+  optimal allocation (2098/828/584/256/234 at a 4,000-view sample) reproduces
+  exactly from his population shares and rates, and his published standard
+  error of 0.054 percentage points reproduces from the variance formula
+  independently of the allocator.
+- STEP-07 D1: the optimal-allocation prior comes from a **pilot sample's rater
+  decisions**, never from `sealed._labels`. `allocate_optimal` takes two
+  mappings of numbers, asserted by signature and by a test that inverted ground
+  truth leaves the allocation byte-identical; the pilot is discarded from the
+  estimate it shaped.
+- STEP-07 D2: `ts_sentry.measurement.sensitivity`, the three curves as
+  byte-stable JSON and CSV, and `.plots`, deterministic Agg rendering. Curve
+  data is identical across runs and machines; PNGs are asserted byte-identical
+  across two renders **in the same environment** only.
+- STEP-07 D2: the policy-scope simulation reports **both arms**. Widening the
+  class set is measured to be exactly null on this corpus and the null is
+  reported with its explanation; the comment-attribution arm moves the rate and
+  supplies the required direction, and carries `is_faithful_vvr = False`
+  because it changes the attribution rule rather than the class set.
+- `matplotlib>=3.8` as a runtime dependency (STEP-07 D2 renders figures, and
+  D5's `report` verb will render them at runtime rather than only under test).
 
 ### Changed
 
@@ -563,6 +593,41 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ### Known limitations
 
+- The VVR lens's baseline estimand is **narrow by construction and narrower
+  still on this corpus**. It counts a view as violative only when the viewed
+  video's own label is a non-benign, non-spam class, which is what the
+  published method judges. On the seed-42 build that is 18 views out of 18,780
+  (0.0958%), and all 18 come from T02 and T07; every other class contributes
+  zero because only those two threat modules plant view events. T04, the class
+  whose name most suggests it should dominate a provenance-stratified estimate,
+  receives **no views at all**.
+- **The normal approximation is invalid at every realistic sample size on this
+  corpus** and becomes valid only at a full census, because 18 violative views
+  cannot supply the ~10 expected successes it needs. Every estimate reports the
+  failed condition rather than suppressing it, and the bootstrap cross-check
+  exists for exactly this reason. The honest operating regime here is large
+  sampling fractions, where the finite population correction is load-bearing;
+  that is the opposite of the published method's regime.
+- **Only two of the five risk strata hold any views.** Viewed videos take just
+  two distinct observable profiles, so no choice of band cut points can
+  populate the others. The cuts are left at untuned equal quarters and the
+  result is reported rather than engineered around.
+- **Rater error is modelled as independent per rater.** Correlated error, such
+  as a policy misreading that a whole panel shares, is not modelled and would
+  not be suppressed by majority voting. Since a three-rater majority suppresses
+  independent error quadratically, the D2 bias curve understates what a real
+  panel with shared training could get wrong.
+- **The risk proxy is not a detector and has no measured precision or recall.**
+  It is an analog of the published method's classifier-score stratification
+  built from content-provenance features, and it is used only to form strata.
+  Nothing here should be read as a detection result.
+- **Arm B of the policy-scope simulation is not a VVR** and is flagged as such
+  in the type, the curve note and the rendered figure. It changes the
+  attribution rule so a video counts when it hosts a violating comment, which
+  the published method does not do.
+- **PNG figures are byte-identical across two renders in one environment
+  only.** Cross-version stability is not claimed and not tested. The byte-stable
+  reproducibility artifact is the curve data in JSON and CSV.
 - Firewall detection does not survive zero-width characters inside a keyword
   (U+200B and similar). They break regex tokens without breaking lines, and
   matching through them would mean normalizing text the analyst never sees,

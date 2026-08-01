@@ -207,6 +207,88 @@ drift sensitivity, and it is out of scope for STEP-06.
 
 ---
 
+## Phase 7: Measurement, the VVR lens (D1 and D2)
+
+Sources consulted before any of this was implemented, per the official-sources
+rule: the Google Transparency Report help centre
+(<https://support.google.com/transparencyreport/answer/9209072>), the YouTube
+blog post introducing the metric, and the independent statistical assessment
+Google commissioned from Arnold Barnett (MIT, September 2021), reproduced at
+`docs/barnett-vvr-assessment.txt`. The Barnett report is the load-bearing one:
+it is the only source that describes the stratification and the allocation.
+
+| # | Decision | Alternative(s) not taken | Reason | Recorded in |
+|---|---|---|---|---|
+| 7.1 | **The estimand is the viewed video's own sealed label, with the spam-shaped classes excluded** | (a) admit every non-benign class; (b) inherit violative status from the video's channel or its commenters | Fidelity is D1's entire value. The published method judges "whether each video does or does not violate our community guidelines" and states "we omit spam from the metric altogether", so T01 and T06 are held out. (b) would stop being a replication and become an invented metric. The cost is accepted and stated rather than softened: the baseline estimand is narrow. Saif's decision. | Saif, this session; `597b77c` |
+| 7.2 | **The headline interval covers sampling error only; rater quality is never folded into it** | Widen the interval to absorb modelled rater error | Google states plainly that "the confidence intervals do not take into account rater quality", and Barnett's footnote 5 excludes rater quality from his assessment's scope. A wider interval would be a better estimate and a worse replication. The confusion-matrix modelling 3.1 requires is labelled a documented superset and surfaces only as the D2 bias curve. Saif's decision. | Saif, this session; `cd4a6f2` |
+| 7.3 | **Strata are bands of an observable risk proxy, described as an analog rather than as a classifier** | (a) stratify on the sealed label; (b) claim to use "the classifier risk score"; (c) stratify on views-per-video | Barnett: strata are "non overlapping ranges for the video scores" built so violation probability "would not vary much within a given stratum but would vary appreciably across strata", plus a fifth "no score available" stratum. There is no production classifier here, so the *method* is replicated using content-provenance as the risk proxy and said so in those words. (a) is cheating. (b) claims a detection capability this project repeatedly says it does not have. (c) is rejected in 7.4. Saif's wording. | Saif, this session; `597b77c` |
+| 7.4 | **views-per-video is rejected as a stratifier despite being the strongest one available** | Use it; it separates violative from benign almost perfectly | It is label leakage wearing an observable's clothing. The threat modules plant 2 to 6 views per video against the base generator's ~50, so "few distinct viewers" is the generator's engagement budget, not risk. Measured: it isolates 100% of violative views into 0.1% of the frame. Using it would produce a spectacular interval that measured nothing. Same defect class as 6.9, the eval ordinal that leaked its own answer key. | `597b77c` |
+| 7.5 | **Allocation is optimal (Neyman), not proportional** | Proportional allocation, which the approved plan had declared sufficient | Barnett's Table 2B has the lowest-risk stratum holding 80% of views and receiving 52.5% of the sample. Measured on his own published population: optimal gives a standard error of 0.054 percentage points and proportional gives 0.070, while proportional stratification beats no stratification by under 1%. On a rare-event estimand essentially all of the benefit is in the allocation, so shipping proportional would have produced intervals 30% wider than the method being replicated. Cochran ch. 5 is the theory Barnett names. | `4dd0267` |
+| 7.6 | **The allocation prior comes from a pilot sample's rater decisions, never from sealed labels** | (a) seed the Neyman variances from ground truth, used "only for allocation"; (b) skip optimal allocation for lack of a prior | Barnett describes YouTube revising sample sizes "based on actual VVR rates in those ranges over the 90 preceding days", so prior *measurements* are the source, not truth. (a) would optimise the design against answers the method does not have and would overstate achievable precision. `allocate_optimal` takes two mappings of numbers, asserted by signature and by a test that inverted ground truth leaves the allocation byte-identical. The pilot is discarded from the estimate it shaped. Saif's requirement. | Saif, this session; `4dd0267` |
+| 7.7 | **`PRIOR_RATE_FLOOR` is a correctness requirement, not smoothing** | No floor | At this corpus's rate a 1,000-view pilot expects one violative view in total, so `p_h = 0` in every stratum is the *expected* outcome and Neyman's key collapses to 0/0. Without a floor the estimator would allocate zero views to strata and a stratum never sampled cannot contribute at all. The floor is the "educated guess" Barnett describes starting from. Its consequence is stated rather than hidden: an uninformative pilot degenerates optimal allocation to proportional, which is correct behaviour. | `4dd0267` |
+| 7.8 | **D2 reports both expansion arms side by side, and arm B is flagged as not a VVR** | (a) report only the null arm; (b) report only the arm that moves; (c) widen the baseline estimand to make the arm work | Measured: the approved class-set expansion is *exactly* null on this corpus (0.0958% unchanged) because the classes it adds carry no views. That null is a true result about the generator and is reported with its explanation. Arm B, in which a video counts when it hosts a comment-spam-ring comment, moves the rate to 3.1097% and supplies the direction the exit checklist requires. Arm B changes the **attribution rule**, not the class set, and YouTube judges the video itself, so it is a policy-scope-question illustration and `is_faithful_vvr` is False for it in the type. Saif's decision. | Saif, this session; `635add7` |
+| 7.9 | **A per-stratum degeneracy condition was added to the validity check** | Leave the four aggregate conditions | Found by running the D2 sample-size curve: at 14,000 of 18,780 views the interval collapsed to **zero width** while all four aggregate conditions passed. The optimal allocation had censused the middle stratum and the lowest returned no violative calls, so its `p(1-p)` contribution vanished. This is the Wald interval's known collapse at `p_hat = 0`, and the aggregate conditions cannot see it because in aggregate the sample did find violative views. Observing nothing in a stratum is not evidence the stratum holds nothing. Censused strata are excluded, because there the zero is real. | `635add7` |
+| 7.10 | **matplotlib is a main dependency; curve data is byte-stable, PNGs are byte-identical in-environment only** | (a) dev-only extra with a data-only degraded path; (b) pin a version and assert PNG bytes against fixtures | D5's `report` verb renders at runtime, not only under test, so (a) would mean designing and testing a behaviour split for no gain. (b) claims a stability belonging to the pin rather than to the code and reddens the suite on every upgrade. The claim is stated at exactly its width: JSON/CSV identical across runs and machines and it is what a reader regenerates numbers from; two renders in one environment byte-identical; cross-version PNG stability explicitly not claimed. Saif's decision. | Saif, this session; `e8b31fc` |
+| 7.11 | **The `NO_SCORE` window is seven days, and that is a choice rather than a finding** | 24 hours, which the source's "very close to the time that sampling was done" might suggest | Barnett's footnote 7 gives no number. On the seed-42 build the last publication falls 4.8 days before the last view, so a 24-hour window leaves the fifth stratum holding nothing and it would exist only on paper. Seven days puts 2 videos and 97 views in it. No label was consulted, and it is a parameter rather than a constant so another corpus can set its own. | `597b77c` |
+| 7.12 | **`test_this_phase_landed_the_handler_it_owed` was rewritten, not deleted or exempted** | (a) delete it; (b) leave `IMPLEMENTATION_PHASE` at 6 so it keeps passing | It asserted that the current phase owes exactly one handler, which became false by construction at phase 7 because STEP-07 adds no tool. (b) would make the phase constant lie about which STEP the build implements. (a) drops the guarantee that the countdown cannot pass vacuously. Restated over the finished countdown instead: steps 3..6 owe exactly one handler each, every declared tool executes, nothing is due after step 6. All three failure directions survive, including the new one of parking a tool past the deadline. | `659d14e` |
+
+### What the corpus can and cannot support, measured
+
+Recorded with its numbers because every claim the VVR lens makes is bounded by
+it, and because the planning assumption it corrects was wrong in a specific way.
+
+On the seed-42 scale-1 build the frame holds **18,780 views** and the true
+baseline VVR is **0.0958%**, which is coincidentally close to the real
+platform's published 0.16-0.20%. It is carried by **18 violative views**.
+
+**Those 18 views come entirely from T02 and T07.** Every other class contributes
+zero. The plan for this phase asserted the baseline would be "driven mainly by
+T04 undisclosed synthetic media" on the strength of T04 being the one
+video-level class whose name suggests it; measurement showed **T04 videos
+receive no view events at all**. Only the two threat modules that plant VIEW
+engagement put views on their own videos, and the base generator's views attach
+only to base-population videos. The assumption was corrected by measuring before
+building, not after.
+
+Three consequences follow, and all three are limits rather than defects:
+
+- **The realistic operating regime is large sampling fractions.** With 18
+  violative views in 18,780, any small sample returns `p_hat = 0` and a
+  degenerate interval. That makes the finite population correction load-bearing
+  rather than decorative, and it is the opposite of YouTube's regime, where the
+  sampling fraction is minuscule and the FPC is negligible.
+- **The normal approximation is invalid at every realistic sample size here**
+  and becomes valid only at a full census. Reported as a failed condition on
+  every estimate rather than suppressed. This is precisely why 3.1 asks for a
+  bootstrap cross-check.
+- **Only two of the five strata hold any views**, because viewed videos take
+  only two distinct observable profiles. No choice of cut points can manufacture
+  strata the data does not contain, so the equal-quarters cuts are left untuned
+  and what they yield is reported.
+
+This is **not** a STEP-01 defect, on the same argument the Phase 6 finding
+makes. STEP-01 promised byte-stable rebuilds and a passing leakage test and met
+both. The view distribution is a limit this phase discovered by asking the data
+for something STEP-01 never promised.
+
+### A finding about panels, from running the estimator
+
+A three-rater majority suppresses **independent** rater error quadratically: a
+per-rater false-positive rate of 1% becomes an effective panel rate near
+`3 * 0.01^2 = 0.0003`. Measured consequence at this corpus's rate: the same 99%
+specificity that puts the truth outside a nominally 95% interval with one
+reviewer leaves it comfortably inside with three.
+
+This was expected to be a straightforward demonstration of the published
+limitation and turned out to need a single reviewer to show it, which is why it
+is recorded rather than quietly worked around. It cuts both ways, and the second
+half is the part that matters: panels buy real robustness against independent
+error and **nothing at all** against correlated error, such as a policy
+misreading that a whole panel shares. Nothing in this phase models correlated
+rater error, and the D2 bias curve inherits that limit.
+
+---
+
 ## Choices made by default, with no recorded rationale
 
 Listed because a decision record that quietly omits its unexamined choices is
