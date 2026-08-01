@@ -71,6 +71,8 @@ pack that has already passed the assembly gate, so "this artifact was accepted"
 stays a statement about a specific set of bytes.
 """
 
+import hashlib
+import json
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
@@ -400,6 +402,25 @@ class EvidencePack:
         a hop, which is why this is one less than the record count.
         """
         return len(self.provenance) - 1
+
+    @property
+    def content_digest(self) -> str:
+        """A digest over everything this pack carries.
+
+        Added in STEP-05, because a memo has to name the pack it was drafted
+        from. Without it the RECOMMEND gate could verify a memo's claims against
+        whichever pack happened to be in scope, which is the same defect
+        decision 4.6 removed on the assembly side: a check that resolves an
+        agent's claims against a set the agent could have influenced is not a
+        check.
+
+        Built from ``to_json_object`` so it covers exactly what the exported
+        artifact carries, and a pack that differs in any node, edge, timeline
+        entry or provenance record digests differently.
+        """
+        return hashlib.sha256(
+            json.dumps(self.to_json_object(), sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
 
     @property
     def record_ids(self) -> frozenset[str]:
