@@ -24,6 +24,7 @@ keeps recording.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -359,3 +360,68 @@ def test_the_firewall_sample_block_is_fenced_and_escapes_awkward_text() -> None:
     assert "END TS-SENTRY CASE DATA" in block
     # An escaped quote inside the JSON encoding of a real comment.
     assert '\\"' in block or '"' in block
+
+
+# --------------------------------------------------------------------------
+# The count the documentation states about these directories
+# --------------------------------------------------------------------------
+
+REPO_ROOT = EXAMPLES.parent
+
+_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+
+# Any prose asserting how many example ledgers or chains there are. Bold markers
+# are stripped first, so "**six**" and "six" are the same claim.
+_LEDGER_COUNT_CLAIM = re.compile(
+    r"(?:all\s+)?(\w+)\s+(?:example\s+(?:chains|ledgers)"
+    r"|session\s+examples\s+also\s+carry\s+a\s+ledger)",
+    re.IGNORECASE,
+)
+
+
+def test_the_number_of_examples_carrying_a_ledger_is_what_the_docs_say() -> None:
+    """The count in prose must equal the count on disk, everywhere it appears.
+
+    Written because the same stale count survived in **three** documents. The
+    self-review caught two of them by checking `README.md` and
+    `examples/README.md`, and missed `docs/POSITIONING.md` entirely, because it
+    checked the two files it happened to think of rather than searching for the
+    claim. Saif found the third by reading.
+
+    A count restated in prose in several places is exactly the kind of fact that
+    drifts silently: nothing breaks, every test passes, and the number is simply
+    wrong in one file. So the claim is located by pattern across every committed
+    markdown file rather than by a list of paths someone has to remember to
+    extend.
+    """
+    on_disk = sorted(path.parent.name for path in EXAMPLES.glob("*/ledger.jsonl"))
+    assert on_disk == sorted(SESSION_EXAMPLES)
+    truth = len(on_disk)
+
+    wrong: list[str] = []
+    for document in sorted(REPO_ROOT.rglob("*.md")):
+        if ".venv" in document.parts:
+            continue
+        text = document.read_text(encoding="utf-8").replace("**", "")
+        for match in _LEDGER_COUNT_CLAIM.finditer(text):
+            claimed = _NUMBER_WORDS.get(match.group(1).lower())
+            if claimed is None:
+                continue
+            if claimed != truth:
+                wrong.append(
+                    f"{document.relative_to(REPO_ROOT)}: claims {claimed}, on disk {truth} "
+                    f"({match.group(0).strip()!r})"
+                )
+
+    assert not wrong, "documentation disagrees with the directories: " + "; ".join(wrong)
