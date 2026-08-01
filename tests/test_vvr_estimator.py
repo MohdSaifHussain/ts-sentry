@@ -318,6 +318,48 @@ def test_the_validity_conditions_fail_at_a_realistic_sample_and_say_so(
     assert "FAIL" in estimate.validity.render()
 
 
+def test_a_zero_width_interval_from_an_undersampled_stratum_is_flagged(
+    frame: ViewFrame,
+) -> None:
+    """The defect the D2 sample-size curve found, kept as a regression test.
+
+    At 14,000 of 18,780 views the optimal allocation censuses the middle stratum
+    and the lowest stratum returns no violative calls at all. Its ``p(1-p)``
+    contribution is zero, so the interval collapses to zero width while the
+    aggregate conditions all pass: in aggregate the sample *did* find violative
+    views, just not in that stratum.
+
+    Observing nothing in a sample is not evidence that a stratum contains
+    nothing, so the interval was reporting certainty it had not earned. The
+    per-stratum condition is what catches it.
+    """
+    estimate, _ = measure_vvr(
+        frame, perfect_panel(3), seed=42, sample_size=14000, pilot_size=2800, replicates=2
+    )
+
+    assert estimate.standard_error == 0.0
+    assert estimate.validity.successes >= estimate.validity.success_threshold
+    assert estimate.validity.degenerate_strata
+    assert not estimate.validity.holds
+    assert "FAIL" in estimate.validity.render()
+
+
+def test_a_true_census_keeps_its_zero_width_interval(frame: ViewFrame) -> None:
+    """The other side of the same rule: at a full census the zero is real.
+
+    Every stratum is enumerated, so no stratum is under-sampled and there is
+    genuinely no sampling uncertainty left. Excluding censused strata from the
+    degeneracy check is what keeps the flag from firing on a correct answer.
+    """
+    estimate, _ = measure_vvr(
+        frame, perfect_panel(1), seed=42, sample_size=frame.size, replicates=2
+    )
+
+    assert estimate.standard_error == 0.0
+    assert estimate.validity.degenerate_strata == ()
+    assert estimate.validity.holds
+
+
 def test_the_bootstrap_is_wider_than_the_analytic_interval_and_by_how_much(
     dataset: duckdb.DuckDBPyConnection,
 ) -> None:

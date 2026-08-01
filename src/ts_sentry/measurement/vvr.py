@@ -402,6 +402,17 @@ class NormalApproximationCheck:
     anything if they are checked and the failures are reported. They fail
     routinely at this corpus's rate, and that is the finding rather than an
     embarrassment: it is precisely why a bootstrap cross-check is required.
+
+    ``degenerate_strata`` was added after the D2 sample-size curve produced a
+    zero-width interval at 14,000 views that the other four conditions all
+    passed. The cause is the Wald interval's known collapse at ``p_hat = 0``: an
+    under-sampled stratum that happens to contain no violative calls contributes
+    ``p(1-p) = 0`` to the variance, so the interval reports certainty it has not
+    earned. Observing nothing in a sample is not evidence that a stratum
+    contains nothing, and the aggregate conditions cannot see the difference
+    because in aggregate the sample did find violative views elsewhere. A
+    stratum sampled to a census is excluded, because there the zero variance is
+    real rather than an artifact.
     """
 
     every_stratum_has_two: bool
@@ -409,6 +420,11 @@ class NormalApproximationCheck:
     failures: float
     success_threshold: float
     interval_within_unit: bool
+    degenerate_strata: tuple[RiskBand, ...]
+
+    @property
+    def no_degenerate_strata(self) -> bool:
+        return not self.degenerate_strata
 
     @property
     def holds(self) -> bool:
@@ -417,12 +433,18 @@ class NormalApproximationCheck:
             and self.successes >= self.success_threshold
             and self.failures >= self.success_threshold
             and self.interval_within_unit
+            and self.no_degenerate_strata
         )
 
     def render(self) -> str:
         def mark(passed: bool) -> str:
             return "ok  " if passed else "FAIL"
 
+        degenerate = (
+            "none"
+            if self.no_degenerate_strata
+            else ", ".join(band.value for band in self.degenerate_strata)
+        )
         return "\n".join(
             [
                 f"  {mark(self.every_stratum_has_two)} every sampled stratum has n_h >= 2",
@@ -431,6 +453,8 @@ class NormalApproximationCheck:
                 f"  {mark(self.failures >= self.success_threshold)} expected non-violative calls "
                 f"{self.failures:.2f} >= {self.success_threshold:g}",
                 f"  {mark(self.interval_within_unit)} interval lies inside [0, 1] without clipping",
+                f"  {mark(self.no_degenerate_strata)} no under-sampled stratum returned an "
+                f"all-or-nothing rate: {degenerate}",
             ]
         )
 
@@ -590,6 +614,13 @@ def estimate_from_calls(
         failures=(1.0 - point) * sampled_total,
         success_threshold=success_threshold,
         interval_within_unit=(point - half_width) >= 0.0 and (point + half_width) <= 1.0,
+        degenerate_strata=tuple(
+            stratum.band
+            for stratum in strata
+            if stratum.sampled >= 2
+            and stratum.sampled < stratum.population
+            and stratum.rate in (0.0, 1.0)
+        ),
     )
 
     return VvrEstimate(
