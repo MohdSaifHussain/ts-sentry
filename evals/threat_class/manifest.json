@@ -15,8 +15,8 @@
   "dataset_seed": 42,
   "generator_version": "0.1.0",
   "item_count": 59,
-  "items_sha256": "e4c0e9c32d3b5beb8c69b542d2e33280843ca2fa5c3081fb1ca82a301a943e3e",
+  "items_sha256": "ed9e86354f05550db6c3b9445b293fcac283415641bb4416f6a2ea3128e9a77c",
   "label_provenance": "Ground truth from the synthetic generator's own plant, read from sealed._labels at build time. These are generator plants, not human labels: there is no adjudication, no inter-rater reliability, and no rater-disagreement modelling.",
-  "labels_sha256": "a7eb09db02835564f37bc18ea5809ce4fb74c40edcdb12c00d28e5b57116e7fc",
+  "labels_sha256": "0e69188afa1245dc7c2c1944990f63bc68a0983f862182aa40667dfbaf79e8db",
   "schema": "ts-sentry/eval-set/v1"
 }

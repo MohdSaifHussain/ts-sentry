@@ -310,9 +310,25 @@ def build_eval_set(
     chosen = rng.choice(len(benign), size=min(wanted, len(benign)), replace=False)
     controls = [benign[int(index)] for index in sorted(chosen)]
 
+    # Shuffled before ids are assigned, and this is a contamination control
+    # rather than tidiness. `_SUBJECT_LABELS` returns rows ordered by entity id,
+    # and planted ids are prefixed by class, so the natural order groups the set
+    # into contiguous per-class blocks: items 0-5 t01, 6-11 t02, and every benign
+    # control at the end. The ordinal would then carry the label as reliably as a
+    # label field would, and `items.json` alone - which has no labels in it -
+    # would be enough to reconstruct the entire answer key by reading the class
+    # boundaries off the content.
+    #
+    # Found at the STEP-06 review stop by asking what an ordinal leaks, after
+    # `_refuse_leaky_item` had been written to check content and only content.
+    # The shuffle uses the same seeded generator, so the assignment is
+    # reproducible from the recorded seed and is not a source of variation.
+    ordered = [*threats, *controls]
+    rng.shuffle(ordered)
+
     items: list[EvalItem] = []
     labels: dict[str, ThreatClass] = {}
-    for position, (kind, entity_id, threat_class) in enumerate([*threats, *controls]):
+    for position, (kind, entity_id, threat_class) in enumerate(ordered):
         item_id = f"{ITEM_ID_PREFIX}{position:04d}"
         content = (
             _render_account(con, entity_id)

@@ -89,6 +89,39 @@ def test_no_committed_item_leaks_its_own_class() -> None:
             assert marker not in haystack, f"{item.item_id} carries the planted marker {marker}"
 
 
+def test_item_order_does_not_leak_the_label() -> None:
+    """The third contamination channel, and the one that was actually open.
+
+    Found at the STEP-06 review stop rather than by any check written before
+    it. ``_refuse_leaky_item`` inspects content, and the leak was not in the
+    content: the builder emitted subjects in entity-id order, planted ids are
+    prefixed by class, so the set arrived as contiguous per-class blocks with
+    every benign control at the end. Items 0-5 were t01, 6-11 t02, 44-58
+    benign.
+
+    An ordinal that groups by class is a label field with extra steps. Worse
+    than a label field, in one respect: ``items.json`` carries no labels at all,
+    so the artifact that is safe to hand a prompt author was on its own
+    sufficient to reconstruct the entire answer key, and every test asserting
+    "no item names its class" passed the whole time.
+
+    Asserted on the shape rather than on an exact order, so a reseeded rebuild
+    does not need this rewritten: with 8 classes over 59 items the labels must
+    break into far more contiguous runs than there are classes.
+    """
+    labels = json.loads((EVAL_ROOT / LABELS_FILE).read_text(encoding="utf-8"))
+    sequence = [labels[item.item_id] for item in load_items(EVAL_ROOT)]
+
+    runs = 1 + sum(1 for left, right in zip(sequence, sequence[1:], strict=False) if left != right)
+    classes = len(set(sequence))
+
+    assert runs > 3 * classes, (
+        f"the label sequence breaks into only {runs} runs across {classes} classes, so items "
+        "are grouped by class and the ordinal leaks the label"
+    )
+    assert sequence != sorted(sequence), "items are emitted in class order"
+
+
 def test_item_ids_are_opaque_and_carry_no_entity_identity() -> None:
     items = load_items(EVAL_ROOT)
 
