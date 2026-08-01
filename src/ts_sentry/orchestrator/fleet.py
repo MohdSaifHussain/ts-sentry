@@ -60,8 +60,8 @@ EVIDENCE_MANDATE = Mandate(
     allowed_tools=frozenset({ToolId.RUN_PARAMETERIZED_PIVOT}),
     data_scopes=TOOL_TABLE[ToolId.RUN_PARAMETERIZED_PIVOT].required_scopes,
     output_schema=EvidencePack,
-    token_budget=200_000,
-    max_steps=12,
+    token_budget=400_000,
+    max_steps=20,
 )
 """The evidence agent's mandate (ARCHITECTURE 4.2, ceiling ASSEMBLE).
 
@@ -71,6 +71,12 @@ so a rejected proposal costs a step exactly as an approved one does. That is
 the honest accounting: the analyst's attention was spent either way, and a
 bound that only counted successes would let an agent propose indefinitely as
 long as everything it proposed was refused.
+
+It is 20 because STEP-04 3.5 reports recovery at 5, 10 and 20 pivots. A ceiling
+of 12 would have made the 20-pivot column unreachable by construction, so the
+largest number in the published table could never have differed from the
+12-pivot result and nobody reading it would have known. A reported budget the
+mandate forbids is not a measurement.
 
 ``data_scopes`` is read from the tool table rather than restated, so the grant
 and the requirement cannot drift apart. The pivot tool declares all six entity

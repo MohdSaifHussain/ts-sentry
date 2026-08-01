@@ -155,20 +155,37 @@ def stub_evidence_responder(request: ModelRequest, mode: StubMode) -> str:
     machinery is right and the product finds nothing.
 
     So the strategy is the one an analyst actually uses: reach the accounts
-    first with ``ACCOUNT_LINK``, then pivot on an account's infrastructure. The
-    stub reads which of those it is in from the prompt, the way a model would.
+    first with ``ACCOUNT_LINK``, then pivot on the accounts. The stub reads
+    which of those it is in from the prompt, the way a model would.
+
+    It also has to *advance*, which was a second finding of the same kind. A
+    stub that pivoted on ``accounts[0]`` every hop re-asked one question
+    forever, so recovery at 5, 10 and 20 pivots came out identical and the
+    budget axis of the STEP-04 3.5 table carried no information at all. A table
+    whose columns cannot differ is not a measurement. So the stub walks the
+    accounts it has found and alternates the two pivots that apply to an
+    account, which is the least an exploration can do and still be one.
     """
     subject = ""
+    hops = 0
     accounts: list[str] = []
     citable: list[str] = []
     for raw in request.user_content.splitlines():
         line = raw.strip()
-        if raw.startswith("Case ") and " concerns " in raw:
+        if " concerns " in raw:
             subject = raw.split(" concerns ", 1)[1].split(".", 1)[0].strip()
-        if line.startswith("["):
-            record_id = line[1:].split(" ", 1)[0].rstrip("]")
+        if " pivots." in raw:
+            hops = int(raw.rsplit("after ", 1)[1].split(" ", 1)[0])
+        if line.startswith("[") and line.endswith("]"):
+            # The whole entry is bracketed, so the kind is inside the closing
+            # bracket rather than at the end of the line. Getting this wrong is
+            # what made the stub believe it had found no accounts, so it
+            # re-asked ACCOUNT_LINK on an account id for twelve hops and
+            # returned zero rows every time.
+            inner = line[1:-1]
+            record_id = inner.split(" ", 1)[0]
             citable.append(record_id)
-            if line.endswith("(account)"):
+            if inner.endswith("(account)"):
                 accounts.append(record_id)
 
     citation = (
@@ -183,11 +200,24 @@ def stub_evidence_responder(request: ModelRequest, mode: StubMode) -> str:
                 f"REASON: the accounts touching this channel are not yet in the pack [{citation}]",
             )
         )
+
+    # Walk the accounts found so far, alternating the two pivots that apply to
+    # an account. Deterministic in the hop count, so a session still replays
+    # identically; it explores rather than repeating.
+    account = accounts[(hops // 2) % len(accounts)]
+    if hops % 2 == 0:
+        return "\n".join(
+            (
+                f"PIVOT: {PivotKind.INFRA_OVERLAP.value}",
+                f"PARAMS: subject_id={account}; signal_type=any; limit=25",
+                f"REASON: this account may share infrastructure with others [{citation}]",
+            )
+        )
     return "\n".join(
         (
-            f"PIVOT: {PivotKind.INFRA_OVERLAP.value}",
-            f"PARAMS: subject_id={accounts[0]}; signal_type=any; limit=25",
-            f"REASON: this account may share infrastructure with others [{citation}]",
+            f"PIVOT: {PivotKind.SHARED_METADATA.value}",
+            f"PARAMS: account_id={account}; metadata_field=any; limit=25",
+            f"REASON: this account may share registration metadata with others [{citation}]",
         )
     )
 

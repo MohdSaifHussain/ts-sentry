@@ -205,6 +205,157 @@ def test_no_agent_module_reaches_its_own_verifier() -> None:
     )
 
 
+SEALED_TABLE = "sealed._labels"
+
+SEALED_NEEDLES = ("sealed._labels", "_labels")
+"""What counts as naming the sealed table in code.
+
+Two needles rather than one, because the first version of this check missed
+``f"SELECT * FROM {schema}._labels"``: a table name assembled at runtime never
+contains the full string, so searching only for it would have reported a
+guarantee the check could not provide. ``_labels`` is distinctive enough to
+catch the fragment and rare enough not to fire on unrelated code.
+
+Stated at its true width: this catches the table *named* in a string the program
+evaluates. It cannot catch a name assembled from pieces that are themselves
+computed, and nothing here claims otherwise. The load-bearing control remains
+structural, as it has been since STEP-01: ``DataScope`` has no member that
+resolves anywhere under ``sealed``, both resolvers are exhaustive, and an
+orchestrator module cannot obtain a connection it was not lent. This is defense
+in depth on top of that, and its product is that writing the name becomes a
+deliberate, visible act.
+"""
+
+LEGITIMATE_SEALED_CONSUMERS = frozenset(
+    {
+        f"{PACKAGE}.data.store",  # the build pipeline writes it
+        f"{PACKAGE}.data.quality",  # the build-time reconcile gate reads it
+        f"{PACKAGE}.measurement.recovery",  # measurement, from STEP-04 onward
+        f"{PACKAGE}.cli.main",  # names it only to prove the allowlist denies it
+    }
+)
+"""Who may name the sealed table *in code*, as an allowlist.
+
+Worded per the two-consumer model STEP-01 established and STEP-02 and STEP-03
+carried: "measurement code is the only consumer of ``sealed._labels``" has to be
+read as the only *agent- or orchestrator-side* consumer, because the build
+pipeline legitimately writes it and reads it back for the D6 reconcile gate. A
+naive blocklist would fail on the build, which is the finding STEP-01 recorded
+and the reason this is a named list rather than a prohibition.
+
+``cli.main`` is the odd one and is listed deliberately. It names the table only
+to hand it to ``resolve_scope_by_name`` and assert the allowlist refuses it, in
+the build-time leakage self-check. That is naming the table in order to prove it
+is unreachable, which is the opposite of consuming it, but a mechanical check
+cannot tell those apart and pretending otherwise would mean either exempting the
+file silently or weakening the check.
+"""
+
+
+def _code_strings(path: Path) -> list[str]:
+    """String literals that are code, excluding docstrings.
+
+    A substring search over the file is the wrong instrument here, and the first
+    version of this test proved it by flagging eight modules whose only mention
+    of the sealed table was prose explaining that they cannot reach it.
+    ``scopes.py`` saying "no member resolves to sealed._labels" is the guarantee
+    being documented, not a breach of it.
+
+    Walking the AST separates the two properly. Comments never enter the tree at
+    all, and docstrings are the string-valued expression statements, so what
+    remains is the set of literals the program actually evaluates. A SQL query
+    is one of those; a docstring is not.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    docstrings: set[int] = set()
+    for node in ast.walk(tree):
+        # Bare string expressions are docstrings, including this project's
+        # attribute docstrings (a string statement after an assignment).
+        if (
+            isinstance(node, ast.Expr)
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            docstrings.add(id(node.value))
+
+    return [
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and id(node) not in docstrings
+    ]
+
+
+def test_no_agent_or_orchestrator_module_can_reach_measurement() -> None:
+    """STEP-07 3.2, landed early because ``measurement/`` exists as of STEP-04.
+
+    Not vacuous: the package is real and has a module in it. The rule is the
+    other half of the sealed boundary. Ground truth is reachable from
+    measurement, so anything that can reach measurement can reach ground truth
+    by one more import, and an agent that could do that is an agent grading its
+    own homework.
+    """
+    graph = build_import_graph()
+    measurement = f"{PACKAGE}.measurement.recovery"
+
+    assert measurement in graph, "the measurement module is missing; this test would be vacuous"
+
+    for module in graph:
+        if not module.startswith((f"{PACKAGE}.agents", f"{PACKAGE}.orchestrator")):
+            continue
+        reachable = reachable_from(graph, module)
+        assert measurement not in reachable, (
+            f"{module} can reach {measurement}, and through it sealed ground truth"
+        )
+        assert f"{PACKAGE}.measurement" not in reachable, (
+            f"{module} can reach the measurement package"
+        )
+
+
+def test_only_named_modules_mention_the_sealed_table() -> None:
+    """Asserted against the source text, not against imports.
+
+    The sealed table is reached by *naming it in SQL*, not by importing a
+    module, so an import-graph check alone would miss a query someone wrote by
+    hand. This greps the tree the way Saif's exit checklist greps for dynamic
+    SQL, and for the same reason: the guarantee is about what the code says,
+    not about what it imports.
+    """
+    offenders: dict[str, int] = {}
+    for path in _ROOT.rglob("*.py"):
+        module = _module_name(path)
+        if module in LEGITIMATE_SEALED_CONSUMERS:
+            continue
+        count = sum(
+            1
+            for literal in _code_strings(path)
+            if any(needle in literal for needle in SEALED_NEEDLES)
+        )
+        if count:
+            offenders[module] = count
+
+    assert offenders == {}, (
+        f"modules naming {SEALED_TABLE} in code outside the allowlist: {sorted(offenders)}. "
+        "Adding one is a deliberate edit to LEGITIMATE_SEALED_CONSUMERS, not an accident."
+    )
+
+
+def test_the_sealed_allowlist_is_not_stale() -> None:
+    """Guards the guard.
+
+    Every module on the allowlist must actually mention the table. Otherwise the
+    list grows entries that permit something nobody is doing, and the next
+    reader cannot tell which entries are load-bearing.
+    """
+    for module in LEGITIMATE_SEALED_CONSUMERS:
+        path = _ROOT / (module.removeprefix(f"{PACKAGE}.").replace(".", "/") + ".py")
+        assert path.is_file(), f"{module} is on the sealed allowlist but does not exist"
+        assert any(
+            any(needle in literal for needle in SEALED_NEEDLES) for literal in _code_strings(path)
+        ), f"{module} is on the sealed allowlist but never names {SEALED_TABLE} in code"
+
+
 def test_agents_are_not_isolated_from_what_they_legitimately_need() -> None:
     """The rule is an allowlist on specific modules, not an isolation cell.
 
