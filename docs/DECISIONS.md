@@ -148,6 +148,65 @@ narrowed rather than the behavior oversold.
 
 ---
 
+## Phase 6: Prompt-eval agent and regression gate
+
+| # | Decision | Alternative(s) not taken | Reason | Recorded in |
+|---|---|---|---|---|
+| 6.1 | **The evaluated task is a new `classify.threat_class.v1`, consumed by no session** | (a) wire it into triage; (b) evaluate the three existing prompts on a non-class metric | No prompt in the fleet emits a threat class, and the harness reports confusion by class. (a) would make a triage product change inside STEP-06 and would touch DECISIONS 3.1's guarantee that severity is data-derived; (b) contradicts D2 and D3's explicit T-01..T-07 stratification. Saif's decision A. The wind tunnel is real and the aircraft does not yet fly, which is carried in Honest Limits rather than left to be noticed. | Saif, this session; `be66b25` |
+| 6.2 | **`EXIT_REGRESSION_REFUSED = 7`**, against D5's literal "exit 5" | Follow D5 as written | `EXIT_INPUT_ERROR` is already 5. A regression refusal is a *governance outcome* and must be distinguishable by exit code from a malformed `--candidate`, which is a broken call. Exactly the collision DECISIONS 2.12 found and removed when argparse's 2 shadowed `EXIT_QUALITY_GATE_FAIL`. Saif's decision B; recorded as a deviation from the STEP contract. | Saif, this session; `e1d3f69` |
+| 6.3 | **The three shipped prompts migrate into the registry, record-only** | A registry holding only the new classification prompt | Closes the deferral `firewall.SystemPrompt` recorded ("a versioned registry with content-addressed files is STEP-06"), so it fulfils a documented promise rather than reaching into a closed phase. A registry holding one of four prompts while calling itself the fleet's registry is a claim wider than the behaviour. Digests unchanged and **asserted** unchanged, module constants still the runtime source. Saif's decision C. | Saif, this session; `be66b25` |
+| 6.4 | **The gate reads the confidence interval's lower bound, not the point estimate** | Gate on the observed delta and report intervals for the reader | Activation requires *evidence of non-regression*, not absence of evidence of regression. Same posture as the seed guard (4.15) and the claim verifier. A candidate whose interval is wide is refused even when its point estimate looks fine, and that cost is accepted rather than tuned away. Saif's decision D. | Saif, this session; `a8012ec` |
+| 6.5 | **`RECALL_REGRESSION` and `REGRESSION_NOT_EXCLUDED` are separate breach codes** | One refusal code for both | The first says the candidate is measurably worse; the second says the eval set cannot tell. On this project's data the second is the common case and is a fact about the generator, so reporting it as the first would blame a prompt for the eval set's resolution. Same argument as 5.21: refusals that cannot be counted by cause make the metric meaningless. | `a8012ec` |
+| 6.6 | **Activation state lives in an append-only pointer history, never on the version record** | A mutable `active: bool` on `PromptVersion` | The obvious implementation is wrong in the exact way STEP-06 3.4 names: activating v2 would have to write `False` into v1's record, so one prompt's activation would rewrite another prompt's record. The active version is derived from the log; version records are written once. Rollback is another entry, so the history never describes a system that did not make the mistake it made. | `be66b25` |
+| 6.7 | **The eval set is built at its honest ceiling and the tolerance is derived from what that ceiling can resolve** | (a) raise the generator's planted volume; (b) add content variety; (c) reverse 6.4 to a point estimate | Measured: threat entities per class are 4 to 12 and invariant to `--scale`; content is byte-identical across seeds. (a) and (b) substantially reopen STEP-01, a closed phase that met its own exit criterion. (c) is worse than refusing on uncertainty: at n=6 a point estimate reports a single-item difference as a 17-point regression. Saif's decision. The consequence, that this gate detects a class collapse and not a few-point drift, is stated in the report artifact and the Outcome rather than inferred. | Saif, this session; `97a2f76` |
+| 6.8 | **`tolerances_sha256` binds into `SESSION_OPEN`** | A twelfth `EventType` for tolerance changes | Directly follows 5.8. A tolerance set is build-time policy that is declared when no session is open, so there is no orchestrator token to write it with. Binding gives the guarantee that matters: a verdict is permanently tied to the limits it was reached under, hash-chained. ARCHITECTURE 3.2's eleven types stay closed. | Saif, this session; `e1d3f69` |
+| 6.9 | **Eval item ids are opaque and the item order is shuffled** | Key items by entity id; emit them in query order | Planted entity ids name their class in three characters, so an id-keyed item hands the model its answer through the firewall. The *ordering* leaks the same thing and was missed by the content check: the first build emitted contiguous per-class blocks, so `items.json`, which carries no labels at all, was on its own sufficient to reconstruct the answer key. Found at the review stop, not by any test written before it. | `0f5553e` |
+| 6.10 | **The classification stub responds to the system prompt, never to a mode flag** | `StubMode.OVERCLAIM`, as the memo stub uses | Found by the end-to-end turn test. A mode belongs to the adapter, so it degraded incumbent and candidate alike and reported the degraded candidate **activatable**. The deeper problem: a stub keyed on a flag answers identically whatever prompt it is given, so an eval harness driven by one measures nothing about prompts while still producing a report, an interval and a verdict. | `a8012ec` |
+| 6.11 | **An unparseable answer keeps its position with `predicted=None`** | Drop it from that version's list, or drop the item from both | Dropping from one side misaligns the pairing; dropping from both deletes the failure from the *failing* version's recall, which is the flattering direction. `None` is never equal to a true class, so it scores as a recall miss while counting toward no class's precision, and the unparseable count is reported separately because a broken output contract is a different finding from a wrong answer. | `a8012ec` |
+| 6.12 | **`minimum_detectable_drop` is reporting only; `decide` never reads it** | Derive the tolerance from the report at gate time | A gate that set its own tolerance from the evidence would widen its acceptance criterion exactly when the evidence got weaker, which is a gate that passes everything and calls it rigour. The two are kept apart in code and asserted apart by test, not merely intended apart. | `a8012ec` |
+
+### The finding that made 6.7 necessary
+
+Recorded here with its measurements because it is the central STEP-06 finding
+and because the next person to ask "why is the eval set only 59 items" will read
+this file first.
+
+**The generator's planted threat volume is fixed and does not scale.** Measured
+on real builds during D2:
+
+| | t01 | t02 | t03 | t04 | t05 | t06 | t07 | benign |
+|---|---|---|---|---|---|---|---|---|
+| entities, scale 1 | 6 | 12 | 6 | 4 | 4 | 6 | 6 | 450 |
+| entities, scale 10 | 6 | 12 | 6 | 4 | 4 | 6 | 6 | 4,500 |
+| entities, scale 40 | 6 | 12 | 6 | 4 | 4 | 6 | 6 | 18,000 |
+
+Benign grows 40x; every threat class is identical. The mechanism is structural:
+`RING_COUNT` and `MEMBERS_PER_RING` are fixed constants in each `t0N` module and
+`for_budget` only ever *shrinks* them, so the per-class abuse budget is computed
+from the population and then left almost entirely unspent. At scale 40 roughly
+540 slots are available and 44 are used.
+
+**Seeds do not vary content either.** Seed 42 and seed 7 return byte-identical
+planted ids, display names, descriptions and comment text; the seed varies
+timing and which base entities are targeted. Pooling across seeds would add
+exact duplicates, inflating the item count while narrowing the bootstrap
+interval by replication, which is the "a lucky sample must not read as
+activatable" failure reached from the other side. It is not done.
+
+**This is explicitly not a STEP-01 defect.** STEP-01's exit criterion was
+byte-stable rebuilds and a passing leakage test; it met both, and neither is
+touched by this. The fixed threat volume is a limit STEP-06 discovered by asking
+the data for something STEP-01 never promised. Manufacturing a defect against a
+closed phase that met its spec would be the same dishonesty this document opens
+by warning against.
+
+**Future work, owned by whichever phase next takes up the generator:** richer
+per-class content templates for genuine item independence, plus volume that
+spends the budget already computed. That is the only route to sub-tolerance
+drift sensitivity, and it is out of scope for STEP-06.
+
+---
+
 ## Choices made by default, with no recorded rationale
 
 Listed because a decision record that quietly omits its unexamined choices is
