@@ -21,17 +21,22 @@ widen silently.
 from collections.abc import Mapping
 
 from ts_sentry.agents.evidence.pack import EvidencePack
+from ts_sentry.agents.memo.memo import Memo
 from ts_sentry.agents.triage.prompts import RankedQueue
+from ts_sentry.data.policy_corpus import PolicyCorpus
 from ts_sentry.governance.gates import ArtifactCheck, FailureCode, GateChecks, GateFailure
 from ts_sentry.governance.mandate import AgentId, Consequence, Mandate, ToolId
+from ts_sentry.orchestrator.memo_gate import memo_checker
 from ts_sentry.orchestrator.pack_gate import pack_checker
 from ts_sentry.orchestrator.tools import TOOL_TABLE
 
 __all__ = [
     "EVIDENCE_MANDATE",
+    "MEMO_MANDATE",
     "PHASE_FOUR_CHECKS",
     "TRIAGE_MANDATE",
     "default_mandates",
+    "phase_five_checks",
 ]
 
 TRIAGE_MANDATE = Mandate(
@@ -86,9 +91,45 @@ the handler refuses a pivot whose scopes this dispatch did not grant.
 """
 
 
+MEMO_MANDATE = Mandate(
+    agent_id=AgentId.MEMO,
+    version="1.0.0",
+    consequence_ceiling=Consequence.RECOMMEND,
+    allowed_tools=frozenset({ToolId.RESOLVE_POLICY_CITATION}),
+    data_scopes=TOOL_TABLE[ToolId.RESOLVE_POLICY_CITATION].required_scopes,
+    output_schema=Memo,
+    token_budget=200_000,
+    max_steps=8,
+)
+"""The memo agent's mandate (ARCHITECTURE 4.3, ceiling RECOMMEND).
+
+``data_scopes`` is empty, read from the tool table like the other two rather
+than restated. That is not an oversight: the memo agent reaches **no platform
+table at all**. It works from an accepted Evidence Pack and the hashed corpus,
+both lent to it by the orchestrator, so there is nothing for it to query and
+nothing it could scope-creep into. It is the narrowest mandate in the fleet, and
+the one where least privilege costs nothing.
+
+RECOMMEND is the ceiling, and it is the highest any mandate may declare.
+``AgentConsequence`` makes ENFORCE unspellable here at type level; this mandate
+is the one that sits closest to it, which is exactly why the memo it produces
+stays a draft until a human signature it cannot reach finalizes it.
+
+``max_steps`` is 8 because STEP-05 3.2's revise loop spends a step per attempt,
+approved or refused, on the accounting STEP-04 established for pivots: the
+analyst's attention was spent either way. Eight is enough for a memo of a few
+sentences plus revisions and small enough that a model looping on one
+unresolvable citation stops.
+"""
+
+
 def default_mandates() -> Mapping[AgentId, Mandate]:
     """The fleet as it exists in this build."""
-    return {AgentId.TRIAGE: TRIAGE_MANDATE, AgentId.EVIDENCE: EVIDENCE_MANDATE}
+    return {
+        AgentId.TRIAGE: TRIAGE_MANDATE,
+        AgentId.EVIDENCE: EVIDENCE_MANDATE,
+        AgentId.MEMO: MEMO_MANDATE,
+    }
 
 
 def _unavailable(kind: str) -> ArtifactCheck:
@@ -119,9 +160,23 @@ PHASE_FOUR_CHECKS = GateChecks(
     assemble=pack_checker(),
     recommend=_unavailable("RECOMMEND"),
 )
-"""Gate checkers for this build.
+"""Gate checkers for a session that drafts no memo.
 
-OBSERVE needs none. ASSEMBLE now has a real checker (STEP-04 D4), which is the
-change that makes an evidence hop able to pass a gate at all. RECOMMEND still
-fails closed until the memo agent that needs it ships.
+OBSERVE needs none. ASSEMBLE has had a real checker since STEP-04 D4. RECOMMEND
+still fails closed here, and deliberately so: a triage or evidence session
+declares no RECOMMEND action, so a permissive stand-in would be a gate that
+could accept something nothing in the session was entitled to produce.
 """
+
+
+def phase_five_checks(pack: EvidencePack, corpus: PolicyCorpus) -> GateChecks:
+    """Gate checkers for a session that drafts a memo (STEP-05).
+
+    A function rather than a constant, which is the whole difference between
+    this and ``PHASE_FOUR_CHECKS``. The RECOMMEND checker has to be told what a
+    claim may resolve against, and that is a property of the evidence pack and
+    corpus in scope, established before the gate runs. A module-level constant
+    would have to find them for itself, and the only way to do that is to let
+    the memo say what it should be checked against.
+    """
+    return GateChecks(assemble=pack_checker(), recommend=memo_checker(pack, corpus))

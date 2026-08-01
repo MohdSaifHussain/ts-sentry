@@ -272,6 +272,43 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   and the manifest carries the fair-use posture and per-document retrieval
   provenance. `ts-sentry fetch-policies` is the operator verb that produces it;
   CI never runs it and every test loads the committed corpus offline.
+- STEP-05 D3: `ts_sentry.agents.memo.memo` - the memo as a DSA Article 17
+  statement of reasons, built against the Regulation's retrieved text rather
+  than from recall (EUR-Lex CELEX 32022R2065). Four sentence roles mapping to
+  Art 17(3)(b), (e), (a) and (f); `Measure` is a fixed StrEnum drawn from Art
+  17(1)(a)-(d), so no memo can invent a sanction. A `FACT` with no evidence and
+  a `POLICY_GROUND` with no citation are **unconstructible**, and a memo missing
+  any of the four roles is refused: Art 17(3) requires all four, so three of
+  them is prose rather than a statement of reasons.
+- STEP-05 D3: Art 17(3)(c), the automated-means disclosure, is carried
+  **structurally** on `AutomatedMeans` and cannot be written by the agent. A
+  disclosure about how automated a decision was is worthless if the automated
+  component composes it, which is the argument `ReviewOutcome.reviewer_kind`
+  already makes about who decided. A signed memo claiming a fully automated
+  decision is refused, because ENFORCE is human-only and a signature is exactly
+  the human step; the vocabulary follows the Commission's DSA Transparency
+  Database schema.
+- STEP-05 D5: `ts_sentry.orchestrator.citation_resolver` and
+  `ts_sentry.orchestrator.citation_tool`. Four reason codes, because they are
+  four different findings about an agent: unknown document, phantom anchor,
+  excerpt not in clause, excerpt too long. The third is the one that matters -
+  a real document, a real anchor and words the clause does not contain is a
+  fabricated quotation with a valid address, which is more dangerous than a
+  phantom anchor because everything checks out except the part a reader relies
+  on. Whitespace is normalised and nothing else is, so a rewrapped quotation
+  passes and a paraphrase does not.
+- STEP-05: `ts_sentry.orchestrator.memo_gate` fills the RECOMMEND
+  `ArtifactCheck` STEP-02 shipped unimplemented and `fleet` has been failing
+  closed ever since. Two resolution surfaces, both zero-tolerance: claims
+  through STEP-02's `verify_claims` against the pack's record ids, and
+  citations through the D5 resolver. A memo names the pack it was drafted from
+  and the corpus it was checked against, so the gate cannot verify a memo
+  against evidence it never saw.
+- STEP-05: `MEMO_MANDATE` (ceiling RECOMMEND, `max_steps` 8) with **no data
+  scopes at all**. The memo agent reaches no platform table: it works from an
+  accepted Evidence Pack and the hashed corpus, both lent by the orchestrator.
+  `RESOLVE_POLICY_CITATION` has its handler, so the pending-handler set shrinks
+  from two to one and `IMPLEMENTATION_PHASE` is 5.
 - STEP-04 follow-up: `ts_sentry.orchestrator.subject_check` - an evidence
   session refuses a `--subject` that does not exist in the dataset, exiting `5`
   and producing no session and no chain. The check runs before the output
@@ -309,6 +346,13 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   `begin_turn`.
 - `EVIDENCE_MANDATE.max_steps` is 20, because STEP-04 3.5 reports recovery at 20
   pivots and a reported budget the mandate forbids is not a measurement.
+- **`mandate_set_hash` changes for every session type**, because the fleet
+  gained a third mandate. Measured: `684b49b9...` becomes `02ed4726...`, while
+  the per-agent triage and evidence mandate hashes are untouched. `SESSION_OPEN`
+  carries the set hash, so **chain heads recorded before STEP-05 do not
+  reproduce**, including Saif's STEP-04 phase-close head. The same class of note
+  as STEP-04's `dataset_digest` v2 change, and stated for the same reason: a
+  recorded head that silently stops reproducing looks like tampering.
 - `require_ist_iso` moved from a private helper in `agents.evidence.pack` to
   `ts_sentry.data.tz`, now that the policy corpus is the second store keeping
   timestamps as text. Same reason `ist_from_epoch_ms` lives there: a second
