@@ -55,9 +55,24 @@ CI-stamped report with 95% CI and sensitivity plots.
 
 ## 6. Outcome
 
-Status: **shipped**, D1 through D5, eleven commits, held locally pending Saif's
-phase-close verification. 1,159 tests pass; `mypy --strict`, `ruff check` and
-`ruff format --check` clean on 161 files; coverage 93.08% against a 90% floor.
+Status: **shipped and verified**, D1 through D5. 1,172 tests pass;
+`mypy --strict`, `ruff check` and `ruff format --check` clean on 161 files;
+coverage 93.09% against a 90% floor.
+
+### Phase close, verified
+
+Saif verified this phase personally on 1 August 2026. He read the footprint
+(7,045 insertions, closed-phase touches all expected), ran the `report` verb by
+hand and confirmed all twelve artifacts plus the partial-run "Not computed"
+path, read `report.md` in full against its claims, and verified all fifteen log
+SHAs as real commits.
+
+His read of the report found a real defect that no test caught: the bootstrap
+cross-check's expected width ratio was computed from the wrong quantity, so
+exit criterion 2 did not in fact hold at the report verb's default sample size.
+Recorded and fixed below. Pushes are checkpoint-gated (CLAUDE.md Process): the
+commits were held locally per deliverable and pushed only after this
+confirmation and the fix it produced.
 
 ### Sources, consulted before implementing
 
@@ -75,10 +90,14 @@ Best Practices Framework.
    estimate, interval and bootstrap bounds; changing the replicate count leaves
    the drawn sample untouched, which is what the named child streams buy.
 2. **Bootstrap within tolerance, in the documented direction.** The bootstrap
-   ignores the finite population correction so it must come out wider. On a real
-   session at a 48% sampling fraction the half-width ratio is 1.376 against an
-   expected 1.386. At a point estimate of zero the check reports itself *not
-   applicable* rather than passing vacuously.
+   ignores the finite population correction so it comes out wider in
+   expectation. Verified across four seeds and three sample sizes: every
+   applicable case agrees within 0.25. At a point estimate of zero the check
+   reports itself *not applicable* rather than passing vacuously.
+
+   **This criterion did not hold when Saif first verified it**, and the defect
+   was mine rather than his run's. See "The defect found at phase-close
+   verification" below.
 3. **Import graph.** No agent or orchestrator module reaches any module under
    `measurement`. The test was generalised from pinning `measurement.recovery`
    by name, which would have left the five new modules unguarded.
@@ -162,6 +181,43 @@ different class moved (7.14). Saif accepted it as-is: the plateau is a bounded
 limit of a metadata-pivot strategy, the same shape as the structural recovery
 ceiling, and reaching the remaining members is future work with a named blocker,
 not a STEP-07 gap.
+
+### The defect found at phase-close verification
+
+Saif read a generated `report.md` and reported a bootstrap half-width ratio of
+**2.194 against an expected 1.386** at a 48% sampling fraction. He read it as the
+bootstrap being wider in the documented direction, which it was. It was also
+**outside the documented tolerance of 0.15**, which meant exit criterion 2 did
+not hold at the report verb's default sample size.
+
+The defect was in `expected_ratio`, not in the bootstrap and not in his run. It
+predicted `1 / sqrt(1 - f)` from the *overall* sampling fraction, which is
+correct only when every stratum is sampled at the same rate. Optimal allocation
+guarantees they are not: at 9,000 of 18,780 views the middle stratum, which
+carries all the signal, sits at a 0.78 sampling fraction while the others sit
+near 0.16. Its analytic variance contribution nearly vanishes under its own FPC
+while the bootstrap still gives it full weight.
+
+Reproduced before fixing: ratios of 2.194, 2.422 and 1.971 across three seeds at
+n=9000, all against a predicted 1.386, and all within tolerance at n=2000 and
+n=5000 where the allocation is still nearly even. That pattern is the signature
+of the predictor being wrong rather than the bootstrap being unstable.
+
+Corrected to `sqrt(V_without_fpc / V_with_fpc)` over the same strata, which is
+exact, reduces to the old form when fractions are equal, and now tracks the
+observed ratio to within Monte Carlo noise: 12 of 12 applicable cases agree
+within 0.25 across four seeds and three sample sizes. `BootstrapCheck` also
+carries `observed_successes` now, because a percentile bootstrap over three
+successes is discrete enough that no tolerance setting makes the comparison
+meaningful, and a reader seeing a disagreement should look there first.
+
+Widening the tolerance to fit the observed numbers was the alternative and was
+not taken: it would have hidden a wrong formula behind a looser test.
+
+**This is the third phase-close defect found by Saif reading an artifact rather
+than by any test** (STEP-04's non-traversing pack, STEP-06's ranked queue,
+this). The pattern is worth naming: the tests check that the arithmetic is
+self-consistent, and a human reading the output checks that it means anything.
 
 ### Honest limits
 

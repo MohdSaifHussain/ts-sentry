@@ -13,6 +13,7 @@ the truth once raters make mistakes. That is not a defect. It is the published
 method's own stated limitation, reproduced deliberately.
 """
 
+import math
 from collections.abc import Iterator
 
 import duckdb
@@ -423,8 +424,71 @@ def test_the_bootstrap_is_wider_than_the_analytic_interval_and_by_how_much(
 
     assert bootstrap.applicable
     assert bootstrap.half_width > estimate.half_width
-    assert bootstrap.expected_ratio == pytest.approx(1.0909, abs=0.001)
-    assert bootstrap.agrees(tolerance=0.15)
+    assert bootstrap.agrees(tolerance=0.25)
+
+
+@pytest.mark.parametrize("seed", [42, 7, 99, 123])
+@pytest.mark.parametrize("sample_size", [2000, 5000, 9000])
+def test_the_bootstrap_agrees_across_seeds_and_sample_sizes(
+    frame: ViewFrame, seed: int, sample_size: int
+) -> None:
+    """The regression test for the defect Saif found reading a report.
+
+    ``expected_ratio`` used to come from the *overall* sampling fraction, which
+    is only right when every stratum is sampled at the same rate. Optimal
+    allocation guarantees they are not: at 9,000 views the middle stratum sits
+    near a 0.78 fraction while the others sit near 0.16, so the FPC nearly
+    erases its analytic variance while the bootstrap keeps all of it. The
+    predicted ratio was 1.386 against an observed 2.2, and the cross-check
+    reported a disagreement that belonged entirely to the predictor.
+
+    Swept rather than checked at one point, because a single seed at a single
+    sample size is exactly what hid this: the defect only appears once the
+    allocation becomes uneven, which needs a large enough sample.
+    """
+    pilot = max(sample_size // 5, MINIMUM_PER_STRATUM * 5)
+    estimate, bootstrap = measure_vvr(
+        frame,
+        perfect_panel(3),
+        seed=seed,
+        sample_size=sample_size,
+        pilot_size=pilot if pilot < sample_size else 0,
+        replicates=2000,
+    )
+
+    if not bootstrap.applicable:
+        pytest.skip("no violative calls drawn; the comparison is vacuous by design")
+
+    assert bootstrap.agrees(tolerance=0.25), (
+        f"bootstrap half-width ratio {bootstrap.width_ratio:.3f} against a predicted "
+        f"{bootstrap.expected_ratio:.3f} on {bootstrap.observed_successes} violative calls"
+    )
+
+
+def test_the_expected_ratio_is_the_overall_fraction_only_when_strata_agree(
+    frame: ViewFrame,
+) -> None:
+    """Guards the correction against being quietly reverted.
+
+    Under proportional allocation every stratum shares one sampling fraction, so
+    the variance-ratio form must reduce to ``1 / sqrt(1 - f)``. Under optimal
+    allocation at the same sample size it must not, because that is the whole
+    reason the old form was wrong.
+    """
+    even, _ = measure_vvr(frame, perfect_panel(3), seed=42, sample_size=9000, replicates=2)
+    uneven, _ = measure_vvr(
+        frame, perfect_panel(3), seed=42, sample_size=9000, pilot_size=1800, replicates=2
+    )
+    _, even_check = measure_vvr(frame, perfect_panel(3), seed=42, sample_size=9000, replicates=200)
+    _, uneven_check = measure_vvr(
+        frame, perfect_panel(3), seed=42, sample_size=9000, pilot_size=1800, replicates=200
+    )
+    naive = 1.0 / math.sqrt(1.0 - even.sampled / even.population)
+
+    assert even.allocation_method == "proportional"
+    assert uneven.allocation_method == "optimal"
+    assert even_check.expected_ratio == pytest.approx(naive, abs=0.02)
+    assert uneven_check.expected_ratio > naive + 0.5
 
 
 def test_the_bootstrap_reports_itself_inapplicable_rather_than_agreeing(

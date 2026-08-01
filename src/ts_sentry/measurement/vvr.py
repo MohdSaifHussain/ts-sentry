@@ -465,10 +465,30 @@ class BootstrapCheck:
 
     Resampling with replacement inside each stratum ignores the finite
     population correction, so the bootstrap interval is **expected to be wider**
-    than the analytic one, by roughly ``1 / sqrt(1 - f)`` at overall sampling
-    fraction ``f``. That direction is asserted rather than glossed: a bootstrap
-    interval that came out narrower than an FPC-corrected analytic interval would
-    mean one of the two is wrong.
+    than the analytic one. How much wider is ``expected_ratio``, and getting it
+    right matters more than it looks.
+
+    The first version predicted ``1 / sqrt(1 - f)`` from the *overall* sampling
+    fraction. That is only correct when every stratum is sampled at the same
+    rate, which optimal allocation guarantees will not happen: at 9,000 of
+    18,780 views the middle stratum, which carries all the signal, sits at a
+    0.78 sampling fraction while the others sit near 0.16. Its analytic variance
+    contribution nearly vanishes under its own FPC while the bootstrap still
+    gives it full weight, so the true ratio was around 2.2 against a predicted
+    1.386 and the cross-check reported a disagreement that was entirely the
+    predictor's. Found by Saif reading a generated report.
+
+    The correction is exact rather than a fudge: the ratio the FPC implies is
+    ``sqrt(V_without_fpc / V_with_fpc)`` over the same strata, which reduces to
+    ``1 / sqrt(1 - f)`` in the equal-fraction case and tracks the observed ratio
+    to within Monte Carlo noise otherwise.
+
+    Direction, stated at its true width: the bootstrap is wider **in
+    expectation**. At very small success counts the percentile interval is
+    discrete, so a single run can come out narrower without either method being
+    wrong. That regime is exactly where the estimate already reports its
+    normal-approximation conditions as failed, and it is why ``agrees`` carries a
+    tolerance rather than asserting an inequality.
     """
 
     replicates: int
@@ -477,6 +497,14 @@ class BootstrapCheck:
     analytic_half_width: float
     expected_ratio: float
     applicable: bool
+    observed_successes: int = 0
+    """Violative calls behind the interval.
+
+    Reported because it says how much the comparison is worth. A percentile
+    bootstrap over three successes is discrete enough that its width jumps in
+    visible steps, so a ratio computed from it is noisy in a way no tolerance
+    setting can fix. A reader seeing a disagreement should look here first.
+    """
 
     @property
     def half_width(self) -> float:
@@ -686,15 +714,37 @@ def bootstrap_check(
         replicate_points[index] = total
 
     lower, upper = (float(value) for value in np.percentile(replicate_points, [2.5, 97.5]))
-    fraction = estimate.sampled / estimate.population
     return BootstrapCheck(
         replicates=replicates,
         lower=lower,
         upper=upper,
         analytic_half_width=estimate.half_width,
-        expected_ratio=1.0 / math.sqrt(1.0 - fraction) if fraction < 1.0 else math.inf,
+        expected_ratio=_fpc_width_ratio(estimate),
         applicable=estimate.half_width > 0.0 and estimate.point > 0.0,
+        observed_successes=sum(stratum.violative_calls for stratum in estimate.strata),
     )
+
+
+def _fpc_width_ratio(estimate: "VvrEstimate") -> float:
+    """How much wider the FPC alone implies the bootstrap should be.
+
+    ``sqrt(V_without_fpc / V_with_fpc)`` over the sampled strata. Computed from
+    the same stratum results the analytic interval used, so the two cannot drift
+    apart, and equal to ``1 / sqrt(1 - f)`` when every stratum happens to share
+    one sampling fraction.
+    """
+    with_fpc = 0.0
+    without_fpc = 0.0
+    for stratum in estimate.strata:
+        if stratum.sampled < 2 or stratum.population == 0:
+            continue
+        weight = stratum.population / estimate.population
+        spread = weight**2 * stratum.rate * (1.0 - stratum.rate)
+        with_fpc += spread * (1.0 - stratum.sampled / stratum.population) / (stratum.sampled - 1)
+        without_fpc += spread / stratum.sampled
+    if with_fpc <= 0.0:
+        return math.inf
+    return math.sqrt(without_fpc / with_fpc)
 
 
 def _rates_from_calls(
