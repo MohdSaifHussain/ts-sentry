@@ -43,6 +43,7 @@ from ts_sentry.orchestrator.fleet import PHASE_FOUR_CHECKS, default_mandates
 from ts_sentry.orchestrator.manifest import ArtifactRecord, SessionManifest
 from ts_sentry.orchestrator.pack_export import write_pack_graphml, write_pack_json
 from ts_sentry.orchestrator.review import AnalystReviewer
+from ts_sentry.orchestrator.subject_check import require_subject
 from ts_sentry.orchestrator.toolspec import ToolResources
 from ts_sentry.orchestrator.triage_turn import TriageTurn, run_triage_turn
 from ts_sentry.provenance import dataset_digest_from_manifest, git_sha
@@ -350,6 +351,13 @@ def run_evidence_session(
     authority to change it, and a connection that could write would leave that
     distinction resting on every future author's care rather than on the
     connection.
+
+    The subject is checked for existence **before anything is created**, so a
+    subject that is not in the dataset leaves no session, no chain, and no
+    output directory. The ordering is the deliverable rather than a detail: a
+    refusal after the session opened would already have written a chain, a
+    manifest and an anchor describing a session that should not exist. See
+    :mod:`ts_sentry.orchestrator.subject_check` for the finding this closes.
     """
     store_path = _dataset_path(seed_dataset)
     if not store_path.is_file():
@@ -360,13 +368,19 @@ def run_evidence_session(
         analyst_id, dataset_digest, AgentId.EVIDENCE.value, case_id, subject_id
     )
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    ledger_store = out_dir / LEDGER_STORE
-    ledger_store.unlink(missing_ok=True)
-
     dataset = duckdb.connect(str(store_path), read_only=True)
-    ledger_connection = duckdb.connect(str(ledger_store))
+    # Left None until the subject check passes, so the guard's refusal cannot
+    # leave a half-created session behind and the `finally` still closes what
+    # was actually opened.
+    ledger_connection: duckdb.DuckDBPyConnection | None = None
     try:
+        # Before out_dir.mkdir and before any ledger exists.
+        require_subject(dataset, subject_id, subject_kind)
+
+        out_dir.mkdir(parents=True, exist_ok=True)
+        ledger_store = out_dir / LEDGER_STORE
+        ledger_store.unlink(missing_ok=True)
+        ledger_connection = duckdb.connect(str(ledger_store))
         session = Session(
             session_id=resolved_session_id,
             analyst_id=analyst_id,
@@ -464,4 +478,5 @@ def run_evidence_session(
         )
     finally:
         dataset.close()
-        ledger_connection.close()
+        if ledger_connection is not None:
+            ledger_connection.close()

@@ -60,6 +60,7 @@ from ts_sentry.orchestrator.review import (
     ScriptedReviewer,
 )
 from ts_sentry.orchestrator.session_runner import run_evidence_session, run_triage_session
+from ts_sentry.orchestrator.subject_check import SubjectNotFound
 from ts_sentry.orchestrator.triage_turn import stub_triage_responder
 from ts_sentry.provenance import DatasetDigestError, git_sha, sha256_file
 
@@ -269,10 +270,7 @@ def run_evidence_session_command(
             max_hops=max_hops,
             seed=seed,
         )
-    except InputError as exc:
-        print(f"run-session: {exc}", file=sys.stderr)
-        return EXIT_INPUT_ERROR
-    except DatasetDigestError as exc:
+    except (InputError, DatasetDigestError, SubjectNotFound) as exc:
         print(f"run-session: {exc}", file=sys.stderr)
         return EXIT_INPUT_ERROR
     except (FileNotFoundError, duckdb.Error) as exc:
