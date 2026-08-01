@@ -114,7 +114,9 @@ narrowed rather than the behavior oversold.
 | 4.10 | **Cases with no planted ring are counted separately, never as zeros** | Fold them in with recovery 0.0 | "Nothing to find" and "failed to find it" are different results, and averaging them together understates the second. | `b6625b6` |
 | 4.11 | **`dataset_digest` from the manifest's `table_hashes`, under a `v2` domain**, with no fallback | (a) keep hashing `build.duckdb`; (b) hash the store when no manifest is present | Closes the gap STEP-03 recorded. The `v2` separator makes the era change structural rather than a changelog note, so a pre-fix and a post-fix identity for one build cannot be compared by accident. A fallback would restore the defect exactly where it is hardest to notice. | Saif, this session; `STEP-04 Outcome` |
 | 4.12 | **GraphML hand-written with `ElementTree`** | Add `networkx` for the serializer | GraphML is four element types, and a dependency added to serialize them would widen the supply-chain surface this document already lists gaps against. Written against the specification rather than from memory. | `graphml.ethz.ch` primer, STEP-04 D6 |
-| 4.13 | **The saturation of the recovery table asserted as a passing test** | Note it in prose, or tune the stub until the numbers move | The shape STEP-02 used for tail truncation. The columns are identical because the stub exhausts its strategy in two hops, which is a fact about the stub; engineering it to look busy would have manufactured a measurement. The day a better strategy makes recovery grow, the test fails and forces the claim to be rewritten. | `b6625b6` |
+| 4.13 | **The saturation of the recovery table asserted as a passing test** | Note it in prose, or tune the stub until the numbers move | The shape STEP-02 used for tail truncation. The columns are identical because the stub exhausts its strategy in two hops, which is a fact about the stub; engineering it to look busy would have manufactured a measurement. The day a better strategy makes recovery grow, the test fails and forces the claim to be rewritten. Superseded in precision by Saif's phase-close finding (4.14), which names the mechanism rather than the symptom. | `b6625b6` |
+| 4.14 | **The traversal defect recorded at the artifact's precision**, as STEP-07's central risk | Record it as "the recovery table is flat" | Saif's phase-close reading of a real `evidence_pack.json`. The vague version is a symptom that invites tuning a number; the precise version names two mechanisms that have to be built. See below. | STEP-04 Outcome, Saif's phase close |
+| 4.15 | **A session can open on a subject that does not exist, and this is recorded rather than fixed** | Add the seed-existence guard immediately | Found while confirming 4.14. The guard is small and obviously right, but STEP-04 was closed and verified; adding code to a closed phase after its verification is exactly what the checkpoint gate exists to prevent. Recorded as a carried defect so the decision to add it is deliberate. | STEP-04 Outcome, Honest limits |
 
 ---
 
@@ -208,3 +210,44 @@ teaches nothing about how they were reached.
 | Session id uniqueness | analyst + dataset identifies a session | analyst + dataset + agent (+ case and subject for evidence) | The first evidence session run through the CLI came back carrying the triage session's id. One kind of session made the shorter derivation sufficient; two did not |
 | `max_steps` as a usable budget | a turn may use the step `begin_turn` booked | the last step was refused by the model call's own re-check | The first multi-turn agent. Fixed with `require_step`, and pinned in both directions |
 | Positional `ORDER BY` in the pivot templates | ordinals, reviewed and passed as safe | aliased projections, ordering by name | Saif's optional review note, taken up because the brittleness has a silent half that arity checking cannot see (4.5) |
+| The recovery-saturation claim | "the stub exhausts its strategy in two hops" | the strategy never traverses at all, and does not react to an empty result | Saif reading a real `evidence_pack.json` at phase close (4.14). The first version was true and too kind: it described a strategy that stopped early, when the artifact showed one that never started |
+
+---
+
+## Carried into STEP-07: the central risk
+
+Recorded here rather than only in the STEP-04 Outcome, because STEP-07 is the
+phase that has to discharge it and this is the file its author will read first.
+
+**The investigation does not traverse.** Found by Saif at phase close, by
+reading `evidence_pack.json` rather than by any test. An evidence session on the
+T-02 subject `t02_chan_003_000` ran 20 hops that were **all**
+`pivot.account_link.v1` with **identical** parameters (`channel_id=t02_chan_003_000`,
+`limit=25`, `min_comments=1`, the same `param_hash` every hop) and **all**
+returned `row_count` 0, yielding a pack of 1 node and 0 edges.
+
+Two defects, both STEP-07's:
+
+- **(a)** The scripted strategy repeats one identical pivot instead of feeding
+  entities found at hop N as seeds into hop N+1, so it never traverses.
+- **(b)** It has no fallback to a different pivot kind when one returns empty,
+  and here even hop 1 was empty.
+
+**STEP-07's headline deliverable:** a strategy that varies pivot kind **and**
+chains discovered entities as new seeds, validated on a subject whose first
+pivot returns rows, recovering a measurable fraction of a planted network at 20
+pivots versus 5. `test_recovery_saturates_before_the_smallest_reported_budget`
+is written to fail when that lands, which is how the phase will know it
+succeeded.
+
+**A third defect, STEP-04's own, found while confirming the above.**
+`t02_chan_003_000` does not exist in the seed-42 scale-1 build at all: only
+rings `000` and `001` are planted. That is the mechanical cause of the twenty
+empty hops, and it exposes something the design does not check. The
+orchestrator accepts a seed subject that does not exist and produces a fully
+valid audit trail for an investigation of nothing: exit 0, intact anchored
+chain, 20 ledgered `HUMAN_DECISION` approvals, every pack through the ASSEMBLE
+gate, provenance complete. Every governance claim held, and all of them were
+about an entity that was never there. The pack's invariants are about internal
+consistency and the gate validates the artifact rather than the world; nothing
+checks that the analyst's chosen seed is real. Recorded and **not fixed** (4.15).
