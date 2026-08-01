@@ -34,6 +34,91 @@ what a script reads.
 
 ---
 
+## Running the published container
+
+```bash
+docker pull ghcr.io/mohdsaifhussain/ts-sentry:1.0.0
+```
+
+The image is the CLI. It runs `ts-sentry` as its entrypoint, so a verb and its
+flags go straight on the end:
+
+```bash
+docker run --rm ghcr.io/mohdsaifhussain/ts-sentry:1.0.0 --help
+```
+
+The working directory inside the image is `/work`, so mount the directory you
+want artifacts written into there.
+
+### It runs as uid 10001, and that has one consequence you will hit
+
+The image runs as a non-root user (`analyst`, uid **10001**), because nothing
+it does needs root. A bind mount carries the **host's** ownership through
+unchanged, so if the directory you mount is owned by someone else, the
+container cannot write into it and you get:
+
+```
+PermissionError: [Errno 13] Permission denied: 'build'
+```
+
+That is the design working, not a fault. On Linux, give the mount to the
+container's uid first:
+
+```bash
+mkdir -p work && sudo chown 10001:10001 work
+
+docker run --rm --network none -v "$PWD/work:/work" \
+    ghcr.io/mohdsaifhussain/ts-sentry:1.0.0 build-dataset --seed 42 --scale 1 --out build
+```
+
+Or run as yourself instead, if you would rather own the output:
+
+```bash
+docker run --rm --network none --user "$(id -u):$(id -g)" -v "$PWD/work:/work" \
+    ghcr.io/mohdsaifhussain/ts-sentry:1.0.0 build-dataset --seed 42 --scale 1 --out build
+```
+
+On Docker Desktop for Windows and macOS this rarely comes up, because those
+mounts are permissive. The requirement is real on Linux, and it is where CI
+runs.
+
+### `--network none` is the point
+
+```bash
+docker run --rm --network none -v "$PWD/work:/work" \
+    ghcr.io/mohdsaifhussain/ts-sentry:1.0.0 run-session --agent triage \
+    --seed-dataset build --out session
+```
+
+Every verb except `fetch-policies` runs with networking switched off entirely.
+The hashed policy corpus, the prompt registry and the eval set ship inside the
+image, so citations resolve and prompts load without reaching anywhere.
+
+### What is not in the image
+
+The examples, the tests and the docs. A reader gets those from the repository;
+5 MB of ledgers and CSVs has no business in a runtime image. The image also
+carries no git, no compiler and no `uv`: the build stage has them and the
+runtime stage does not.
+
+One consequence is visible in the artifacts. `git_sha` is a provenance stamp
+taken by shelling out to git, and inside the image there is no git, so manifests
+record `"git_sha": "unknown"` rather than failing. A manifest that silently
+dropped the field would be worse than one that says it could not take it.
+
+### Verifying what you pulled
+
+```bash
+gh attestation verify oci://ghcr.io/mohdsaifhussain/ts-sentry:1.0.0 \
+    --repo MohdSaifHussain/ts-sentry --format json
+```
+
+The digest it reports must match what `docker pull` printed. That
+correspondence is the whole point: it is what proves the attestation describes
+the image you actually have.
+
+---
+
 ## `ts-sentry build-dataset`
 
 Builds the seeded synthetic platform plus the sealed ground truth.

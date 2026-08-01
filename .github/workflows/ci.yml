@@ -177,7 +177,25 @@ jobs:
       - name: It runs a complete session offline, as a non-root user
         run: |
           set -euo pipefail
+
+          # The mount has to be owned by the uid the container runs as.
+          #
+          # A bind mount carries the host's ownership through unchanged: Docker
+          # documents that "bind mounts have write access to files on the host
+          # by default" and does not remap ownership the way a named volume
+          # does on first use. The runner's workspace belongs to the runner's
+          # uid, the image runs as 10001 by design, and the two collide the
+          # moment the container tries to create a directory.
+          #
+          # This bit on the first Linux runner and never locally, because
+          # Docker Desktop's Windows mounts are permissive. It is a defect in
+          # this job's mount setup, not in the image: a non-root container
+          # refusing to write a directory it does not own is the design
+          # working. The image is deliberately not changed to paper over it,
+          # and the same requirement is documented for anyone running the
+          # published image on Linux (docs/USER_GUIDE.md).
           mkdir -p out
+          sudo chown 10001:10001 out
 
           docker run --rm ts-sentry:ci --help > /dev/null
 
