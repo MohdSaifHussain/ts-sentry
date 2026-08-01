@@ -51,3 +51,22 @@ def require_ist(value: datetime, field_name: str) -> None:
         raise ValueError(
             f"{field_name} must resolve to Asia/Kolkata (UTC+05:30); got offset {value.utcoffset()}"
         )
+
+
+def require_ist_iso(value: str, field_name: str) -> None:
+    """Parse an ISO 8601 string, then run ``require_ist`` on the result.
+
+    Shared for the reason ``ist_from_epoch_ms`` is: two modules now store
+    timestamps as text and both have to reject the same things, and a second
+    spelling of the check is a second chance to accept a UTC-rendered or naive
+    timestamp somewhere. A string that merely *looks* like a timestamp is not
+    one, so this parses rather than pattern-matching.
+
+    Lifted here in STEP-05 from ``agents.evidence.pack``, which had it private,
+    when the policy corpus became the second text-timestamp store.
+    """
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be an ISO 8601 timestamp; got {value!r}") from exc
+    require_ist(parsed, field_name)

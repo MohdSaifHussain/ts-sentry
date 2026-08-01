@@ -73,11 +73,10 @@ stays a statement about a specific set of bytes.
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime
 from enum import StrEnum
 
 from ts_sentry.data.enums import EntityKind
-from ts_sentry.data.tz import require_ist
+from ts_sentry.data.tz import require_ist_iso
 from ts_sentry.governance.canonical import digest_fields, require_sha256_hex
 from ts_sentry.orchestrator.pivots import PivotKind
 
@@ -145,22 +144,6 @@ def _require_id(value: str, field_name: str) -> None:
         raise ValueError(f"{field_name} must be a non-empty identifier")
 
 
-def _require_ist_iso(value: str, field_name: str) -> None:
-    """Parse and check an ISO 8601 string, rather than trusting its shape.
-
-    The pack stores timestamps as strings because it is serialized to JSON and
-    GraphML, but a string that merely looks like a timestamp is not one. Parsing
-    it here and running the same ``require_ist`` the entity schemas use means a
-    pack cannot carry a UTC-rendered or naive timestamp, which is the defect
-    STEP-02 D3 and STEP-03 D5 both hit from the DuckDB side.
-    """
-    try:
-        parsed = datetime.fromisoformat(value)
-    except ValueError as exc:
-        raise ValueError(f"{field_name} must be an ISO 8601 timestamp; got {value!r}") from exc
-    require_ist(parsed, field_name)
-
-
 @dataclass(frozen=True, slots=True)
 class Provenance:
     """One pivot execution, and everything needed to re-derive what it returned.
@@ -202,7 +185,7 @@ class Provenance:
             raise ValueError(f"row_count must be non-negative; got {self.row_count}")
         require_sha256_hex(self.template_sha256, "template_sha256")
         require_sha256_hex(self.param_hash, "param_hash")
-        _require_ist_iso(self.retrieval_ts_ist, "retrieval_ts_ist")
+        require_ist_iso(self.retrieval_ts_ist, "retrieval_ts_ist")
         if (self.pivot_kind is None) is not (self.query_template_id == SEED_TEMPLATE_ID):
             raise ValueError(
                 "exactly the case-selection record carries no pivot_kind; a pivot record names "
@@ -321,7 +304,7 @@ class TimelineEvent:
         _require_id(self.event_id, "event_id")
         _require_id(self.node_id, "node_id")
         _require_id(self.provenance_id, "provenance_id")
-        _require_ist_iso(self.ts_ist, "ts_ist")
+        require_ist_iso(self.ts_ist, "ts_ist")
 
     def to_json_object(self) -> dict[str, object]:
         return {
