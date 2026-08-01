@@ -7,10 +7,21 @@ STEP-08 D1. Run it from the repository root:
 
 It builds the seed-42 scale-1 dataset into a temporary directory, runs each
 example session through ``ts_sentry.cli.main`` exactly as the documentation
-teaches, and writes the artifacts into ``examples/NN-name/``. Nothing here
-reaches past the CLI into the orchestrator, because an example a reader cannot
-reproduce with the documented commands is a demonstration of this script rather
-than of the system.
+teaches, and writes the artifacts into ``examples/NN-name/``. For examples 01
+through 07 nothing here reaches past the CLI into the orchestrator, because an
+example a reader cannot reproduce with the documented commands is a
+demonstration of this script rather than of the system.
+
+**Example 08 is the one exception, and it is labelled as one.** It calls
+``apply_firewall`` directly, because the input firewall is a library component
+rather than a session and this project ships no CLI verb that runs it on its
+own. Inventing one purely to make an example look uniform would be adding
+product surface to serve a demo. What follows from that is stated rather than
+glossed: 08 has no ledger, no session id and no chain, because no session runs.
+Requirement 3.2 asks every example directory for a verify-ledger-clean ledger,
+and 08 deviates from it deliberately: manufacturing a session around a
+component call would mean ledgering governance events that never happened,
+which is a worse failure than an example that does not fit the shape.
 
 **What is and is not reproducible, measured rather than assumed.** Running this
 twice does not produce byte-identical output, and pretending otherwise would be
@@ -33,6 +44,7 @@ the kind of claim this project keeps narrowing:
 rather than byte-identity of files that honestly cannot have it.
 """
 
+import csv
 import json
 import shutil
 import subprocess
@@ -49,6 +61,11 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 from ts_sentry.agents.prompt_eval.prompts import CLASSIFY_SYSTEM_TEXT  # noqa: E402
 from ts_sentry.cli.main import main  # noqa: E402
 from ts_sentry.data.tz import IST  # noqa: E402
+from ts_sentry.orchestrator.firewall import (  # noqa: E402
+    CaseRecord,
+    FirewallError,
+    apply_firewall,
+)
 from ts_sentry.prompt_registry.registry import PromptTask, content_digest  # noqa: E402
 from ts_sentry.prompt_registry.store import load_registry, write_registry  # noqa: E402
 
@@ -129,6 +146,30 @@ def build_degraded_registry(destination: Path) -> str:
 # --------------------------------------------------------------------------
 
 
+# The one file in an example directory that this script does not produce.
+# NOTES.md is hand-written analysis and it lives inside a directory the
+# regeneration wipes, so it is carried across explicitly. Found by running the
+# script: the first full regeneration deleted all seven of them.
+HAND_WRITTEN = "NOTES.md"
+
+
+def reset(out: Path) -> str | None:
+    """Empty an example directory, preserving the hand-written notes."""
+    notes = None
+    if out.exists():
+        notes_path = out / HAND_WRITTEN
+        if notes_path.is_file():
+            notes = notes_path.read_text(encoding="utf-8")
+        shutil.rmtree(out)
+    return notes
+
+
+def restore(out: Path, notes: str | None) -> None:
+    if notes is not None:
+        out.mkdir(parents=True, exist_ok=True)
+        (out / HAND_WRITTEN).write_text(notes, encoding="utf-8", newline="\n")
+
+
 def run(name: str, argv: list[str], *, expect: int) -> Path:
     """Run one CLI invocation into ``examples/name`` and check its exit code.
 
@@ -137,8 +178,7 @@ def run(name: str, argv: list[str], *, expect: int) -> Path:
     would otherwise still look like it worked.
     """
     out = EXAMPLES / name
-    if out.exists():
-        shutil.rmtree(out)
+    notes = reset(out)
     out.mkdir(parents=True)
 
     print(f"\n=== {name}: ts-sentry {' '.join(argv)}")
@@ -148,27 +188,184 @@ def run(name: str, argv: list[str], *, expect: int) -> Path:
 
     for unwanted in UNCOMMITTED:
         (out / unwanted).unlink(missing_ok=True)
+    restore(out, notes)
     return out
 
 
-def write_inputs(out: Path, *, command: str, inputs: dict[str, object]) -> None:
+def write_inputs(
+    out: Path,
+    *,
+    command: str,
+    inputs: dict[str, object],
+    from_dataset: bool = True,
+) -> None:
     """The 3.2 inputs manifest: what produced this directory.
 
     Deliberately hand-assembled rather than scraped from ``sys.argv``, so it
     records the *documented* command a reader would type rather than whatever
     this script happened to construct.
+
+    ``from_dataset`` exists because example 08 opens no dataset and binds no
+    analyst. Writing the seed, the scale and an analyst id into its manifest
+    anyway would put two false statements into a **provenance** file, which is
+    the one kind of file that must never say something that did not happen. The
+    fields are omitted rather than nulled, for the reason ``SESSION_OPEN``
+    omits the corpus fields it never loaded.
     """
+    manifest: dict[str, object] = {"command": command}
+    if from_dataset:
+        manifest["dataset"] = {
+            "seed": SEED,
+            "scale": SCALE,
+            "built_by": "ts-sentry build-dataset",
+        }
+        manifest["analyst_id"] = ANALYST
+    manifest["regenerated_by"] = "python examples/regenerate.py"
+    manifest.update(inputs)
+
     (out / "inputs.json").write_text(
+        json.dumps(manifest, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
+def run_firewall_over_real_comments(out: Path) -> None:
+    """Example 08: the input firewall over 1,956 real YouTube comments.
+
+    The only third-party data in this repository, and the only example that
+    calls a library function rather than a CLI verb. See the module docstring
+    for why, and `examples/data/youtube-spam-collection/ATTRIBUTION.md` for the
+    licence and the citation.
+
+    The point of this example is narrow and worth exactly its own width: every
+    byte the firewall had previously been shown was written either by this
+    project's own generator or by its own adversarial fixtures. Text written by
+    strangers, in 2013, for reasons entirely unrelated to this system, is a
+    different kind of input.
+    """
+    rows: list[dict[str, str]] = []
+    for csv_path in sorted((EXAMPLES / "data" / "youtube-spam-collection").glob("Youtube*.csv")):
+        with csv_path.open(encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle):
+                row["_file"] = csv_path.name
+                rows.append(row)
+
+    def as_record(row: dict[str, str]) -> CaseRecord:
+        return CaseRecord(
+            record_id=row["COMMENT_ID"],
+            source=f"youtube-spam-collection/{row['_file']}#CONTENT",
+            text=row["CONTENT"],
+        )
+
+    # The first thing real data did was get refused, and that is the finding
+    # this example leads with rather than works around. `InertBlock.wrap`
+    # requires record ids to be unique, because "a citation that resolves to
+    # two records is not a citation", and this published corpus carries
+    # duplicate COMMENT_IDs. The synthetic generator never produced one.
+    #
+    # Asserted rather than narrated: if a future version of the corpus fixes
+    # the duplicates, this raises and the NOTES file has to be rewritten
+    # instead of quietly outliving its own truth.
+    try:
+        apply_firewall(tuple(as_record(row) for row in rows))
+    except FirewallError as refusal:
+        raw_refusal = str(refusal)
+    else:  # pragma: no cover - only reachable if the corpus itself changes
+        raise SystemExit(
+            "the raw corpus no longer contains duplicate record ids; "
+            "08-firewall-real-comments/NOTES.md leads with that finding and now needs rewriting"
+        )
+
+    by_id: dict[str, list[dict[str, str]]] = {}
+    for row in rows:
+        by_id.setdefault(row["COMMENT_ID"], []).append(row)
+    duplicated = {rid: group for rid, group in by_id.items() if len(group) > 1}
+
+    # Dropping a duplicate is only lossless if the rows are actually identical.
+    # If two rows ever share an id and differ in content, dropping one destroys
+    # data, and this example would be quietly choosing which comment to believe.
+    for rid, group in duplicated.items():
+        distinct = {(r["AUTHOR"], r["CONTENT"], r["CLASS"]) for r in group}
+        if len(distinct) > 1:
+            raise SystemExit(
+                f"record id {rid} covers rows that differ in content; de-duplicating "
+                "would discard data, so this example refuses rather than choosing one"
+            )
+
+    deduplicated = [group[0] for group in by_id.values()]
+    records = tuple(as_record(row) for row in deduplicated)
+    result = apply_firewall(records)
+
+    # Per-record signals, so the report can say which comments tripped what
+    # rather than only how many did.
+    flagged: dict[str, set[str]] = {}
+    for signal in result.signals:
+        flagged.setdefault(signal.record_id, set()).add(signal.pattern_id.value)
+
+    spam = sum(1 for row in deduplicated if row["CLASS"] == "1")
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "firewall_report.json").write_text(
         json.dumps(
             {
-                "command": command,
-                "dataset": {"seed": SEED, "scale": SCALE, "built_by": "ts-sentry build-dataset"},
-                "analyst_id": ANALYST,
-                "regenerated_by": "python examples/regenerate.py",
-                **inputs,
+                "corpus": {
+                    "name": "UCI YouTube Spam Collection",
+                    "doi": "10.24432/C58885",
+                    "licence": "CC BY 4.0",
+                    "rows_as_published": len(rows),
+                    "distinct_record_ids": len(records),
+                    "labelled_spam": spam,
+                    "labelled_legitimate": len(records) - spam,
+                },
+                "raw_corpus_refused_by_the_firewall": {
+                    "reason": raw_refusal,
+                    "duplicate_ids": sorted(duplicated),
+                    "rows_dropped": len(rows) - len(records),
+                    "lossless": (
+                        "every duplicated id covered byte-identical rows; the example "
+                        "refuses to proceed if they ever differ"
+                    ),
+                },
+                "firewall": {
+                    "pattern_set_version": result.pattern_set_version,
+                    "pattern_set_hash": result.pattern_set_hash,
+                    "block_nonce": result.block.nonce,
+                    "redacted": result.redacted,
+                    "signal_counts": result.signal_counts(),
+                    "records_with_at_least_one_signal": len(flagged),
+                },
+                "flagged_records": [
+                    {"record_id": rid, "patterns": sorted(patterns)}
+                    for rid, patterns in sorted(flagged.items())
+                ],
             },
             indent=2,
         )
+        + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+    # A readable slice of the model-facing block, so the fence and the
+    # content-derived nonce are visible rather than only counted. Chosen
+    # deterministically and in corpus order: any flagged records first, then
+    # records whose text contains a character the encoder has to escape (a
+    # quote, a backslash or a line break), then whatever is next. Preferring
+    # awkward text is the point. A sample of six bland comments would render a
+    # block that proves nothing about the encoding.
+    def rank(record: CaseRecord) -> tuple[int, int]:
+        flagged_rank = 0 if record.record_id in flagged else 1
+        awkward = 0 if set(record.text) & set('"\\\n\r\t') else 1
+        return (flagged_rank, awkward)
+
+    ordered = sorted(enumerate(records), key=lambda pair: (*rank(pair[1]), pair[0]))
+    chosen = tuple(record for _, record in ordered[:6])
+    sample = apply_firewall(chosen)
+    (out / "sample_block.txt").write_text(
+        "# The model-facing block for six of the 1,956 comments.\n"
+        "# Everything below the fence is inert data. The fence token is a digest\n"
+        "# of the content it fences, so closing it early is a preimage problem.\n\n"
+        + sample.model_text
         + "\n",
         encoding="utf-8",
         newline="\n",
@@ -345,8 +542,7 @@ def main_regenerate() -> int:
         # right.
         registry_dir = EXAMPLES / "registries" / "degraded-classify"
         out = EXAMPLES / "06-prompt-eval-refused"
-        if out.exists():
-            shutil.rmtree(out)
+        notes = reset(out)
         candidate = build_degraded_registry(registry_dir)
         print(f"\n=== 06-prompt-eval-refused: candidate {candidate[:16]}")
         code = main(
@@ -363,6 +559,7 @@ def main_regenerate() -> int:
             raise SystemExit(f"06-prompt-eval-refused: expected exit 7, got {code}")
         for unwanted in UNCOMMITTED:
             (out / unwanted).unlink(missing_ok=True)
+        restore(out, notes)
         write_inputs(
             out,
             command=(
@@ -382,8 +579,7 @@ def main_regenerate() -> int:
 
         # 07: the measurement report over 01's session
         out = EXAMPLES / "07-measurement-report"
-        if out.exists():
-            shutil.rmtree(out)
+        notes = reset(out)
         out.mkdir(parents=True)
         print("\n=== 07-measurement-report: ts-sentry report")
         code = main(
@@ -396,6 +592,7 @@ def main_regenerate() -> int:
         )
         if code:
             raise SystemExit(f"07-measurement-report: report failed with exit {code}")
+        restore(out, notes)
         write_inputs(
             out,
             command=(
@@ -403,6 +600,25 @@ def main_regenerate() -> int:
             ),
             inputs={"session": "../01-triage-queue", "sample_size": 9000, "cases": 1},
         )
+
+    # 08: the input firewall over real third-party comment text. Outside the
+    # `with` block above because it needs no dataset: it reads committed CSVs.
+    print("\n=== 08-firewall-real-comments: apply_firewall over 1,956 real comments")
+    firewall_out = EXAMPLES / "08-firewall-real-comments"
+    firewall_notes = reset(firewall_out)
+    run_firewall_over_real_comments(firewall_out)
+    restore(firewall_out, firewall_notes)
+    write_inputs(
+        firewall_out,
+        command="python examples/regenerate.py  (library call, not a CLI verb: see NOTES.md)",
+        inputs={
+            "corpus": "../data/youtube-spam-collection",
+            "corpus_doi": "10.24432/C58885",
+            "corpus_licence": "CC BY 4.0",
+            "rows_as_published": 1956,
+        },
+        from_dataset=False,
+    )
 
     print(f"\nregenerated at {git_describe()}")
     return 0

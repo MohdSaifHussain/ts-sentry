@@ -1,0 +1,8 @@
+{
+  "command": "python examples/regenerate.py  (library call, not a CLI verb: see NOTES.md)",
+  "regenerated_by": "python examples/regenerate.py",
+  "corpus": "../data/youtube-spam-collection",
+  "corpus_doi": "10.24432/C58885",
+  "corpus_licence": "CC BY 4.0",
+  "rows_as_published": 1956
+}

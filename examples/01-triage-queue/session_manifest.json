@@ -2,8 +2,8 @@
   "manifest_version": "1.0.0",
   "session_id": "session-2d3ca01015f8",
   "analyst_id": "saif",
-  "opened_ts_ist": "2026-08-01T21:07:43.246881+05:30",
-  "closed_ts_ist": "2026-08-01T21:07:43.309790+05:30",
+  "opened_ts_ist": "2026-08-01T21:44:56.894376+05:30",
+  "closed_ts_ist": "2026-08-01T21:44:56.957281+05:30",
   "close_reason": "completed",
   "dataset_digest": "060c60d71ac4acf67046f49e7fb581160937355ce1f88c3a2b3d118f48860e1d",
   "mandate_set_hash": "e575f98f184a43d2cfa3d449d656430731c65044ee9413537b4502879b2bc10b",
@@ -12,7 +12,7 @@
   },
   "expected_head": {
     "count": 8,
-    "entry_hash": "a89149464f560c0a43f8dbe90736ab73ebce3d1a699d7d010ec4382bbec99084"
+    "entry_hash": "ad8b0f467e93191e5a2054ffeffa5f001c3b2fd0a51282e829b512d4f0eade54"
   },
   "event_counts": {
     "output_proposed": 1,
@@ -31,12 +31,12 @@
       "steps_taken": 1
     }
   },
-  "git_sha": "63565420eb8c48f0c106465e123ac7d10c2b00a9",
+  "git_sha": "1844024cc35033573fcfefedbd3d20019ca2eb78",
   "artifacts": [
     {
       "name": "ledger_jsonl",
       "path": "ledger.jsonl",
-      "sha256": "2f4c44bec812c030a634635120bdc67aac5fe64d3d622fd79cab6e1ed3350903"
+      "sha256": "60cce4e1334011465b2119b44c7611373f8d1ff2add37090e9b534949e152b40"
     },
     {
       "name": "ranked_queue",
@@ -46,7 +46,7 @@
     {
       "name": "session_events",
       "path": "session_events.json",
-      "sha256": "27bb47de53f03823db16f953a017269e5da6c6b831c16476cd6e0bd6df0218eb"
+      "sha256": "4caafd649ac8ae03b1846621db9bdf34af0c60565748862d843473fde9e728f8"
     }
   ],
   "model_mode": "stub",

@@ -548,7 +548,7 @@
             "case_id": "case-0001",
             "subject_id": "t07_chan_000"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:43.908282+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.551056+05:30",
           "row_count": 1
         },
         {
@@ -564,7 +564,7 @@
             "limit": 25,
             "min_comments": 1
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:43.912868+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.555901+05:30",
           "row_count": 3
         },
         {
@@ -581,7 +581,7 @@
             "limit": 25,
             "min_events": 1
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:43.926836+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.570908+05:30",
           "row_count": 2
         },
         {
@@ -597,7 +597,7 @@
             "signal_type": "any",
             "subject_id": "t07_chan_000"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:43.943310+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.587891+05:30",
           "row_count": 0
         },
         {
@@ -613,7 +613,7 @@
             "signal_type": "any",
             "subject_id": "t07_acct_001"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:43.954225+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.599643+05:30",
           "row_count": 2
         },
         {
@@ -629,7 +629,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:43.969265+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.614052+05:30",
           "row_count": 2
         },
         {
@@ -645,7 +645,7 @@
             "signal_type": "any",
             "subject_id": "t07_acct_002"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:43.980813+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.625132+05:30",
           "row_count": 2
         },
         {
@@ -661,7 +661,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:43.995241+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.639589+05:30",
           "row_count": 2
         },
         {
@@ -677,7 +677,7 @@
             "signal_type": "any",
             "subject_id": "t07_acct_000"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.006621+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.650725+05:30",
           "row_count": 2
         },
         {
@@ -693,7 +693,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.020433+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.665984+05:30",
           "row_count": 2
         },
         {
@@ -709,7 +709,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.031464+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.676771+05:30",
           "row_count": 2
         },
         {
@@ -725,7 +725,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.042378+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.687385+05:30",
           "row_count": 2
         },
         {
@@ -741,7 +741,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.053592+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.698782+05:30",
           "row_count": 2
         },
         {
@@ -757,7 +757,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.065176+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.709417+05:30",
           "row_count": 2
         },
         {
@@ -773,7 +773,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.075961+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.721222+05:30",
           "row_count": 2
         },
         {
@@ -789,7 +789,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.088062+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.732466+05:30",
           "row_count": 2
         },
         {
@@ -805,7 +805,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.099726+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.744033+05:30",
           "row_count": 2
         },
         {
@@ -821,7 +821,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.110898+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.755377+05:30",
           "row_count": 2
         },
         {
@@ -837,7 +837,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.121363+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.766228+05:30",
           "row_count": 2
         },
         {
@@ -853,7 +853,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.132720+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.777898+05:30",
           "row_count": 2
         },
         {
@@ -869,7 +869,7 @@
             "limit": 25,
             "metadata_field": "any"
           },
-          "retrieval_ts_ist": "2026-08-01T21:07:44.144335+05:30",
+          "retrieval_ts_ist": "2026-08-01T21:44:57.788813+05:30",
           "row_count": 2
         }
       ]
@@ -879,7 +879,7 @@
     {
       "seq": 0,
       "event_type": "session_open",
-      "timestamp_ist": "2026-08-01T21:07:43.906391+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.548734+05:30",
       "payload": {
         "session_id": "session-24e7d646fcac",
         "analyst_id": "saif",
@@ -898,7 +898,7 @@
     {
       "seq": 1,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:43.908448+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.551226+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -921,7 +921,7 @@
     {
       "seq": 2,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.909982+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.552846+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "account_link",
@@ -944,7 +944,7 @@
     {
       "seq": 3,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:43.911465+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.554337+05:30",
       "payload": {
         "hop_index": 1,
         "case_id": "case-0001",
@@ -967,7 +967,7 @@
     {
       "seq": 4,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:43.912912+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.555964+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -990,7 +990,7 @@
     {
       "seq": 5,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:43.917949+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.561607+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -1000,7 +1000,7 @@
     {
       "seq": 6,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.919825+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.564108+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -1010,7 +1010,7 @@
     {
       "seq": 7,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:43.921756+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.565884+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -1033,7 +1033,7 @@
     {
       "seq": 8,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.923822+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.567650+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "engagement_edge",
@@ -1057,7 +1057,7 @@
     {
       "seq": 9,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:43.925441+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.569293+05:30",
       "payload": {
         "hop_index": 2,
         "case_id": "case-0001",
@@ -1081,7 +1081,7 @@
     {
       "seq": 10,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:43.926880+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.570950+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -1105,7 +1105,7 @@
     {
       "seq": 11,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:43.934639+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.579231+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -1115,7 +1115,7 @@
     {
       "seq": 12,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.936756+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.581574+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -1125,7 +1125,7 @@
     {
       "seq": 13,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:43.938671+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.583387+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -1148,7 +1148,7 @@
     {
       "seq": 14,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.940202+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.584849+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "infra_overlap",
@@ -1171,7 +1171,7 @@
     {
       "seq": 15,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:43.941720+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.586413+05:30",
       "payload": {
         "hop_index": 3,
         "case_id": "case-0001",
@@ -1194,7 +1194,7 @@
     {
       "seq": 16,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:43.943352+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.587933+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -1217,7 +1217,7 @@
     {
       "seq": 17,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:43.946109+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.590942+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -1227,7 +1227,7 @@
     {
       "seq": 18,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.948218+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.593221+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -1237,7 +1237,7 @@
     {
       "seq": 19,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:43.949877+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.594880+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -1260,7 +1260,7 @@
     {
       "seq": 20,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.951395+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.596450+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "infra_overlap",
@@ -1283,7 +1283,7 @@
     {
       "seq": 21,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:43.952861+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.597966+05:30",
       "payload": {
         "hop_index": 4,
         "case_id": "case-0001",
@@ -1306,7 +1306,7 @@
     {
       "seq": 22,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:43.954263+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.599684+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -1329,7 +1329,7 @@
     {
       "seq": 23,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:43.960047+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.605587+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -1339,7 +1339,7 @@
     {
       "seq": 24,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.962169+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.607882+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -1349,7 +1349,7 @@
     {
       "seq": 25,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:43.964075+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.609664+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -1372,7 +1372,7 @@
     {
       "seq": 26,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.965595+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.611261+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -1395,7 +1395,7 @@
     {
       "seq": 27,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:43.967377+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.612719+05:30",
       "payload": {
         "hop_index": 5,
         "case_id": "case-0001",
@@ -1418,7 +1418,7 @@
     {
       "seq": 28,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:43.969330+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.614103+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -1441,7 +1441,7 @@
     {
       "seq": 29,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:43.972520+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.616763+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -1451,7 +1451,7 @@
     {
       "seq": 30,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.974414+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.618618+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -1461,7 +1461,7 @@
     {
       "seq": 31,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:43.976352+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.620387+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -1484,7 +1484,7 @@
     {
       "seq": 32,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.977972+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.622225+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "infra_overlap",
@@ -1507,7 +1507,7 @@
     {
       "seq": 33,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:43.979388+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.623718+05:30",
       "payload": {
         "hop_index": 6,
         "case_id": "case-0001",
@@ -1530,7 +1530,7 @@
     {
       "seq": 34,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:43.980856+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.625171+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -1553,7 +1553,7 @@
     {
       "seq": 35,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:43.986871+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.630652+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -1563,7 +1563,7 @@
     {
       "seq": 36,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.988917+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.632979+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -1573,7 +1573,7 @@
     {
       "seq": 37,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:43.990767+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.634926+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -1596,7 +1596,7 @@
     {
       "seq": 38,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.992346+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.636336+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -1619,7 +1619,7 @@
     {
       "seq": 39,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:43.993863+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.638105+05:30",
       "payload": {
         "hop_index": 7,
         "case_id": "case-0001",
@@ -1642,7 +1642,7 @@
     {
       "seq": 40,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:43.995281+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.639636+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -1665,7 +1665,7 @@
     {
       "seq": 41,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:43.998135+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.642372+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -1675,7 +1675,7 @@
     {
       "seq": 42,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.000267+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.644364+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -1685,7 +1685,7 @@
     {
       "seq": 43,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.002261+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.646224+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -1708,7 +1708,7 @@
     {
       "seq": 44,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.003920+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.647802+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "infra_overlap",
@@ -1731,7 +1731,7 @@
     {
       "seq": 45,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.005333+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.649233+05:30",
       "payload": {
         "hop_index": 8,
         "case_id": "case-0001",
@@ -1754,7 +1754,7 @@
     {
       "seq": 46,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.006664+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.650773+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -1777,7 +1777,7 @@
     {
       "seq": 47,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.011786+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.657072+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -1787,7 +1787,7 @@
     {
       "seq": 48,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.013795+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.659437+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -1797,7 +1797,7 @@
     {
       "seq": 49,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.015949+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.661442+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -1820,7 +1820,7 @@
     {
       "seq": 50,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.017611+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.663041+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -1843,7 +1843,7 @@
     {
       "seq": 51,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.019057+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.664613+05:30",
       "payload": {
         "hop_index": 9,
         "case_id": "case-0001",
@@ -1866,7 +1866,7 @@
     {
       "seq": 52,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.020477+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.666031+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -1889,7 +1889,7 @@
     {
       "seq": 53,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.023082+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.668695+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -1899,7 +1899,7 @@
     {
       "seq": 54,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.025095+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.670189+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -1909,7 +1909,7 @@
     {
       "seq": 55,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.027152+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.672070+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -1932,7 +1932,7 @@
     {
       "seq": 56,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.028696+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.673577+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -1955,7 +1955,7 @@
     {
       "seq": 57,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.030086+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.674982+05:30",
       "payload": {
         "hop_index": 10,
         "case_id": "case-0001",
@@ -1978,7 +1978,7 @@
     {
       "seq": 58,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.031506+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.676811+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -2001,7 +2001,7 @@
     {
       "seq": 59,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.034236+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.679388+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -2011,7 +2011,7 @@
     {
       "seq": 60,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.036265+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.680867+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -2021,7 +2021,7 @@
     {
       "seq": 61,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.038125+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.682662+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -2044,7 +2044,7 @@
     {
       "seq": 62,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.039643+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.684069+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -2067,7 +2067,7 @@
     {
       "seq": 63,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.041006+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.685723+05:30",
       "payload": {
         "hop_index": 11,
         "case_id": "case-0001",
@@ -2090,7 +2090,7 @@
     {
       "seq": 64,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.042416+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.687432+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -2113,7 +2113,7 @@
     {
       "seq": 65,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.045075+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.690343+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -2123,7 +2123,7 @@
     {
       "seq": 66,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.047230+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.692297+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -2133,7 +2133,7 @@
     {
       "seq": 67,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.049174+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.694226+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -2156,7 +2156,7 @@
     {
       "seq": 68,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.050775+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.695861+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -2179,7 +2179,7 @@
     {
       "seq": 69,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.052253+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.697412+05:30",
       "payload": {
         "hop_index": 12,
         "case_id": "case-0001",
@@ -2202,7 +2202,7 @@
     {
       "seq": 70,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.053632+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.698821+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -2225,7 +2225,7 @@
     {
       "seq": 71,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.056562+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.701493+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -2235,7 +2235,7 @@
     {
       "seq": 72,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.058644+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.702988+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -2245,7 +2245,7 @@
     {
       "seq": 73,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.060714+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.704859+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -2268,7 +2268,7 @@
     {
       "seq": 74,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.062319+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.706590+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -2291,7 +2291,7 @@
     {
       "seq": 75,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.063712+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.708121+05:30",
       "payload": {
         "hop_index": 13,
         "case_id": "case-0001",
@@ -2314,7 +2314,7 @@
     {
       "seq": 76,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.065215+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.709456+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -2337,7 +2337,7 @@
     {
       "seq": 77,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.067662+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.712143+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -2347,7 +2347,7 @@
     {
       "seq": 78,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.069623+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.714337+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -2357,7 +2357,7 @@
     {
       "seq": 79,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.071480+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.716666+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -2380,7 +2380,7 @@
     {
       "seq": 80,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.073014+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.718266+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -2403,7 +2403,7 @@
     {
       "seq": 81,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.074423+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.719688+05:30",
       "payload": {
         "hop_index": 14,
         "case_id": "case-0001",
@@ -2426,7 +2426,7 @@
     {
       "seq": 82,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.076010+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.721262+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -2449,7 +2449,7 @@
     {
       "seq": 83,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.079526+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.723671+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -2459,7 +2459,7 @@
     {
       "seq": 84,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.081480+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.725707+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -2469,7 +2469,7 @@
     {
       "seq": 85,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.083490+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.727719+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -2492,7 +2492,7 @@
     {
       "seq": 86,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.085095+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.729373+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -2515,7 +2515,7 @@
     {
       "seq": 87,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.086520+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.730986+05:30",
       "payload": {
         "hop_index": 15,
         "case_id": "case-0001",
@@ -2538,7 +2538,7 @@
     {
       "seq": 88,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.088107+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.732516+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -2561,7 +2561,7 @@
     {
       "seq": 89,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.090725+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.735580+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -2571,7 +2571,7 @@
     {
       "seq": 90,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.092770+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.737524+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -2581,7 +2581,7 @@
     {
       "seq": 91,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.094940+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.739567+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -2604,7 +2604,7 @@
     {
       "seq": 92,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.096737+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.741257+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -2627,7 +2627,7 @@
     {
       "seq": 93,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.098200+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.742590+05:30",
       "payload": {
         "hop_index": 16,
         "case_id": "case-0001",
@@ -2650,7 +2650,7 @@
     {
       "seq": 94,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.099768+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.744075+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -2673,7 +2673,7 @@
     {
       "seq": 95,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.102474+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.746859+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -2683,7 +2683,7 @@
     {
       "seq": 96,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.104597+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.748913+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -2693,7 +2693,7 @@
     {
       "seq": 97,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.106532+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.750850+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -2716,7 +2716,7 @@
     {
       "seq": 98,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.108034+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.752580+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -2739,7 +2739,7 @@
     {
       "seq": 99,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.109467+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.754013+05:30",
       "payload": {
         "hop_index": 17,
         "case_id": "case-0001",
@@ -2762,7 +2762,7 @@
     {
       "seq": 100,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.110938+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.755418+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -2785,7 +2785,7 @@
     {
       "seq": 101,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.113448+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.758054+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -2795,7 +2795,7 @@
     {
       "seq": 102,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.115366+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.759420+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -2805,7 +2805,7 @@
     {
       "seq": 103,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.117204+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.761315+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -2828,7 +2828,7 @@
     {
       "seq": 104,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.118684+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.762996+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -2851,7 +2851,7 @@
     {
       "seq": 105,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.120024+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.764730+05:30",
       "payload": {
         "hop_index": 18,
         "case_id": "case-0001",
@@ -2874,7 +2874,7 @@
     {
       "seq": 106,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.121407+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.766267+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -2897,7 +2897,7 @@
     {
       "seq": 107,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.124234+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.769097+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -2907,7 +2907,7 @@
     {
       "seq": 108,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.126262+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.771125+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -2917,7 +2917,7 @@
     {
       "seq": 109,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.128320+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.773075+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -2940,7 +2940,7 @@
     {
       "seq": 110,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.129810+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.774869+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -2963,7 +2963,7 @@
     {
       "seq": 111,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.131243+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.776259+05:30",
       "payload": {
         "hop_index": 19,
         "case_id": "case-0001",
@@ -2986,7 +2986,7 @@
     {
       "seq": 112,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.132761+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.777939+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -3009,7 +3009,7 @@
     {
       "seq": 113,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.135350+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.780457+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -3019,7 +3019,7 @@
     {
       "seq": 114,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.137463+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.782465+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -3029,7 +3029,7 @@
     {
       "seq": 115,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.139394+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.784319+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -3052,7 +3052,7 @@
     {
       "seq": 116,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.141091+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.785856+05:30",
       "payload": {
         "accepted": true,
         "pivot_kind": "shared_metadata",
@@ -3075,7 +3075,7 @@
     {
       "seq": 117,
       "event_type": "human_decision",
-      "timestamp_ist": "2026-08-01T21:07:44.142942+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.787362+05:30",
       "payload": {
         "hop_index": 20,
         "case_id": "case-0001",
@@ -3098,7 +3098,7 @@
     {
       "seq": 118,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.144372+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.788852+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "consequence": "assemble",
@@ -3121,7 +3121,7 @@
     {
       "seq": 119,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.146930+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.791348+05:30",
       "payload": {
         "tool_id": "run_parameterized_pivot",
         "ok": true,
@@ -3131,7 +3131,7 @@
     {
       "seq": 120,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:44.148842+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.793372+05:30",
       "payload": {
         "consequence": "assemble",
         "failures": [],
@@ -3141,7 +3141,7 @@
     {
       "seq": 121,
       "event_type": "session_close",
-      "timestamp_ist": "2026-08-01T21:07:44.150325+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.794874+05:30",
       "payload": {
         "session_id": "session-24e7d646fcac",
         "analyst_id": "saif",

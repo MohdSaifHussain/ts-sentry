@@ -1,0 +1,12 @@
+# The model-facing block for six of the 1,956 comments.
+# Everything below the fence is inert data. The fence token is a digest
+# of the content it fences, so closing it early is a preimage problem.
+
+-----BEGIN TS-SENTRY CASE DATA 218448f922fbd4421a4bc4e1b5736dde-----
+{"record_id": "z121e3zq5kj3ip2ch22ks3vwekuaibrgc04", "source": "youtube-spam-collection/Youtube01-Psy.csv#CONTENT", "text": "Check out my dubstep song \"Fireball\", made with Fruity Loops. I really took  time in it.  /watch?v=telOA6RIO8o﻿"}
+{"record_id": "z13zz3cjwmztcni0p23ug3vb0pasfvzqc04", "source": "youtube-spam-collection/Youtube01-Psy.csv#CONTENT", "text": "OMG this oldspice spraytan party commercial omg....i'm sitting here \"NO  this isn't a real thing is it? OMG\" ﻿"}
+{"record_id": "z122f10gdvathpo2222pshcxxpjliddjv04", "source": "youtube-spam-collection/Youtube01-Psy.csv#CONTENT", "text": "check out \"starlitnightsky\" channel to see epic videos﻿"}
+{"record_id": "z13mtrjqsqzliho5w04cex3zmoqfvnpgyys0k", "source": "youtube-spam-collection/Youtube01-Psy.csv#CONTENT", "text": "Search \"Chubbz Dinero - Ready Or Not \" Thanks ﻿"}
+{"record_id": "z13rdtkxmnfsdptlc22qwryhlsrfslcht04", "source": "youtube-spam-collection/Youtube01-Psy.csv#CONTENT", "text": "Is this the video that started the whole \"got my dick stuck in an elevator\"  excuse thing? ﻿"}
+{"record_id": "z124inzqgoyeh33uw23iibficv2kuf2nx", "source": "youtube-spam-collection/Youtube01-Psy.csv#CONTENT", "text": "People Who Say That \"This Song Is Too Old Now, There's No Point Of  Listening To It\" Suck. Just Stfu And Enjoy The Music. So, Your Mom Is Old  Too But You Still Listen To Her Right?....﻿"}
+-----END TS-SENTRY CASE DATA 218448f922fbd4421a4bc4e1b5736dde-----

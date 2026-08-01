@@ -4,7 +4,7 @@
     {
       "seq": 0,
       "event_type": "session_open",
-      "timestamp_ist": "2026-08-01T21:07:43.246881+05:30",
+      "timestamp_ist": "2026-08-01T21:44:56.894376+05:30",
       "payload": {
         "session_id": "session-2d3ca01015f8",
         "analyst_id": "saif",
@@ -23,7 +23,7 @@
     {
       "seq": 1,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:43.248996+05:30",
+      "timestamp_ist": "2026-08-01T21:44:56.896470+05:30",
       "payload": {
         "tool_id": "rank_triage_queue",
         "consequence": "observe",
@@ -41,7 +41,7 @@
     {
       "seq": 2,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:43.272757+05:30",
+      "timestamp_ist": "2026-08-01T21:44:56.919775+05:30",
       "payload": {
         "tool_id": "rank_triage_queue",
         "ok": true,
@@ -51,7 +51,7 @@
     {
       "seq": 3,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.275318+05:30",
+      "timestamp_ist": "2026-08-01T21:44:56.922020+05:30",
       "payload": {
         "consequence": "observe",
         "failures": [],
@@ -61,7 +61,7 @@
     {
       "seq": 4,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:43.304216+05:30",
+      "timestamp_ist": "2026-08-01T21:44:56.951685+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -84,7 +84,7 @@
     {
       "seq": 5,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.306800+05:30",
+      "timestamp_ist": "2026-08-01T21:44:56.954122+05:30",
       "payload": {
         "rationales": 23,
         "accepted": 23,
@@ -95,7 +95,7 @@
     {
       "seq": 6,
       "event_type": "output_proposed",
-      "timestamp_ist": "2026-08-01T21:07:43.308447+05:30",
+      "timestamp_ist": "2026-08-01T21:44:56.955702+05:30",
       "payload": {
         "rows": 23,
         "rationales": 23,
@@ -106,7 +106,7 @@
     {
       "seq": 7,
       "event_type": "session_close",
-      "timestamp_ist": "2026-08-01T21:07:43.309790+05:30",
+      "timestamp_ist": "2026-08-01T21:44:56.957281+05:30",
       "payload": {
         "session_id": "session-2d3ca01015f8",
         "analyst_id": "saif",

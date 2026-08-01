@@ -4,15 +4,15 @@
 
 - Signed by: `saif`
 - Decision: `approve_enforcement`
-- Signed at: 2026-08-01T21:07:43.874516+05:30
-- Signature: `826a0f451930a785708d7b4013be4741a6fc70565777400eae4d1b0e84bc3494`
-- Over memo digest: `b479fd613a8541dc9f07be7b8a7ea226e1dedf1f6a0ee2e5397fdb35d1b03f3d`
+- Signed at: 2026-08-01T21:44:57.515645+05:30
+- Signature: `8e6bad8df4cbe724b5633fbb3aff7f18da9ebf28a09bc434cab4cbb86c81f938`
+- Over memo digest: `2cd7bff70031187dd2c98c09502931bf6cda7dbb086051694b2a6d5d4bba069c`
 
 ## Subject
 
 - Case: `case-0000`
 - Subject: `t02_chan_000_000`
-- Evidence pack digest: `9dfc0932469d64fd3838a662335470d268ee38e6691e67d4792ffa79c8adde97`
+- Evidence pack digest: `8074fcb70de93eed560f8d48f7a6cd1dd1e8a8f3f051cc43aa429ea6cd24af37`
 - Policy corpus: `1.0.0` (`9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2`)
 
 ## Use of automated means (DSA Art. 17(3)(c))
@@ -46,6 +46,6 @@
 
 - Signed by: `saif`
 - Decision: `approve_enforcement`
-- Signed at: 2026-08-01T21:07:43.874516+05:30
-- Signature: `826a0f451930a785708d7b4013be4741a6fc70565777400eae4d1b0e84bc3494`
-- Over memo digest: `b479fd613a8541dc9f07be7b8a7ea226e1dedf1f6a0ee2e5397fdb35d1b03f3d`
+- Signed at: 2026-08-01T21:44:57.515645+05:30
+- Signature: `8e6bad8df4cbe724b5633fbb3aff7f18da9ebf28a09bc434cab4cbb86c81f938`
+- Over memo digest: `2cd7bff70031187dd2c98c09502931bf6cda7dbb086051694b2a6d5d4bba069c`

@@ -1,0 +1,30 @@
+{
+  "corpus": {
+    "name": "UCI YouTube Spam Collection",
+    "doi": "10.24432/C58885",
+    "licence": "CC BY 4.0",
+    "rows_as_published": 1956,
+    "distinct_record_ids": 1953,
+    "labelled_spam": 1003,
+    "labelled_legitimate": 950
+  },
+  "raw_corpus_refused_by_the_firewall": {
+    "reason": "duplicate record_id 'LneaDw26bFvPh9xBHNw1btQoyP60ay_WWthtvXCx37s': a citation that resolves to two records is not a citation",
+    "duplicate_ids": [
+      "LneaDw26bFuH6iFsSrjlJLJIX3qD4R8-emuZ-aGUj0o",
+      "LneaDw26bFvPh9xBHNw1btQoyP60ay_WWthtvXCx37s",
+      "_2viQ_Qnc68fX3dYsfYuM-m4ELMJvxOQBmBOFHqGOk0"
+    ],
+    "rows_dropped": 3,
+    "lossless": "every duplicated id covered byte-identical rows; the example refuses to proceed if they ever differ"
+  },
+  "firewall": {
+    "pattern_set_version": "1.0.0",
+    "pattern_set_hash": "3fd538cb6c10700d94283263596a42b99eaf93e49d4ce8fcab320b63513035b9",
+    "block_nonce": "c3ef19b6d90bae5bd88cc7af9992fee3",
+    "redacted": false,
+    "signal_counts": {},
+    "records_with_at_least_one_signal": 0
+  },
+  "flagged_records": []
+}

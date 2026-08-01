@@ -2,7 +2,7 @@
   "session_id": "session-3b6172e035d7",
   "corpus_version": "1.0.0",
   "corpus_sha256": "9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2",
-  "pack_digest": "d40db2ef3e60edb104d1f4282617d260ba9b771523b8cfc8a4b547a8e3dc3d0e",
+  "pack_digest": "6b1ee6fb5bfd60897741b40a4b37ba0a5b8a130ce14788e38b1d05cd3539316b",
   "turn": {
     "verified": false,
     "close_reason": null,
@@ -82,7 +82,7 @@
       "memo_id": "memo-0001",
       "case_id": "case-0001",
       "subject_id": "t07_chan_000",
-      "pack_digest": "d40db2ef3e60edb104d1f4282617d260ba9b771523b8cfc8a4b547a8e3dc3d0e",
+      "pack_digest": "6b1ee6fb5bfd60897741b40a4b37ba0a5b8a130ce14788e38b1d05cd3539316b",
       "corpus_version": "1.0.0",
       "corpus_sha256": "9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2",
       "measure": "content_demoted",

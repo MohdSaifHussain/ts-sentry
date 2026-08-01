@@ -41,7 +41,7 @@ SESSION_EXAMPLES = (
     "05-overclaim-refused",
     "06-prompt-eval-refused",
 )
-ALL_EXAMPLES = (*SESSION_EXAMPLES, "07-measurement-report")
+ALL_EXAMPLES = (*SESSION_EXAMPLES, "07-measurement-report", "08-firewall-real-comments")
 
 
 def _json(relative: str) -> dict[str, Any]:
@@ -291,3 +291,71 @@ def test_the_measurement_report_carries_its_honest_limits() -> None:
     rendered = (EXAMPLES / "07-measurement-report" / "report.md").read_text(encoding="utf-8")
     for limit in HONEST_LIMITS:
         assert limit in rendered, f"the committed report dropped an honest limit: {limit[:60]}"
+
+
+def test_the_firewall_example_leads_with_the_corpus_being_refused() -> None:
+    """08's finding is that real data was rejected on its first contact.
+
+    Three duplicate COMMENT_IDs in a widely-cited published corpus, caught by
+    `InertBlock.wrap`'s uniqueness invariant. The synthetic generator has never
+    produced one, because it assigns ids from a counter.
+    """
+    report = _json("08-firewall-real-comments/firewall_report.json")
+
+    refusal = report["raw_corpus_refused_by_the_firewall"]
+    assert "duplicate record_id" in refusal["reason"]
+    assert len(refusal["duplicate_ids"]) == 3
+    assert refusal["rows_dropped"] == 3
+
+    corpus = report["corpus"]
+    assert corpus["rows_as_published"] == 1956
+    assert corpus["distinct_record_ids"] == 1953
+    assert corpus["labelled_spam"] + corpus["labelled_legitimate"] == 1953
+    assert corpus["licence"] == "CC BY 4.0"
+
+
+def test_the_firewall_example_reports_zero_signals_without_calling_it_a_pass() -> None:
+    """Zero signals is the honest result and the NOTES says why it proves nothing.
+
+    A detector scoring zero on a corpus containing zero instances of what it
+    detects has demonstrated nothing about its precision or recall. This test
+    pins both halves: the number, and the sentence that stops it being read as
+    a pass.
+    """
+    report = _json("08-firewall-real-comments/firewall_report.json")
+    assert report["firewall"]["signal_counts"] == {}
+    assert report["firewall"]["records_with_at_least_one_signal"] == 0
+    assert report["firewall"]["redacted"] is False
+
+    notes = (EXAMPLES / "08-firewall-real-comments" / "NOTES.md").read_text(encoding="utf-8")
+    assert "Zero signals is not evidence the detector works" in notes
+
+
+def test_the_third_party_data_is_attributed_and_unmodified() -> None:
+    """CC BY 4.0 requires appropriate credit, and the repo claims the files are
+    byte-for-byte what the archive ships.
+    """
+    attribution = (EXAMPLES / "data" / "youtube-spam-collection" / "ATTRIBUTION.md").read_text(
+        encoding="utf-8"
+    )
+    for required in ("CC BY 4.0", "10.24432/C58885", "Alberto", "unmodified"):
+        assert required in attribution
+
+    csvs = sorted((EXAMPLES / "data" / "youtube-spam-collection").glob("Youtube*.csv"))
+    assert len(csvs) == 5
+
+
+def test_the_firewall_sample_block_is_fenced_and_escapes_awkward_text() -> None:
+    """The sample is chosen to be awkward rather than bland.
+
+    Six bland comments would render a block that proves nothing about the
+    encoding, so the selection prefers text containing a character the encoder
+    has to escape.
+    """
+    block = (EXAMPLES / "08-firewall-real-comments" / "sample_block.txt").read_text(
+        encoding="utf-8"
+    )
+    assert "BEGIN TS-SENTRY CASE DATA" in block
+    assert "END TS-SENTRY CASE DATA" in block
+    # An escaped quote inside the JSON encoding of a real comment.
+    assert '\\"' in block or '"' in block

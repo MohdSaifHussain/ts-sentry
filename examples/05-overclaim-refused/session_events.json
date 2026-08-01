@@ -5,7 +5,7 @@
     {
       "seq": 0,
       "event_type": "session_open",
-      "timestamp_ist": "2026-08-01T21:07:44.250194+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.896205+05:30",
       "payload": {
         "session_id": "session-3b6172e035d7",
         "analyst_id": "saif",
@@ -26,7 +26,7 @@
     {
       "seq": 1,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.252334+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.898723+05:30",
       "payload": {
         "adapter_id": "stub/overclaim",
         "model_id": "deterministic-stub-v1",
@@ -49,7 +49,7 @@
     {
       "seq": 2,
       "event_type": "output_proposed",
-      "timestamp_ist": "2026-08-01T21:07:44.254368+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.900510+05:30",
       "payload": {
         "accepted": true,
         "refusal_code": null,
@@ -60,7 +60,7 @@
     {
       "seq": 3,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.255844+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.902046+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "consequence": "recommend",
@@ -76,7 +76,7 @@
     {
       "seq": 4,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.257367+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.903644+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "ok": true,
@@ -86,7 +86,7 @@
     {
       "seq": 5,
       "event_type": "verification_fail",
-      "timestamp_ist": "2026-08-01T21:07:44.258744+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.905084+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -101,7 +101,7 @@
     {
       "seq": 6,
       "event_type": "gate_rejection",
-      "timestamp_ist": "2026-08-01T21:07:44.258744+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.905084+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -116,7 +116,7 @@
     {
       "seq": 7,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.262075+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.908469+05:30",
       "payload": {
         "adapter_id": "stub/overclaim",
         "model_id": "deterministic-stub-v1",
@@ -139,7 +139,7 @@
     {
       "seq": 8,
       "event_type": "output_proposed",
-      "timestamp_ist": "2026-08-01T21:07:44.263809+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.910232+05:30",
       "payload": {
         "accepted": true,
         "refusal_code": null,
@@ -150,7 +150,7 @@
     {
       "seq": 9,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.265250+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.911539+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "consequence": "recommend",
@@ -166,7 +166,7 @@
     {
       "seq": 10,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.266947+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.912986+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "ok": true,
@@ -176,7 +176,7 @@
     {
       "seq": 11,
       "event_type": "verification_fail",
-      "timestamp_ist": "2026-08-01T21:07:44.268552+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.914307+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -191,7 +191,7 @@
     {
       "seq": 12,
       "event_type": "gate_rejection",
-      "timestamp_ist": "2026-08-01T21:07:44.268552+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.914307+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -206,7 +206,7 @@
     {
       "seq": 13,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.271949+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.917483+05:30",
       "payload": {
         "adapter_id": "stub/overclaim",
         "model_id": "deterministic-stub-v1",
@@ -229,7 +229,7 @@
     {
       "seq": 14,
       "event_type": "output_proposed",
-      "timestamp_ist": "2026-08-01T21:07:44.273715+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.919433+05:30",
       "payload": {
         "accepted": true,
         "refusal_code": null,
@@ -240,7 +240,7 @@
     {
       "seq": 15,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.275222+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.920817+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "consequence": "recommend",
@@ -256,7 +256,7 @@
     {
       "seq": 16,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.276602+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.922139+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "ok": true,
@@ -266,7 +266,7 @@
     {
       "seq": 17,
       "event_type": "verification_fail",
-      "timestamp_ist": "2026-08-01T21:07:44.277885+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.923561+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -281,7 +281,7 @@
     {
       "seq": 18,
       "event_type": "gate_rejection",
-      "timestamp_ist": "2026-08-01T21:07:44.277885+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.923561+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -296,7 +296,7 @@
     {
       "seq": 19,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.280962+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.926805+05:30",
       "payload": {
         "adapter_id": "stub/overclaim",
         "model_id": "deterministic-stub-v1",
@@ -319,7 +319,7 @@
     {
       "seq": 20,
       "event_type": "output_proposed",
-      "timestamp_ist": "2026-08-01T21:07:44.282756+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.928445+05:30",
       "payload": {
         "accepted": true,
         "refusal_code": null,
@@ -330,7 +330,7 @@
     {
       "seq": 21,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.284132+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.929924+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "consequence": "recommend",
@@ -346,7 +346,7 @@
     {
       "seq": 22,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.285399+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.931356+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "ok": true,
@@ -356,7 +356,7 @@
     {
       "seq": 23,
       "event_type": "verification_fail",
-      "timestamp_ist": "2026-08-01T21:07:44.286767+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.932719+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -371,7 +371,7 @@
     {
       "seq": 24,
       "event_type": "gate_rejection",
-      "timestamp_ist": "2026-08-01T21:07:44.286767+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.932719+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -386,7 +386,7 @@
     {
       "seq": 25,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.289973+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.936133+05:30",
       "payload": {
         "adapter_id": "stub/overclaim",
         "model_id": "deterministic-stub-v1",
@@ -409,7 +409,7 @@
     {
       "seq": 26,
       "event_type": "output_proposed",
-      "timestamp_ist": "2026-08-01T21:07:44.291653+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.938224+05:30",
       "payload": {
         "accepted": true,
         "refusal_code": null,
@@ -420,7 +420,7 @@
     {
       "seq": 27,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.293064+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.939782+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "consequence": "recommend",
@@ -436,7 +436,7 @@
     {
       "seq": 28,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.294407+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.941161+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "ok": true,
@@ -446,7 +446,7 @@
     {
       "seq": 29,
       "event_type": "verification_fail",
-      "timestamp_ist": "2026-08-01T21:07:44.295743+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.942485+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -461,7 +461,7 @@
     {
       "seq": 30,
       "event_type": "gate_rejection",
-      "timestamp_ist": "2026-08-01T21:07:44.295743+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.942485+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -476,7 +476,7 @@
     {
       "seq": 31,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.298904+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.945865+05:30",
       "payload": {
         "adapter_id": "stub/overclaim",
         "model_id": "deterministic-stub-v1",
@@ -499,7 +499,7 @@
     {
       "seq": 32,
       "event_type": "output_proposed",
-      "timestamp_ist": "2026-08-01T21:07:44.300649+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.947631+05:30",
       "payload": {
         "accepted": true,
         "refusal_code": null,
@@ -510,7 +510,7 @@
     {
       "seq": 33,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.302143+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.949086+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "consequence": "recommend",
@@ -526,7 +526,7 @@
     {
       "seq": 34,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.303474+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.950942+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "ok": true,
@@ -536,7 +536,7 @@
     {
       "seq": 35,
       "event_type": "verification_fail",
-      "timestamp_ist": "2026-08-01T21:07:44.304961+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.952459+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -551,7 +551,7 @@
     {
       "seq": 36,
       "event_type": "gate_rejection",
-      "timestamp_ist": "2026-08-01T21:07:44.304961+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.952459+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -566,7 +566,7 @@
     {
       "seq": 37,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.308164+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.955751+05:30",
       "payload": {
         "adapter_id": "stub/overclaim",
         "model_id": "deterministic-stub-v1",
@@ -589,7 +589,7 @@
     {
       "seq": 38,
       "event_type": "output_proposed",
-      "timestamp_ist": "2026-08-01T21:07:44.309743+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.957433+05:30",
       "payload": {
         "accepted": true,
         "refusal_code": null,
@@ -600,7 +600,7 @@
     {
       "seq": 39,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.311203+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.958818+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "consequence": "recommend",
@@ -616,7 +616,7 @@
     {
       "seq": 40,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.313291+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.960242+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "ok": true,
@@ -626,7 +626,7 @@
     {
       "seq": 41,
       "event_type": "verification_fail",
-      "timestamp_ist": "2026-08-01T21:07:44.314698+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.961616+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -641,7 +641,7 @@
     {
       "seq": 42,
       "event_type": "gate_rejection",
-      "timestamp_ist": "2026-08-01T21:07:44.314698+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.961616+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -656,7 +656,7 @@
     {
       "seq": 43,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:44.317951+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.964726+05:30",
       "payload": {
         "adapter_id": "stub/overclaim",
         "model_id": "deterministic-stub-v1",
@@ -679,7 +679,7 @@
     {
       "seq": 44,
       "event_type": "output_proposed",
-      "timestamp_ist": "2026-08-01T21:07:44.319653+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.966573+05:30",
       "payload": {
         "accepted": true,
         "refusal_code": null,
@@ -690,7 +690,7 @@
     {
       "seq": 45,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:44.321066+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.968214+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "consequence": "recommend",
@@ -706,7 +706,7 @@
     {
       "seq": 46,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:44.322578+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.969739+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "ok": true,
@@ -716,7 +716,7 @@
     {
       "seq": 47,
       "event_type": "verification_fail",
-      "timestamp_ist": "2026-08-01T21:07:44.324023+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.971211+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -731,7 +731,7 @@
     {
       "seq": 48,
       "event_type": "gate_rejection",
-      "timestamp_ist": "2026-08-01T21:07:44.324023+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.971211+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [
@@ -746,7 +746,7 @@
     {
       "seq": 49,
       "event_type": "session_close",
-      "timestamp_ist": "2026-08-01T21:07:44.326962+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.974301+05:30",
       "payload": {
         "session_id": "session-3b6172e035d7",
         "analyst_id": "saif",

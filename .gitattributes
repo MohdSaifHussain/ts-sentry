@@ -23,3 +23,8 @@ prompts/manifest.json -text
 # reappearing in a new location rather than a new defect.
 examples/registries/**/*.txt -text
 examples/registries/**/manifest.json -text
+
+# Third-party data, redistributed unmodified. ATTRIBUTION.md claims these files
+# are byte-for-byte what the UCI archive ships, and a checkout that rewrote
+# their line endings would make that claim false on Windows.
+examples/data/youtube-spam-collection/*.csv -text

@@ -289,7 +289,7 @@
   "stamp": {
     "dataset_scale": 1,
     "dataset_seed": 42,
-    "git_sha": "63565420eb8c48f0c106465e123ac7d10c2b00a9",
+    "git_sha": "1844024cc35033573fcfefedbd3d20019ca2eb78",
     "macro_f1_drop": 0.1,
     "max_unparseable": 0,
     "recall_drop": 0.25,

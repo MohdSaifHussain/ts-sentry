@@ -6,7 +6,7 @@
 
 - Case: `case-0001`
 - Subject: `t07_chan_000`
-- Evidence pack digest: `d40db2ef3e60edb104d1f4282617d260ba9b771523b8cfc8a4b547a8e3dc3d0e`
+- Evidence pack digest: `6b1ee6fb5bfd60897741b40a4b37ba0a5b8a130ce14788e38b1d05cd3539316b`
 - Policy corpus: `1.0.0` (`9dd656fb9fd917be39e9ec75626a3ecfb7e5f480c5d3933ce52d266bc6a67db2`)
 
 ## Use of automated means (DSA Art. 17(3)(c))

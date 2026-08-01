@@ -5,7 +5,7 @@
     {
       "seq": 0,
       "event_type": "session_open",
-      "timestamp_ist": "2026-08-01T21:07:43.785975+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.426367+05:30",
       "payload": {
         "session_id": "session-a69eea25ee06",
         "analyst_id": "saif",
@@ -26,7 +26,7 @@
     {
       "seq": 1,
       "event_type": "prompt_sent",
-      "timestamp_ist": "2026-08-01T21:07:43.788508+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.428606+05:30",
       "payload": {
         "adapter_id": "stub/faithful",
         "model_id": "deterministic-stub-v1",
@@ -49,7 +49,7 @@
     {
       "seq": 2,
       "event_type": "output_proposed",
-      "timestamp_ist": "2026-08-01T21:07:43.790814+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.430835+05:30",
       "payload": {
         "accepted": true,
         "refusal_code": null,
@@ -60,7 +60,7 @@
     {
       "seq": 3,
       "event_type": "tool_called",
-      "timestamp_ist": "2026-08-01T21:07:43.792677+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.432919+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "consequence": "recommend",
@@ -76,7 +76,7 @@
     {
       "seq": 4,
       "event_type": "tool_result",
-      "timestamp_ist": "2026-08-01T21:07:43.794382+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.434839+05:30",
       "payload": {
         "tool_id": "resolve_policy_citation",
         "ok": true,
@@ -86,7 +86,7 @@
     {
       "seq": 5,
       "event_type": "verification_pass",
-      "timestamp_ist": "2026-08-01T21:07:43.795868+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.436447+05:30",
       "payload": {
         "consequence": "recommend",
         "failures": [],
@@ -96,7 +96,7 @@
     {
       "seq": 6,
       "event_type": "session_close",
-      "timestamp_ist": "2026-08-01T21:07:43.797813+05:30",
+      "timestamp_ist": "2026-08-01T21:44:57.438479+05:30",
       "payload": {
         "session_id": "session-a69eea25ee06",
         "analyst_id": "saif",
