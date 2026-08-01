@@ -244,6 +244,34 @@ def test_the_csv_and_json_agree_on_every_value(frame: ViewFrame, tmp_path: Path)
             assert float(cell) == point["values"][name]
 
 
+def test_the_sample_size_curve_survives_small_sample_sizes(frame: ViewFrame) -> None:
+    """Found at the review stop by trying a sample size nobody had tried.
+
+    The pilot guard compared against the number of ``RiskBand`` members, which
+    counts strata holding no views. With three non-empty strata that let a pilot
+    of five through, and the allocation it fed refused because three strata need
+    six. The curve raised at sample sizes around 26.
+    """
+    curve = sample_size_curve(frame, seed=1, sample_sizes=[26, 30, 60])
+
+    assert len(curve.points) == 3
+
+
+def test_a_label_containing_a_separator_is_refused() -> None:
+    """A comma in a label would shift every column after it, and the CSV would
+    still parse. Refused rather than quoted: a separator inside a curve label is
+    a naming mistake."""
+    for bad in ("arm, b", "arm\nb"):
+        with pytest.raises(ValueError, match="separator"):
+            Curve(
+                name="c",
+                x_label="x",
+                y_label="y",
+                note="n" * 120,
+                points=(CurvePoint(x=0.0, values={"a": 1.0}, label=bad),),
+            )
+
+
 def test_a_curve_refuses_to_be_empty_or_ragged() -> None:
     with pytest.raises(ValueError, match="no points"):
         Curve(name="c", x_label="x", y_label="y", note="n", points=())

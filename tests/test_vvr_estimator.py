@@ -318,6 +318,50 @@ def test_the_validity_conditions_fail_at_a_realistic_sample_and_say_so(
     assert "FAIL" in estimate.validity.render()
 
 
+def test_an_unsampled_stratum_is_refused_rather_than_assumed_empty(
+    frame: ViewFrame,
+) -> None:
+    """Found at the review stop, by reading the weights rather than by a failure.
+
+    The stratum weights are shares of the whole frame, so an estimate formed
+    over only the sampled strata silently asserts that the unsampled ones
+    contain nothing. At 40 views with the per-stratum minimum relaxed to zero,
+    the no-score stratum went unsampled and the estimate covered 99.48% of the
+    population weight while looking entirely healthy.
+
+    ``every_stratum_has_two`` could not catch it: that condition inspects
+    strata that *were* sampled, so a stratum sampled zero times is invisible to
+    it and it returned True. Refused outright now, because there is no honest
+    number to report.
+    """
+    with pytest.raises(ValueError, match="received no sample"):
+        measure_vvr(
+            frame,
+            perfect_panel(1),
+            seed=1,
+            sample_size=40,
+            minimum_per_stratum=0,
+            replicates=2,
+        )
+
+
+def test_a_single_view_stratum_is_reported_as_invalid(frame: ViewFrame) -> None:
+    """The neighbouring case, which is caught rather than refused.
+
+    A stratum sampled once contributes to the point estimate but not to the
+    variance, because the SRSWOR estimator divides by ``n_h - 1``. That
+    understates the interval, and ``every_stratum_has_two`` is exactly the
+    condition that says so.
+    """
+    estimate, _ = measure_vvr(
+        frame, perfect_panel(1), seed=1, sample_size=200, minimum_per_stratum=0, replicates=2
+    )
+
+    assert any(stratum.sampled == 1 for stratum in estimate.strata)
+    assert not estimate.validity.every_stratum_has_two
+    assert not estimate.validity.holds
+
+
 def test_a_zero_width_interval_from_an_undersampled_stratum_is_flagged(
     frame: ViewFrame,
 ) -> None:

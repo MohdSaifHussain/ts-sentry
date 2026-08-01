@@ -127,6 +127,17 @@ class PanelVerdicts:
         return int(self.violative.size)
 
     @property
+    def split_count(self) -> int:
+        """Items where the panel was not unanimous, as a count.
+
+        Exposed alongside the rate because callers aggregating across strata
+        need to add counts. Reconstructing one by multiplying the rate back out
+        and rounding is lossy, and the loss lands in a reported number.
+        """
+        split = np.logical_and(self.votes > 0, self.votes < self.panel_size)
+        return int(np.count_nonzero(split))
+
+    @property
     def disagreement_rate(self) -> float:
         """Share of items where the panel was not unanimous.
 
@@ -139,8 +150,7 @@ class PanelVerdicts:
         """
         if self.size == 0:
             return 0.0
-        split = np.logical_and(self.votes > 0, self.votes < self.panel_size)
-        return float(np.count_nonzero(split)) / self.size
+        return self.split_count / self.size
 
 
 @dataclass(frozen=True, slots=True)

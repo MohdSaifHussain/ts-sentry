@@ -35,9 +35,10 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from ts_sentry.measurement.frame import RiskBand, ViewFrame
+from ts_sentry.measurement.frame import ViewFrame
 from ts_sentry.measurement.raters import RaterPanel, perfect_panel, uniform_panel
 from ts_sentry.measurement.vvr import (
+    MINIMUM_PER_STRATUM,
     Z_95,
     allocate_proportional,
     measure_vvr,
@@ -92,6 +93,17 @@ class Curve:
         series = {frozenset(point.values) for point in self.points}
         if len(series) != 1:
             raise ValueError(f"curve {self.name!r} has points with differing series names")
+
+        # Labels reach the CSV unquoted. Today they are scope names and contain
+        # neither, but a label with a comma would silently shift every column
+        # after it and the file would still parse, which is the failure mode
+        # nobody notices. Refused rather than quoted, because a separator inside
+        # a curve label is a naming mistake rather than something to accommodate.
+        for point in self.points:
+            if any(character in point.label for character in ",\r\n"):
+                raise ValueError(
+                    f"curve {self.name!r} has a label containing a separator: {point.label!r}"
+                )
 
     @property
     def series_names(self) -> tuple[str, ...]:
@@ -161,6 +173,13 @@ def sample_size_curve(
     sizes = frame.stratum_sizes()
     true_rates = frame.true_stratum_rates()
 
+    # A pilot has to be big enough to give every *non-empty* stratum the
+    # per-stratum minimum, or the allocation it feeds refuses outright. The
+    # first version compared against ``len(RiskBand)``, which counts strata that
+    # hold no views: with three non-empty strata on this frame it let a pilot of
+    # five through and the curve raised at sample sizes around 26.
+    smallest_pilot = MINIMUM_PER_STRATUM * sum(1 for size in sizes.values() if size > 0)
+
     points: list[CurvePoint] = []
     for total in sorted(sample_sizes):
         pilot = int(total * pilot_fraction)
@@ -169,7 +188,7 @@ def sample_size_curve(
             reviewers,
             seed=seed,
             sample_size=total,
-            pilot_size=pilot if pilot >= len(RiskBand) else 0,
+            pilot_size=pilot if pilot >= smallest_pilot else 0,
             replicates=2,
         )
         analytic = stratified_standard_error(

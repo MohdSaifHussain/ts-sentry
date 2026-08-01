@@ -156,6 +156,27 @@ def test_votes_never_exceed_the_panel_size(
     assert verdicts.violative.size == count
 
 
+def test_the_split_count_is_exact_rather_than_reconstructed() -> None:
+    """Callers aggregating disagreement across strata need counts, not rates.
+
+    The estimator previously rebuilt the count by multiplying the rate back out
+    and rounding, which is lossy in a number that gets reported. The count is
+    the primitive now and the rate is derived from it.
+    """
+    panel = RaterPanel(
+        profiles=(
+            RaterProfile(rater_id="always", sensitivity=1.0, specificity=0.0),
+            RaterProfile(rater_id="never", sensitivity=0.0, specificity=1.0),
+            RaterProfile(rater_id="also-never", sensitivity=0.0, specificity=1.0),
+        )
+    )
+
+    verdicts = panel.review([True] * 7, rng=_rng())
+
+    assert verdicts.split_count == 7
+    assert verdicts.disagreement_rate == verdicts.split_count / verdicts.size
+
+
 def test_a_panel_refuses_duplicate_or_missing_raters() -> None:
     with pytest.raises(ValueError, match="at least one rater"):
         RaterPanel(profiles=())

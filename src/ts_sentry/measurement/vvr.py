@@ -595,6 +595,22 @@ def estimate_from_calls(
         if sizes[band] > 0
     )
 
+    # A non-empty stratum that received no sample is refused rather than
+    # estimated around. The weights below are shares of the *whole* frame, so
+    # skipping such a stratum silently asserts that its rate is zero and drags
+    # the estimate down by that stratum's share. Found by review rather than by
+    # a failing test: at 40 views with the minimum relaxed to zero, the
+    # no-score stratum went unsampled, the estimate covered 99.48% of the
+    # population weight, and ``every_stratum_has_two`` still reported True
+    # because it only inspects strata that were in fact sampled.
+    starved = [stratum.band.value for stratum in strata if stratum.sampled == 0]
+    if starved:
+        raise ValueError(
+            f"strata {starved} hold views but received no sample; an estimate over the "
+            "remaining strata would silently assume they contain nothing. Raise the sample "
+            "size or the per-stratum minimum."
+        )
+
     point = sum(
         (stratum.population / frame.size) * stratum.rate for stratum in strata if stratum.sampled
     )
@@ -709,7 +725,7 @@ def _review_sample(
         indices = sample[band]
         verdicts = panel.review(truth[indices], rng=rng)
         calls[band] = verdicts.violative
-        split += int(round(verdicts.disagreement_rate * verdicts.size))
+        split += verdicts.split_count
         total += verdicts.size
     return calls, (split / total if total else 0.0)
 
