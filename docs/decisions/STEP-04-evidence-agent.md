@@ -1,10 +1,11 @@
 # STEP-04: Evidence Agent + Evidence Packs
 
 **Project:** Trust & Safety Sentry | **Phase:** 4 of 8 | **Date:** 31 July 2026 (IST)
-**Status:** Closed. D1-D6 implemented; SQL template review passed by Saif with
-zero required changes; phase-close verification run personally by Saif and
-passed. One product finding from his reading of `evidence_pack.json` is carried
-to STEP-07 as its central risk. Held for his push release.
+**Status:** Closed and released. D1-D6 implemented; SQL template review passed
+by Saif with zero required changes; phase-close verification run personally by
+Saif against a real subject and passed, after a first pass on a nonexistent
+subject surfaced the seed-existence defect, which was fixed and re-verified. One
+product finding is carried to STEP-07 as its central risk.
 **Depends on:** STEP-03
 
 ## 1. Objective
@@ -51,14 +52,16 @@ network recovery metric reportable at fixed pivot budget.
       - Asserted against the exported JSONL of a real session, not a return
         value, and each carries `reviewer_kind`.
 - [x] mypy --strict, ruff, coverage floor green; CHANGELOG updated
-      - 780 tests, 98% line coverage against a 90 floor.
+      - 782 tests, 98% line coverage against a 90 floor.
+- [x] The analyst's subject resolves to a real entity before a session opens
+      - Added at phase close from Saif's finding; verified personally.
 
 ## 6. Outcome
 
 Shipped: D1-D6, in `src/ts_sentry/orchestrator/` (pivots, pivot_tool,
-proposal_check, review, evidence_turn, pack_gate, pack_export),
+proposal_check, review, evidence_turn, pack_gate, pack_export, subject_check),
 `src/ts_sentry/agents/evidence/`, `src/ts_sentry/measurement/`, and the
-`run-session --agent evidence` verb. 780 tests green, mypy `--strict` and ruff
+`run-session --agent evidence` verb. 782 tests green, mypy `--strict` and ruff
 clean, 98% line coverage against a 90 floor. Fully offline.
 
 ### Deliverable order, and the review stop
@@ -180,62 +183,92 @@ Saif ran the phase-close verification personally, continuing the pattern from
 STEP-01 through STEP-03 where his own pass is the closing step rather than a
 green suite.
 
+It was run **twice**. The first pass investigated `t02_chan_003_000`, which does
+not exist in this build, so its product-path result was hollow: it verified an
+audit trail over an empty investigation. That run is what surfaced the
+seed-existence defect, and it is recorded below rather than deleted, because the
+finding was worth more than the verification it invalidated. This record is the
+re-run against a real subject, and it is the one that stands.
+
 | Scenario | Expected | Observed |
 |---|---|---|
-| `run-session --agent evidence` on `build_p4` | exit 0, intact chain | exit 0, 122 entries, intact |
+| Guard: `--subject t02_chan_003_000` | refused, no session | exit 5, no session directory created, message states the defect it prevents |
+| `run-session --agent evidence --subject t02_chan_000_000` | exit 0, intact chain | exit 0, intact, head `cb23...cf39` |
 | `verify-ledger` on the JSONL, bare | exit 0 | exit 0 |
 | `verify-ledger --expect-head-from` the manifest | exit 0, head matches | exit 0, head matches |
 | Truncated copy, `--expect-head-from` | exit 6, both heads printed | exit 6, both heads printed |
 | `reviewer_kind` on every hop | `scripted`, never human | `scripted` on every hop |
 | Provenance completeness on all 21 records | every field present | `template_sha256`, `param_hash`, `source_table`, `retrieval_ts`, `row_count` on all 21 |
+| Pivots actually vary | more than one kind | `shared_metadata`, `infra_overlap`, `account_link` |
+| Network reconstructed | ring members recovered | 4 nodes, 13 edges; 3 of 8 ring members |
 
-Chain head `1c95...3876`. The 122 entries corroborate the count independently:
-an approved hop writes six entries (`PROMPT_SENT`, `VERIFICATION_PASS` for the
-proposal, `HUMAN_DECISION`, `TOOL_CALLED`, `TOOL_RESULT`, `VERIFICATION_PASS`
-for the gate), so 20 hops is 120, plus `SESSION_OPEN` and `SESSION_CLOSE`. The
-21 provenance records are the same 20 hops plus the analyst's case selection.
+The pack reconstructs the T-02 fake-engagement ring through the two shared
+values the generator planted: the device fingerprint `devhint_t02_000` and the
+signup IP bucket `ipb_t02_000`. That is the product working as designed, on a
+real network, and it is the first time in this project that an evidence pack has
+been read back and found to contain the thing it was supposed to find.
 
-The fourth row is the one worth keeping in view, as it has been since STEP-02:
-a *passing* result that confirms a real limitation. Chain verification alone
-accepts a truncated export, and only the stored anchor catches it.
+Mechanism results from the first pass carry over rather than being re-derived.
+Chain integrity, anchor comparison, truncation detection, `reviewer_kind`
+labelling and provenance completeness are subject-independent: they are
+properties of the ledger and the artifact writer, not of which entity was
+investigated. Per ISO/IEC/IEEE 29119, re-execution is required where the test
+basis changed, and the test basis for those items did not. What changed is the
+product path, which is exactly what the re-run covers.
 
-### The investigation does not traverse: STEP-07's central risk
+The truncation row is the one worth keeping in view, as it has been since
+STEP-02: a *passing* result that confirms a real limitation. Chain verification
+alone accepts a truncated export, and only the stored anchor catches it.
+
+### The strategy plateaus at the ring core: STEP-07's central risk
 
 Saif found this by reading `evidence_pack.json` directly at phase close, not
-from any test. It is recorded at his precision because the vague version ("the
-recovery table is flat") is a symptom that invites tuning a number, while the
-precise version names two mechanisms that have to be built.
+from any test. The finding was **diagnosed twice, and the first diagnosis was
+wrong in a way worth recording**, because it is the kind of error this project
+is otherwise good at catching.
 
-**What the artifact showed.** An evidence session on the T-02 subject
-`t02_chan_003_000` ran 20 hops. Every one was `pivot.account_link.v1` with
-*identical* parameters (`channel_id=t02_chan_003_000`, `limit=25`,
-`min_comments=1`, the same `param_hash` on every hop) and every one returned
-`row_count` 0. The resulting pack held 1 node and 0 edges: the seed, and
-nothing else.
+**First diagnosis, from the hollow run, and now retracted.** The session on
+`t02_chan_003_000` ran 20 hops that were all `pivot.account_link.v1` with
+identical parameters (`channel_id=t02_chan_003_000`, `limit=25`,
+`min_comments=1`, the same `param_hash` every hop), all returning `row_count` 0,
+for a pack of 1 node and 0 edges. That was read as two defects: that the
+strategy never chains discovered entities into later hops, and that it never
+falls back to another pivot kind when one returns empty.
 
-**Two defects, both STEP-07's to fix:**
+The first of those is **false**, and the artifact that proved it is the re-run.
+On a real subject the strategy does chain and does vary: the same code produced
+`account_link`, then `shared_metadata`, then `infra_overlap`, pivoting on
+accounts it had discovered at earlier hops. The twenty identical empty hops were
+an artifact of the nonexistent subject, not the strategy: with no accounts ever
+entering the pack, the one branch that fires when the pack has no accounts fired
+every time. A defect diagnosed from a degenerate input was generalized into a
+claim about the algorithm, and the degenerate input was doing all the work.
 
-- **(a) The strategy repeats one identical pivot instead of chaining.** Entities
-  found at hop N are never fed as seeds into hop N+1, so the investigation
-  never traverses. It asks one question about one entity, twenty times.
-- **(b) There is no fallback to a different pivot kind when one returns empty.**
-  Here even hop 1 was empty, and nothing in the strategy reacted to that. An
-  empty result is information, and the strategy discards it.
+**Second diagnosis, from the real run, and narrower.** On `t02_chan_000_000` the
+investigation recovers **3 of 8 ring members** and then plateaus, at every budget
+from 5 to 20. The three it finds are the tightly-connected core: the accounts
+that share the ring's device fingerprint `devhint_t02_000` and signup IP bucket
+`ipb_t02_000`, reachable in one hop from a metadata or infrastructure pivot. The
+five it does not find are the looser members, connected to the ring through
+something other than a shared registration value.
 
-**A third defect, found while confirming the above, and STEP-04's own.**
+So the real defect is not that the strategy fails to traverse. It is that
+**traversal terminates at the first shell**: the strategy exhausts the
+questions answerable from the seed's immediate metadata neighbourhood and has no
+way to push outward from there. That is a materially different problem from the
+one first recorded, and a materially easier one to state a target for.
+
+**What remains true from the first diagnosis:** there is still no fallback when a
+pivot returns empty. It did not bite here because nothing important returned
+empty, which is precisely why it is worth keeping on the list rather than
+quietly dropping when the symptom went away.
+
+**A defect found while confirming all this, and STEP-04's own.**
 `t02_chan_003_000` **does not exist in the seed-42 scale-1 build**. It is absent
 from `main.channel` and has no row in `sealed._labels`; only rings `000` and
 `001` are planted, so the T-02 channels present are `t02_chan_000_000` through
-`t02_chan_001_002`. That is the mechanical cause of the twenty empty hops:
-`account_link`'s owner branch is `WHERE ch.channel_id = ?` and its commenter
-branch joins through `video`, so both return nothing for a channel that is not
-there, and the stub, seeing no account nodes in the pack, proposes
-`ACCOUNT_LINK` again forever.
-
-Defects (a) and (b) are real and independent of this: they would bite on a real
-but sparse subject too, which is why they stand as written. But the third is
-the more serious finding about *this* phase, and it belongs to STEP-04 rather
-than STEP-07:
+`t02_chan_001_002`. That is the mechanical cause of the twenty empty hops, and
+it belongs to STEP-04 rather than STEP-07:
 
 > **The orchestrator accepts a seed subject that does not exist in the dataset,
 > and produces a fully valid audit trail for an investigation of nothing.** The
@@ -246,18 +279,24 @@ than STEP-07:
 
 Nothing in the design is wrong here, which is what makes it worth recording: the
 pack's invariants are about internal consistency, and the gate validates the
-artifact rather than the world. The missing check is that the analyst-selected
-seed resolves to a real entity before a session opens. That is a small, cheap
-guard, and it is **not implemented**: it is recorded here and carried, so the
-decision to add it is a deliberate one rather than something that slipped in
-after a phase closed.
+artifact rather than the world. Seed-existence is the boundary check that ties
+the audit trail to a real subject, and no component owned it.
+
+**Fixed**, per Saif's instruction, before the phase was released:
+`orchestrator/subject_check.py`, called before the output directory is created
+and before any ledger connection exists, so a refused subject leaves no session
+and no chain rather than a short valid one. Verified personally: exit 5, no
+session directory, and an error message that states the defect it prevents.
 
 **STEP-07's headline deliverable, stated so it can be checked.** A strategy that
-varies pivot kind *and* chains discovered entities as new seeds, validated on a
-subject whose first pivot returns rows, recovering a measurable fraction of a
-planted network at 20 pivots that is strictly greater than at 5. The existing
-`test_recovery_saturates_before_the_smallest_reported_budget` is written to fail
-the moment that happens, which is how STEP-07 will know it has succeeded.
+pushes past the first shell: recovering ring members that are *not* reachable
+from the seed's immediate shared-metadata neighbourhood, on a subject where the
+core is already found, with recovery at 20 pivots strictly greater than at 5.
+The existing `test_recovery_saturates_before_the_smallest_reported_budget` is
+written to fail the moment that happens, which is how STEP-07 will know it has
+succeeded. The concrete target on this build is `t02_chan_000_000`: 3 of 8
+members recovered today, 5 remaining, and the 5 are the interesting ones
+precisely because no shared registration value points at them.
 
 ### Defects found by running it, not by inspection
 
@@ -372,9 +411,11 @@ executable.
 - **The recovery budget axis is uninformative on this build**, for the reason
   recorded above, and the investigation does not traverse at all. See "The
   investigation does not traverse".
-- **A session can be opened on a subject that does not exist**, and it produces
-  a clean, anchored, gate-passing audit trail describing nothing. Found at
-  phase close; recorded, not fixed.
+- **The strategy plateaus at the ring core.** On the verified subject it
+  recovers the 3 members reachable through a shared registration value and none
+  of the looser 5. Recovery does not grow between 5 and 20 pivots. This is
+  STEP-07's central risk and is stated above at the precision the artifact
+  supports.
 - **The agent's competence is untested.** Every number here was produced by a
   deterministic stub that cannot be persuaded and cannot reason. What is tested
   is the pipeline: that a proposal is checked rather than trusted, that nothing

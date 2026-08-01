@@ -248,6 +248,19 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   and `--max-hops`. A surface STEP-04 does not enumerate, added because its own
   exit checklist requires a ledgered session to inspect.
 
+- STEP-04 follow-up: `ts_sentry.orchestrator.subject_check` - an evidence
+  session refuses a `--subject` that does not exist in the dataset, exiting `5`
+  and producing no session and no chain. The check runs before the output
+  directory is created and before any ledger connection exists, because a
+  refusal after the session opened would already have written the chain,
+  manifest and anchor it exists to prevent. Found at phase close: a session on a
+  nonexistent subject had produced a fully valid audit trail for an
+  investigation of nothing. The assembly gate validates the artifact's internal
+  consistency, not its correspondence to reality, and seed-existence is the
+  boundary check that ties the audit trail to a real subject. Asked of the
+  entity tables through `resolve_table`, never of `sealed._labels`: whether an
+  entity is *planted* is ground truth.
+
 ### Changed
 
 - **`dataset_digest` now derives from the build manifest's `table_hashes`**
