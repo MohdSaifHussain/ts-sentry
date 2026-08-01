@@ -447,6 +447,20 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   **breach code**, plus the strongest available passing control: the incumbent
   evaluated against itself, which must be activatable or every refusal proves
   nothing. The noisy fixture is the one that proves decision D earns its cost.
+- STEP-06 D5: `ts-sentry eval-prompts --candidate HASH`, plus
+  `ts_sentry.orchestrator.eval_session`. Exit `0` when the candidate may be
+  activated and **`EXIT_REGRESSION_REFUSED = 7`** when the gate refuses it, both
+  printing the report path. Joins `TRANSLATES_USAGE_ERRORS` from the start, so a
+  usage error exits 5 and never argparse's 2.
+- STEP-06 D6: the eval report artifact (`ts_sentry.orchestrator.eval_report`),
+  in Markdown and JSON, stamped with dataset seed and scale, eval-set item and
+  label digests, both prompt digests, adapter and model id, bootstrap seed,
+  tolerances digest and git SHA. Carries the precision-is-not-a-deployment-
+  estimate caveat and the class-collapse-not-drift resolution caveat **in the
+  artifact itself**, and no per-item rows.
+- STEP-06 3.3: `tolerances_sha256` binds into `SESSION_OPEN` rather than
+  becoming a twelfth `EventType`, on DECISIONS 5.8's precedent for corpus
+  updates. ARCHITECTURE 3.2's eleven event types stay a closed surface.
 
 ### Changed
 

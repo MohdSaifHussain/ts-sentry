@@ -34,6 +34,7 @@ from typing import NoReturn
 import duckdb
 
 from ts_sentry.agents.memo.memo import Memo, MemoError
+from ts_sentry.data.eval_set import EvalSetError
 from ts_sentry.data.generator import build_dataset
 from ts_sentry.data.policy_corpus import (
     CorpusError,
@@ -65,12 +66,15 @@ from ts_sentry.governance.scopes import (
 )
 from ts_sentry.governance.signature import Decision
 from ts_sentry.orchestrator.adapter import ModelAdapter, ModelMode, Responder, StubAdapter
+from ts_sentry.orchestrator.eval_session import EvalSessionError, run_eval_session
 from ts_sentry.orchestrator.evidence_turn import stub_evidence_responder
 from ts_sentry.orchestrator.manifest import ManifestError, read_expected_head
 from ts_sentry.orchestrator.memo_export import write_memo_html, write_memo_markdown
 from ts_sentry.orchestrator.memo_gate import memo_check
 from ts_sentry.orchestrator.memo_turn import stub_memo_responder
 from ts_sentry.orchestrator.pack_export import PackReadError, read_pack_json
+from ts_sentry.orchestrator.prompt_eval_turn import stub_classify_responder
+from ts_sentry.orchestrator.regression_gate import TOLERANCES_FILE, ToleranceError, load_tolerances
 from ts_sentry.orchestrator.review import (
     AnalystReviewer,
     InteractiveReviewer,
@@ -84,6 +88,7 @@ from ts_sentry.orchestrator.session_runner import (
 from ts_sentry.orchestrator.signing import SigningRefused, sign_memo
 from ts_sentry.orchestrator.subject_check import SubjectNotFound
 from ts_sentry.orchestrator.triage_turn import stub_triage_responder
+from ts_sentry.prompt_registry.registry import PromptRegistryError
 from ts_sentry.provenance import DatasetDigestError, git_sha, sha256_file
 
 GENERATOR_VERSION = "0.1.0"
@@ -94,6 +99,16 @@ EXIT_LEAKAGE_FAIL = 3
 EXIT_BROKEN_CHAIN = 4
 EXIT_INPUT_ERROR = 5
 EXIT_HEAD_MISMATCH = 6
+EXIT_REGRESSION_REFUSED = 7
+"""A prompt candidate was refused activation by the regression gate.
+
+STEP-06 D5's text says exit 5. Deviating deliberately, per Saif: 5 is
+``EXIT_INPUT_ERROR`` throughout this CLI, and a regression refusal is a
+*governance outcome* - the gate did its job and refused a worse prompt - while
+5 means the caller made a broken request. Overloading one code would make a
+degraded candidate indistinguishable from a mistyped ``--candidate``, which is
+precisely the collision DECISIONS 2.12 removed when argparse's 2 shadowed
+``EXIT_QUALITY_GATE_FAIL``. The deviation is recorded in the STEP-06 Outcome."""
 
 _SEALED_ONLY_COLUMNS = frozenset({"threat_class", "ring_id", "generator_params_hash", "planted_ts"})
 
@@ -767,8 +782,11 @@ VERIFY_LEDGER = "verify-ledger"
 RUN_SESSION = "run-session"
 FETCH_POLICIES = "fetch-policies"
 SIGN_MEMO = "sign-memo"
+EVAL_PROMPTS = "eval-prompts"
 
-TRANSLATES_USAGE_ERRORS = frozenset({VERIFY_LEDGER, RUN_SESSION, FETCH_POLICIES, SIGN_MEMO})
+TRANSLATES_USAGE_ERRORS = frozenset(
+    {VERIFY_LEDGER, RUN_SESSION, FETCH_POLICIES, SIGN_MEMO, EVAL_PROMPTS}
+)
 """Subcommands whose argparse usage errors become ``EXIT_INPUT_ERROR``.
 
 Argparse exits 2 on a usage error, and 2 is ``EXIT_QUALITY_GATE_FAIL`` in this
@@ -782,8 +800,73 @@ STEP-01, that is its published contract, and changing it here would alter a
 closed phase's behavior for tidiness.
 
 ``fetch-policies`` is included from the start, so it never acquires the defect
-``run-session`` had to have fixed retrospectively.
+``run-session`` had to have fixed retrospectively, and ``eval-prompts`` is
+included for the same reason. It matters more there than anywhere else: that
+verb also exits 7 for a regression refusal, so an untranslated usage error would
+leave three distinct meanings competing over two codes.
 """
+
+
+def run_eval_prompts(
+    candidate: str,
+    *,
+    registry_dir: Path,
+    evals_dir: Path,
+    out_dir: Path,
+    analyst_id: str,
+    llm_mode: str,
+    seed: int,
+    session_id: str | None,
+) -> int:
+    """Evaluate a candidate prompt against the incumbent, and report the verdict.
+
+    Exit 0 when the candidate may be activated, ``EXIT_REGRESSION_REFUSED`` when
+    the gate refused it. Both print the report path, because a refusal a reader
+    cannot open is a refusal they cannot act on, and the per-class breach report
+    is the phase's exit criterion.
+
+    Refusal is not an error. It is the control working, so it prints to stdout
+    like any other result and the nonzero code is what a script reads.
+    """
+    try:
+        tolerances = load_tolerances(evals_dir / TOLERANCES_FILE)
+        adapter = _build_adapter(llm_mode, stub_classify_responder)
+        run = run_eval_session(
+            registry_dir,
+            evals_dir,
+            out_dir,
+            adapter,
+            candidate_digest=candidate,
+            tolerances=tolerances,
+            analyst_id=analyst_id,
+            session_id=session_id,
+            seed=seed,
+        )
+    except (ToleranceError, PromptRegistryError, EvalSetError, EvalSessionError) as exc:
+        print(f"eval-prompts: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+
+    verdict = run.turn.verdict
+    assert verdict is not None  # a run that produced no verdict raised above
+
+    print(f"session:    {run.manifest.session_id}")
+    print(f"task:       {verdict.task}")
+    print(f"incumbent:  {run.incumbent_digest[:16]}")
+    print(f"candidate:  {run.candidate_digest[:16]}")
+    print(f"decision:   {verdict.decision.value}")
+    print(f"report:     {run.report_md}")
+    print(f"report json:{run.report_json}")
+    print(f"head:       {run.manifest.expected_head.render()}")
+
+    if verdict.activatable:
+        return EXIT_OK
+
+    print("", file=sys.stderr)
+    print("activation refused; per-class breaches:", file=sys.stderr)
+    for breach in verdict.breaches:
+        where = "overall" if breach.threat_class is None else breach.threat_class.value
+        print(f"  [{breach.code.value}] {where}: {breach.detail}", file=sys.stderr)
+    return EXIT_REGRESSION_REFUSED
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -904,6 +987,16 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
 
+    eval_parser = subparsers.add_parser(EVAL_PROMPTS)
+    eval_parser.add_argument("--candidate", required=True)
+    eval_parser.add_argument("--registry", type=Path, default=Path("prompts"))
+    eval_parser.add_argument("--evals", type=Path, default=Path("evals/threat_class"))
+    eval_parser.add_argument("--out", type=Path, required=True)
+    eval_parser.add_argument("--analyst-id", default="analyst")
+    eval_parser.add_argument("--llm-mode", default=ModelMode.STUB.value)
+    eval_parser.add_argument("--seed", type=int, default=42)
+    eval_parser.add_argument("--session-id", default=None)
+
     policies_parser = subparsers.add_parser(FETCH_POLICIES)
     policies_parser.add_argument(
         "--out",
@@ -927,6 +1020,7 @@ def main(argv: list[str] | None = None) -> int:
         session_parser: RUN_SESSION,
         policies_parser: FETCH_POLICIES,
         sign_parser: SIGN_MEMO,
+        eval_parser: EVAL_PROMPTS,
     }
 
     try:
@@ -969,6 +1063,18 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == FETCH_POLICIES:
         return run_fetch_policies(args.out)
+
+    if args.command == EVAL_PROMPTS:
+        return run_eval_prompts(
+            args.candidate,
+            registry_dir=args.registry,
+            evals_dir=args.evals,
+            out_dir=args.out,
+            analyst_id=args.analyst_id,
+            llm_mode=args.llm_mode,
+            seed=args.seed,
+            session_id=args.session_id,
+        )
 
     if args.command == SIGN_MEMO:
         return run_sign_memo(

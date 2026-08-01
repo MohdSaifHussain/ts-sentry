@@ -423,6 +423,7 @@ class Session:
         "_session_id",
         "_state",
         "_token",
+        "_tolerances_sha256",
     )
 
     def __init__(
@@ -435,6 +436,7 @@ class Session:
         mandates: Mapping[AgentId, Mandate],
         dataset_digest: str,
         corpus: PolicyCorpus | None = None,
+        tolerances_sha256: str | None = None,
     ) -> None:
         if not session_id.strip():
             raise ValueError("session_id must be a non-empty identifier")
@@ -456,6 +458,7 @@ class Session:
         self._clock = clock
         self._dataset_digest = dataset_digest
         self._corpus = corpus
+        self._tolerances_sha256 = tolerances_sha256
         self._token = OrchestratorToken(session_id=session_id)
         self._mandates = {
             agent_id: MandateBinding.of(mandate) for agent_id, mandate in mandates.items()
@@ -659,6 +662,21 @@ class Session:
         if self._corpus is not None:
             payload["corpus_version"] = self._corpus.corpus_version
             payload["corpus_sha256"] = self._corpus.corpus_sha256
+        if self._tolerances_sha256 is not None:
+            # STEP-06 3.3 asks that tolerance changes be "ledgered corpus-style
+            # events". Bound here rather than given a twelfth EventType, on the
+            # precedent DECISIONS 5.8 set for the policy corpus: a tolerance set
+            # is build-time policy rather than a session action, and it is
+            # declared when no session is open, so there is no token to write it
+            # with. Binding gives the guarantee that matters anyway, which is
+            # that every eval run is permanently tied to the limits it ran
+            # under, hash-chained. ARCHITECTURE 3.2's eleven types stay closed.
+            #
+            # Omitted entirely rather than written as null when absent, exactly
+            # as the corpus fields are: a triage session declares no tolerances,
+            # and recording limits it never consulted would put the whole
+            # fleet's chain at the mercy of an edit that changed nothing it used.
+            payload["tolerances_sha256"] = self._tolerances_sha256
 
         recorded = self.append_event(
             EventType.SESSION_OPEN,
