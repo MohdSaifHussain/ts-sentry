@@ -9,15 +9,10 @@ artifact does what it says.
 posting, and the left column is **not** quoted from one. This is a personal
 project built against a generalized capability profile for the role family,
 assembled from the responsibility areas referenced in
-[ARCHITECTURE.md](../ARCHITECTURE.md) (notably section 4.4's prompt engineering,
-data labeling and performance analysis, and the threat-model, measurement and
-regulatory-alignment sections) and from the role research recorded across the
-[STEP files](decisions/). Nothing here is presented as a verbatim quotation.
-
-STEP-08's requirement 3.3 asks for JD lines quoted verbatim. There is no
-committed JD and none is coming, so that requirement is amended by decision, and
-the exit-checklist line reads "POSITIONING.md covers 100% of the named
-capabilities" instead. The deviation is recorded in the STEP-08 Outcome.
+[ARCHITECTURE.md](../ARCHITECTURE.md): section 4.4's prompt engineering, data
+labeling and performance analysis, and the threat-model, measurement and
+regulatory-alignment sections. Nothing here is presented as a verbatim
+quotation.
 
 **Rows with no honest artifact say so.** A stated gap beats a stretched claim,
 and there are five of them at the bottom. Reading only the first table would
