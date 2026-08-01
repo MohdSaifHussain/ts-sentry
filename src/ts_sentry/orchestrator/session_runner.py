@@ -199,6 +199,7 @@ def run_triage_session(
             clock=clock or SystemClock(),
             mandates=default_mandates(),
             dataset_digest=dataset_digest,
+            model_provenance=adapter.provenance,
         )
         session.open()
 
@@ -280,6 +281,7 @@ def run_triage_session(
                 AgentId.TRIAGE.value: session.budget(AgentId.TRIAGE).snapshot(),
             },
             git_sha=git_sha(),
+            model_provenance=session.model_provenance,
             artifacts=[
                 ArtifactRecord.of("ledger_jsonl", artifacts.ledger_jsonl, relative_to=out_dir),
                 ArtifactRecord.of("ranked_queue", artifacts.ranked_queue, relative_to=out_dir),
@@ -401,6 +403,7 @@ def run_evidence_session(
             clock=clock or SystemClock(),
             mandates=default_mandates(),
             dataset_digest=dataset_digest,
+            model_provenance=adapter.provenance,
         )
         session.open()
 
@@ -473,6 +476,7 @@ def run_evidence_session(
                 AgentId.EVIDENCE.value: session.budget(AgentId.EVIDENCE).snapshot(),
             },
             git_sha=git_sha(),
+            model_provenance=session.model_provenance,
             artifacts=[
                 ArtifactRecord.of("ledger_jsonl", artifacts.ledger_jsonl, relative_to=out_dir),
                 ArtifactRecord.of("evidence_pack", artifacts.evidence_pack, relative_to=out_dir),
@@ -580,6 +584,7 @@ def run_memo_session(
             mandates=default_mandates(),
             dataset_digest=dataset_digest,
             corpus=corpus,
+            model_provenance=adapter.provenance,
         )
         session.open()
 
@@ -662,6 +667,7 @@ def run_memo_session(
             event_counts=session.event_counts(),
             budgets={AgentId.MEMO.value: session.budget(AgentId.MEMO).snapshot()},
             git_sha=git_sha(),
+            model_provenance=session.model_provenance,
             artifacts=[
                 ArtifactRecord.of("ledger_jsonl", artifacts.ledger_jsonl, relative_to=out_dir),
                 ArtifactRecord.of("memo", artifacts.memo_json, relative_to=out_dir),

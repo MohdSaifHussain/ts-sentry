@@ -42,6 +42,7 @@ from pathlib import Path
 from ts_sentry.governance.canonical import require_sha256_hex
 from ts_sentry.governance.ledger import ChainHead
 from ts_sentry.orchestrator.core import BudgetSnapshot, CloseReason
+from ts_sentry.orchestrator.model_modes import ModelProvenance
 from ts_sentry.provenance import sha256_file
 
 __all__ = [
@@ -114,6 +115,7 @@ class SessionManifest:
     budgets: Mapping[str, BudgetSnapshot]
     git_sha: str
     artifacts: Sequence[ArtifactRecord]
+    model_provenance: ModelProvenance | None = None
     manifest_version: str = MANIFEST_VERSION
 
     def __post_init__(self) -> None:
@@ -126,7 +128,7 @@ class SessionManifest:
             )
 
     def to_json_object(self) -> dict[str, object]:
-        return {
+        rendered: dict[str, object] = {
             "manifest_version": self.manifest_version,
             "session_id": self.session_id,
             "analyst_id": self.analyst_id,
@@ -147,6 +149,12 @@ class SessionManifest:
             "git_sha": self.git_sha,
             "artifacts": [artifact.to_json_object() for artifact in self.artifacts],
         }
+        if self.model_provenance is not None:
+            # Rendered by the same function that renders it into SESSION_OPEN,
+            # so the manifest and the chain cannot describe one session two
+            # ways. STEP-08 8.B.
+            rendered.update(self.model_provenance.to_json_object())
+        return rendered
 
     def write(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)

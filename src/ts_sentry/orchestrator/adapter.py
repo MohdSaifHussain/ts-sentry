@@ -55,7 +55,6 @@ never be read before that is checked.
 import os
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from enum import StrEnum
 from typing import Protocol
 
 import numpy as np
@@ -66,6 +65,12 @@ from ts_sentry.governance.mandate import AgentId
 from ts_sentry.orchestrator.core import CloseReason, Session
 from ts_sentry.orchestrator.firewall import SystemPrompt
 
+# Defined in `model_modes` rather than here, and re-exported so every existing
+# `from ts_sentry.orchestrator.adapter import StubMode` keeps working. This
+# module imports `core`, so `core` cannot import it back, and STEP-08 needs the
+# session to record which mode produced its outputs. See that module's docstring.
+from ts_sentry.orchestrator.model_modes import ModelMode, ModelProvenance, StubMode
+
 __all__ = [
     "DEFAULT_LIVE_MODEL",
     "ENV_LLM_MODE",
@@ -75,6 +80,7 @@ __all__ = [
     "ModelAdapter",
     "ModelCall",
     "ModelMode",
+    "ModelProvenance",
     "ModelRefusal",
     "ModelRequest",
     "ModelResponse",
@@ -102,11 +108,6 @@ rather than a code change."""
 _CHARS_PER_TOKEN = 4
 """Divisor for the pre-flight estimate. A rule of thumb, not a measurement;
 see the module docstring for why an exact count is not available offline."""
-
-
-class ModelMode(StrEnum):
-    STUB = "stub"
-    LIVE = "live"
 
 
 class AdapterError(Exception):
@@ -236,6 +237,20 @@ class ModelAdapter(Protocol):
     @property
     def model_id(self) -> str: ...
 
+    @property
+    def provenance(self) -> ModelProvenance:
+        """What this adapter is, as a fact the session can ledger.
+
+        On the protocol rather than passed alongside the adapter, and that is
+        the whole design. A caller who supplied the provenance separately could
+        hand a session an overclaiming adapter while declaring a faithful run,
+        and the ledger would carry the declaration rather than the truth.
+        Reading it off the adapter that actually served the calls makes that
+        disagreement unexpressible instead of merely detectable, which is the
+        preventive-over-detective posture ARCHITECTURE 1.1 states.
+        """
+        ...
+
     def complete(self, request: ModelRequest, /) -> ModelResponse: ...
 
 
@@ -339,22 +354,6 @@ def call_with_retry(
 # --------------------------------------------------------------------------
 
 
-class StubMode(StrEnum):
-    """How the stub behaves.
-
-    ``OVERCLAIM`` and ``TRANSIENT`` are not test scaffolding smuggled into
-    production code; they are how the governance layer's failure paths get
-    demonstrated. A verifier that has never rejected anything is a verifier
-    nobody has tested, and STEP-02 recorded that reasoning about
-    ``VERIFICATION_FAIL`` counts being a showcased metric.
-    """
-
-    FAITHFUL = "faithful"
-    OVERCLAIM = "overclaim"
-    TRANSIENT = "transient"
-    REFUSE = "refuse"
-
-
 type Responder = Callable[[ModelRequest, StubMode], str]
 """Produces the stub's text for a request. Injected so this module never has
 to know what a triage rationale looks like: that contract belongs to D5, and
@@ -393,6 +392,10 @@ class StubAdapter:
     @property
     def model_id(self) -> str:
         return "deterministic-stub-v1"
+
+    @property
+    def provenance(self) -> ModelProvenance:
+        return ModelProvenance(model_mode=ModelMode.STUB, stub_mode=self.mode)
 
     def complete(self, request: ModelRequest, /) -> ModelResponse:
         if self._failures_left > 0:
@@ -456,6 +459,10 @@ class LiveAdapter:
     @property
     def model_id(self) -> str:
         return self._model_id
+
+    @property
+    def provenance(self) -> ModelProvenance:
+        return ModelProvenance(model_mode=ModelMode.LIVE, stub_mode=None)
 
     def complete(self, request: ModelRequest, /) -> ModelResponse:  # pragma: no cover
         """Send one request. Not exercised by the offline suite, by design.

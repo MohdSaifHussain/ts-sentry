@@ -184,6 +184,7 @@ def run_eval_session(
         mandates=default_mandates(),
         dataset_digest=dataset_digest,
         tolerances_sha256=tolerances.digest,
+        model_provenance=adapter.provenance,
     )
     session.open()
 
@@ -248,6 +249,7 @@ def run_eval_session(
         event_counts=session.event_counts(),
         budgets={AgentId.PROMPT_EVAL.value: session.budget(AgentId.PROMPT_EVAL).snapshot()},
         git_sha=git_sha(),
+        model_provenance=session.model_provenance,
         artifacts=[
             ArtifactRecord.of("ledger_jsonl", ledger_path, relative_to=out_dir),
             ArtifactRecord.of("eval_report_md", report_md, relative_to=out_dir),

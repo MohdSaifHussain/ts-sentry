@@ -55,6 +55,7 @@ from ts_sentry.governance.ledger import (
     digest_payload,
 )
 from ts_sentry.governance.mandate import AgentId, Mandate, mandate_hash
+from ts_sentry.orchestrator.model_modes import ModelProvenance
 
 __all__ = [
     "TRANSITIONS",
@@ -419,6 +420,7 @@ class Session:
         "_ledger",
         "_mandate_set_hash",
         "_mandates",
+        "_model_provenance",
         "_opened_ts",
         "_session_id",
         "_state",
@@ -437,6 +439,7 @@ class Session:
         dataset_digest: str,
         corpus: PolicyCorpus | None = None,
         tolerances_sha256: str | None = None,
+        model_provenance: ModelProvenance | None = None,
     ) -> None:
         if not session_id.strip():
             raise ValueError("session_id must be a non-empty identifier")
@@ -459,6 +462,7 @@ class Session:
         self._dataset_digest = dataset_digest
         self._corpus = corpus
         self._tolerances_sha256 = tolerances_sha256
+        self._model_provenance = model_provenance
         self._token = OrchestratorToken(session_id=session_id)
         self._mandates = {
             agent_id: MandateBinding.of(mandate) for agent_id, mandate in mandates.items()
@@ -520,6 +524,16 @@ class Session:
         need a corpus is the fleet's business rather than the session's.
         """
         return self._corpus
+
+    @property
+    def model_provenance(self) -> ModelProvenance | None:
+        """Which model path produced this session's outputs, if it was named.
+
+        Read back by the runner so the session manifest stamps the same value
+        the chain covers. One source, so the manifest and the ledger cannot
+        disagree about what a session ran under, and a test asserts they do not.
+        """
+        return self._model_provenance
 
     @property
     def recorded_events(self) -> tuple[RecordedEvent, ...]:
@@ -677,6 +691,21 @@ class Session:
             # and recording limits it never consulted would put the whole
             # fleet's chain at the mercy of an edit that changed nothing it used.
             payload["tolerances_sha256"] = self._tolerances_sha256
+        if self._model_provenance is not None:
+            # STEP-08 8.B. Which model path produced this session's outputs, in
+            # the one place a reader cannot rewrite without breaking the chain.
+            # The example that demonstrates the memo gate catching an
+            # overclaiming agent is only honest if its own ledger says the agent
+            # was made to overclaim, so the mode is provenance rather than a
+            # hidden switch.
+            #
+            # Bound here rather than given a twelfth EventType, on the precedent
+            # DECISIONS 5.8 and 6.8 set for the corpus and the tolerances, and
+            # omitted entirely rather than written as null when absent, exactly
+            # as those two are: a session built without naming its model path
+            # has nothing to assert, and asserting one anyway would be the
+            # default-that-nobody-chose this field exists to prevent.
+            payload.update(self._model_provenance.to_json_object())
 
         recorded = self.append_event(
             EventType.SESSION_OPEN,

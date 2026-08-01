@@ -303,6 +303,92 @@ def test_live_mode_needs_the_flag_and_the_environment(
     assert _run_session(dataset_dir, tmp_path / "session", "--llm-mode", "live") == EXIT_INPUT_ERROR
 
 
+# --------------------------------------------------------------------------
+# STEP-08 8.B: the stub mode is provenance, not a hidden switch
+# --------------------------------------------------------------------------
+
+
+def test_a_faithful_run_says_so_rather_than_staying_silent(
+    dataset_dir: Path, tmp_path: Path
+) -> None:
+    """The default is faithful, and a default run positively records that.
+
+    Recording it only when it is interesting would make silence mean faithful,
+    and then an artifact that never recorded the field at all would read as a
+    guarantee nobody gave.
+    """
+    out = tmp_path / "session"
+    assert _run_session(dataset_dir, out) == EXIT_OK
+
+    manifest = json.loads((out / "session_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["model_mode"] == "stub"
+    assert manifest["stub_mode"] == "faithful"
+
+
+def test_an_overclaim_run_is_self_identifying_in_both_artifacts(
+    dataset_dir: Path, tmp_path: Path
+) -> None:
+    """The manifest stamp and the ledgered ``SESSION_OPEN`` entry both say it.
+
+    Two places because they answer to different threats. The manifest is what
+    a reader opens; the ledger entry is what a hash chain protects. An
+    overclaim session that only admitted it in the manifest could be laundered
+    into a faithful-looking one by editing a file nothing verifies.
+    """
+    out = tmp_path / "session"
+    assert _run_session(dataset_dir, out, "--stub-mode", "overclaim") == EXIT_OK
+
+    manifest = json.loads((out / "session_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["stub_mode"] == "overclaim"
+
+    entries = [json.loads(line) for line in (out / "ledger.jsonl").read_text().splitlines()]
+    opens = [e for e in entries if e["event_type"] == "session_open"]
+    assert len(opens) == 1
+
+    events = json.loads((out / "session_events.json").read_text(encoding="utf-8"))["events"]
+    open_payloads = [e["payload"] for e in events if e["event_type"] == "session_open"]
+    assert len(open_payloads) == 1
+    assert open_payloads[0]["stub_mode"] == "overclaim"
+
+    # The chain still verifies, so the field is inside what the hashes cover
+    # rather than appended somewhere convenient.
+    assert main(["verify-ledger", str(out / "ledger.jsonl")]) == EXIT_OK
+
+
+def test_a_stub_mode_is_refused_under_live_rather_than_ignored(
+    dataset_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """There is no stub to put in a mode, so the combination is a broken call.
+
+    Ignoring the flag would let a command line say something about a run that
+    was not true of it, which is the failure this whole field exists to
+    prevent, reintroduced at the argument parser.
+    """
+    monkeypatch.setenv("TS_SENTRY_LLM_MODE", "live")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "not-read-by-this-repository")
+
+    assert (
+        _run_session(
+            dataset_dir, tmp_path / "session", "--llm-mode", "live", "--stub-mode", "overclaim"
+        )
+        == EXIT_INPUT_ERROR
+    )
+
+
+def test_the_transient_and_refuse_modes_are_not_on_the_command_line(
+    dataset_dir: Path, tmp_path: Path
+) -> None:
+    """Only the two modes an example needs are exposed, and that is deliberate.
+
+    ``TRANSIENT`` and ``REFUSE`` simulate failures at the model boundary rather
+    than governance outcomes, so they demonstrate nothing a curated session
+    artifact would show. Asserted rather than left to the choices list, so
+    widening the surface is a visible decision rather than a one-word edit.
+    """
+    assert _run_session(dataset_dir, tmp_path / "s", "--stub-mode", "transient") == EXIT_INPUT_ERROR
+    assert _run_session(dataset_dir, tmp_path / "s", "--stub-mode", "refuse") == EXIT_INPUT_ERROR
+
+
 def test_two_runs_of_one_dataset_produce_the_same_queue(dataset_dir: Path, tmp_path: Path) -> None:
     """Reproducibility of the product, which is the ranking.
 

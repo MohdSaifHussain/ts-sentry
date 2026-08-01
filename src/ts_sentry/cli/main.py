@@ -85,7 +85,13 @@ from ts_sentry.measurement.sensitivity import (
 )
 from ts_sentry.measurement.vvr import MINIMUM_PER_STRATUM, VvrEstimate, measure_vvr
 from ts_sentry.measurement.workflow import AnalystMinutesModel, read_session_counts
-from ts_sentry.orchestrator.adapter import ModelAdapter, ModelMode, Responder, StubAdapter
+from ts_sentry.orchestrator.adapter import (
+    ModelAdapter,
+    ModelMode,
+    Responder,
+    StubAdapter,
+    StubMode,
+)
 from ts_sentry.orchestrator.eval_session import EvalSessionError, run_eval_session
 from ts_sentry.orchestrator.evidence_turn import stub_evidence_responder
 from ts_sentry.orchestrator.manifest import ManifestError, read_expected_head
@@ -320,19 +326,34 @@ SCRIPTED_REVIEW = "scripted"
 INTERACTIVE_REVIEW = "interactive"
 
 
-def _build_adapter(mode: str, responder: Responder = stub_triage_responder) -> ModelAdapter:
+def _build_adapter(
+    mode: str,
+    responder: Responder = stub_triage_responder,
+    *,
+    stub_mode: StubMode = StubMode.FAITHFUL,
+) -> ModelAdapter:
     """Resolve the adapter, defaulting to the offline stub.
 
     ``live`` is refused here unless the environment also says live. The flag
     alone is not enough on purpose: a shell alias or a stray script argument
     should not be able to start spending money, so the intent has to be
     expressed twice, in two different places.
+
+    ``stub_mode`` selects how the stub behaves and is refused outright under
+    live, because there is no stub to put in a mode and silently ignoring the
+    flag would let a command line say something about a run that was not true
+    of it.
     """
     if mode != ModelMode.LIVE.value:
-        return StubAdapter(responder=responder)
+        return StubAdapter(responder=responder, mode=stub_mode)
 
     from ts_sentry.orchestrator.adapter import LiveAdapter, resolve_mode
 
+    if stub_mode is not StubMode.FAITHFUL:
+        raise InputError(
+            f"--stub-mode {stub_mode.value} has no meaning with --llm-mode live: "
+            "there is no stub to put in a mode. Drop one of the two flags"
+        )
     if resolve_mode() is not ModelMode.LIVE:
         raise InputError(
             "--llm-mode live also requires TS_SENTRY_LLM_MODE=live in the environment. "
@@ -363,6 +384,7 @@ def run_evidence_session_command(
     subject_id: str | None,
     analyst_id: str,
     llm_mode: str,
+    stub_mode: StubMode,
     review_mode: str,
     max_hops: int | None,
     seed: int,
@@ -377,7 +399,7 @@ def run_evidence_session_command(
         return EXIT_INPUT_ERROR
 
     try:
-        adapter = _build_adapter(llm_mode, stub_evidence_responder)
+        adapter = _build_adapter(llm_mode, stub_evidence_responder, stub_mode=stub_mode)
         run = run_evidence_session(
             seed_dataset,
             out_dir,
@@ -434,6 +456,7 @@ def run_memo_session_command(
     policies_dir: Path,
     analyst_id: str,
     llm_mode: str,
+    stub_mode: StubMode,
     memo_id: str,
     max_attempts: int | None,
     seed: int,
@@ -449,7 +472,7 @@ def run_memo_session_command(
         return EXIT_INPUT_ERROR
 
     try:
-        adapter = _build_adapter(llm_mode, stub_memo_responder)
+        adapter = _build_adapter(llm_mode, stub_memo_responder, stub_mode=stub_mode)
         run = run_memo_session(
             seed_dataset,
             pack_path,
@@ -508,13 +531,14 @@ def run_run_session(
     *,
     analyst_id: str,
     llm_mode: str,
+    stub_mode: StubMode,
     limit: int,
     seed: int,
     session_id: str | None,
 ) -> int:
     """Run one triage session and report where it left its artifacts."""
     try:
-        adapter = _build_adapter(llm_mode)
+        adapter = _build_adapter(llm_mode, stub_mode=stub_mode)
         run = run_triage_session(
             seed_dataset,
             out_dir,
@@ -1100,6 +1124,19 @@ def main(argv: list[str] | None = None) -> int:
             "live additionally requires TS_SENTRY_LLM_MODE=live in the environment."
         ),
     )
+    session_parser.add_argument(
+        "--stub-mode",
+        choices=[StubMode.FAITHFUL.value, StubMode.OVERCLAIM.value],
+        default=StubMode.FAITHFUL.value,
+        help=(
+            "How the deterministic stub behaves. 'overclaim' makes the agent cite an "
+            "evidence id no pack carries, so the consequence gate refuses the output and "
+            "ledgers the refusal; it is how the governance layer's failure path is "
+            "demonstrated on a real artifact. The chosen mode is written into the "
+            "hash-chained SESSION_OPEN entry and stamped in the session manifest, so an "
+            "overclaim run is self-identifying and cannot be presented as a faithful one."
+        ),
+    )
     session_parser.add_argument("--limit", type=int, default=25)
     session_parser.add_argument("--seed", type=int, default=42)
     session_parser.add_argument("--session-id", type=str, default=None)
@@ -1292,6 +1329,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.command == RUN_SESSION:
+        stub_mode = StubMode(args.stub_mode)
         if args.agent == MEMO_AGENT:
             return run_memo_session_command(
                 args.seed_dataset,
@@ -1300,6 +1338,7 @@ def main(argv: list[str] | None = None) -> int:
                 policies_dir=args.policies,
                 analyst_id=args.analyst_id,
                 llm_mode=args.llm_mode,
+                stub_mode=stub_mode,
                 memo_id=args.memo_id,
                 max_attempts=args.max_attempts,
                 seed=args.seed,
@@ -1313,6 +1352,7 @@ def main(argv: list[str] | None = None) -> int:
                 subject_id=args.subject,
                 analyst_id=args.analyst_id,
                 llm_mode=args.llm_mode,
+                stub_mode=stub_mode,
                 review_mode=args.review,
                 max_hops=args.max_hops,
                 seed=args.seed,
@@ -1323,6 +1363,7 @@ def main(argv: list[str] | None = None) -> int:
             args.out,
             analyst_id=args.analyst_id,
             llm_mode=args.llm_mode,
+            stub_mode=stub_mode,
             limit=args.limit,
             seed=args.seed,
             session_id=args.session_id,
