@@ -121,6 +121,35 @@ The drafted memo cites `prov-0000` (a real pack record) and quotes
 `comment-spam` verbatim from the corpus. It is the first memo this system has
 produced.
 
+### Phase close, verified
+
+Saif ran the phase-close verification personally, continuing the pattern from
+STEP-01 through STEP-04 where his own pass is the closing step rather than a
+green suite.
+
+| Scenario | Expected | Observed |
+|---|---|---|
+| Signed `memo.md` read by eye | complete Art. 17 statement of reasons | signature block present, AI-DRAFT watermark absent, all four roles present |
+| Automated-means disclosure (Art. 17(3)(c)) | `partially_automated` on a signed memo | `partially_automated` |
+| Fact sentence | cites a record the pack carries | cites `prov-0000` |
+| Contractual ground (Art. 17(3)(e)) | resolvable anchor, bounded excerpt | `comment-spam`, excerpt within bounds |
+| Bindings intact | pack and corpus pinned | `pack_digest` `5bb6ba58`, corpus `1.0.0` / `9dd656fb` |
+| Signature | over the memo's own digest | `04fda5dd` over `b0f1c39d` |
+| `verify-ledger`, bare | exit 0, intact | exit 0, head `8ff8ef0b` |
+| `verify-ledger --expect-head-from` the manifest | exit 0, head matches | exit 0, head matches |
+| Truncated copy, `--expect-head-from` | exit 6, both heads printed | exit 6, both heads printed |
+| Decision-table SHAs `29128dc`, `00cb625`, `f1330fc` | resolve in `git log` | confirmed real |
+
+The last row is there because two SHAs in the Phase 5 decisions table were
+invented during drafting and corrected before the commit landed. Checking that
+a decision log's citations resolve is now part of the close, because a log that
+manufactures its own evidence is the failure `docs/DECISIONS.md` opens by
+warning against, and nothing else in the suite would catch it.
+
+The truncation row remains what it has been since STEP-02: a *passing* result
+that confirms a real limitation. Chain verification alone accepts a truncated
+export, and only the stored anchor catches it.
+
 ### Findings that changed the design
 
 Six, none of them caught by a test that already existed.
