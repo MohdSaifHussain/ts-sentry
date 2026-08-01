@@ -334,6 +334,49 @@ temporal pivots reach members that registration metadata does not. Explicitly
 
 ---
 
+---
+
+## Phase 8: Examples, documentation, release
+
+| # | Decision | Alternative(s) not taken | Reason | Recorded in |
+|---|---|---|---|---|
+| 8.1 | **D6 amended: POSITIONING.md is a capability matrix over representative responsibilities, never a quotation** | (a) quote a JD verbatim as 3.3 asks; (b) drop D6 | No job description is committed to this repository and none is coming. This is a personal project built against the responsibility profile of a role family, not against a posting, so (a) would mean inventing a source and presenting it as quoted. (b) discards a deliverable that is genuinely useful once its left column is honestly labelled. The exit-checklist line is restated to match. Five capabilities get rows saying no honest artifact exists, because a stated gap beats a stretched claim. Saif's decision. | Saif, this session; STEP-08 Outcome dev. 1 |
+| 8.2 | **The stub mode is session provenance, read off the adapter** | (a) leave `StubMode.OVERCLAIM` unreachable from the CLI; (b) expose it as a plain flag; (c) pass the mode alongside the adapter | D1 needs a gate-rejection example and no shipped command could produce one, so (a) fails the deliverable. (b) makes an overclaim run indistinguishable from a faithful one after the fact. (c) is the subtle one and is why this is a decision rather than a flag: a caller could hand the session an overclaiming adapter while declaring a faithful run, and the ledger would carry the declaration rather than the truth. Reading it off the adapter that served the calls makes the disagreement **unexpressible** instead of detectable, which is ARCHITECTURE 1.1's posture applied to a field whose whole job is telling two kinds of run apart. Binds into `SESSION_OPEN` on DECISIONS 5.8 and 6.8's precedent; no default, on 4.7's and 5.7's. Saif's decision, with both conditions. | Saif, this session; `6356542` |
+| 8.3 | **`uv.lock` as the single locking artifact** | (a) `pip-tools` with `--generate-hashes`; (b) a lockfile plus an exported hash file | (a) handles VCS direct references badly and `analystkit` is exactly that. (b) is two artifacts that can disagree, which is the failure class this document keeps recording, and Saif rejected it explicitly. uv pins the git dependency natively, which discharges the queued AnalystKit SHA pin in the same artifact. Measured rather than taken from the documentation, which does not state it: 50 packages, 48 from PyPI carrying **802 sha256 hashes**, one editable project, one git dependency pinned to its resolved commit. Documented as two install paths and never implied to be one command. Saif's decision. | Saif, this session; `6d32c27` |
+| 8.4 | **A release candidate is cut before the release** | Tag v1.0.0 directly and verify by reading | This project's own lesson, applied to its one irreversible act. Three phase-close defects (STEP-04's non-traversing pack, STEP-06's ranked queue, STEP-07's bootstrap ratio) were found by executing something and reading the artifact, never by reading code. The release workflow does not get to be the one thing proven by reading alone. Costs one extra checkpoint-gated push; buys the only real proof before the tag. Saif's decision. | Saif, this session; STEP-08 Outcome |
+| 8.5 | **The examples are checked on the invariants that are real, not by byte-diffing a regeneration** | (a) commit the artifacts and diff a regeneration in CI, as the approved plan said; (b) freeze a clock so everything is byte-stable | Measured across two runs rather than assumed: only `ranked_queue.json` is byte-identical. Ledgers, manifests, packs and heads all carry real timestamps. (a) would fail forever for a correct reason, which is the worst kind of failing test. (b) is worse than that: a ledger records *when* things happened, and one that was byte-stable across runs would be a worse artifact rather than a better one. What is checked instead is what genuinely holds: session ids, the ranked queue, event counts, exit codes, chain integrity, and the anchor catching a truncation. | `1844024`, `examples/README.md` |
+| 8.6 | **Example 08 carries no ledger, and says so** | (a) add a CLI verb that runs the firewall, so the example matches 3.2's shape; (b) wrap the component call in a session | The input firewall is a library component and no session runs. (a) is adding product surface to serve a demo. (b) is worse and is the reason this is recorded: manufacturing a session around a component call would mean ledgering governance events that never happened, in the phase whose whole theme is that provenance artifacts must not assert what did not happen. A deliberate 3.2 deviation is the honest option. | `b918565`, STEP-08 Outcome dev. 2 |
+| 8.7 | **The third-party corpus is redistributed unmodified, and de-duplicated only in the example's runner** | (a) commit a cleaned CSV; (b) ship no data and link to it | The corpus has three duplicate `COMMENT_ID`s, which is what made it interesting: the firewall's uniqueness invariant refused it outright. (a) would make "redistributed unmodified" false and would hide the finding the example exists to show. (b) leaves the firewall having still never seen a byte nobody here wrote. The runner asserts the duplicated rows are byte-identical before dropping them, and refuses to run if they ever differ, because dropping a row that differs would be quietly choosing which comment to believe. | `b918565` |
+| 8.8 | **BuildKit produces the image SBOM and provenance; no third-party action enters the release path** | `anchore/sbom-action` (Syft), the de facto standard | `docker/build-push-action` has `sbom:` and `provenance:` inputs, so the same result needs no additional party in the chain of custody. That is the argument this document already makes for the governance core being stdlib-only: the fewer third parties inside the chain, the fewer a reviewer has to trust. The Python distributions get a separate CycloneDX document from `cyclonedx-py`, because an image SBOM and a dependency SBOM describe different things and neither substitutes for the other. | `8f5696a` |
+| 8.9 | **CodeQL as a committed workflow, not GitHub's default setup** | Enable default setup in repository settings | Default setup is a repository setting whose configuration lives somewhere a reader of this repository cannot see. A workflow file is version-controlled and reviewable in a pull request. This project's whole posture is that a control nobody can inspect is a control nobody can audit, and applying that to its own security tooling costs nothing. | `8f5696a` |
+| 8.10 | **`git_sha()` tolerates git being absent** | Install git into the runtime image | The docstring had promised this for seven phases ("or `UNKNOWN_GIT_SHA` if git cannot answer") while `subprocess.run` raised `FileNotFoundError` when the executable did not exist. A claim wider than the behaviour, surviving because every environment it had run in had git installed. Fixed in the **code** rather than the docstring: a released container is exactly the environment where a manifest should record that it could not take a provenance stamp and carry on, and installing git to satisfy a crash would have widened the runtime image to hide a defect. Verified: a session inside the image records `"git_sha": "unknown"` and closes with an intact anchored chain. | `8f5696a` |
+
+### The method failure worth recording
+
+Recorded because it is about how the checking was done rather than about any one
+number, and because the next person to run an adversarial pass over this
+repository will make the same mistake otherwise.
+
+**A stale count survived in three documents and the self-review found two.**
+README and `examples/README.md` both said "seven" example ledgers where six
+carry one. The review corrected both and reported the count fixed. It had
+checked the two files it happened to think of, rather than searching for the
+claim, so it never looked at `docs/POSITIONING.md`. Saif found the third by
+reading at the review stop.
+
+The lesson is not "check more files". It is that **a number restated in prose in
+several places is a fact that drifts silently**: nothing breaks, every test
+passes, and one file is simply wrong. The guard that now exists locates the
+claim by pattern across every committed markdown file rather than against a list
+of paths someone has to remember to extend, and it was verified to fail on the
+reintroduced defect rather than pass vacuously.
+
+The same session produced the positive version of this: 30 numeric claims were
+re-derived from the artifacts they describe rather than re-read, and all 30 held.
+The two that had drifted were the two nobody had re-derived.
+
+---
+
 ## Choices made by default, with no recorded rationale
 
 Listed because a decision record that quietly omits its unexamined choices is
