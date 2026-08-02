@@ -72,6 +72,14 @@ before any tag existed, as contracted.
       `05-overclaim-refused` and `06-prompt-eval-refused`, plus a third refusal
       nobody specified: `08-firewall-real-comments`, where a published research
       corpus was rejected outright.
+- [x] **Negative control on the release verification.**
+      `gh attestation verify` was run against the wrong repository
+      (`--repo MohdSaifHussain/analystkit`) and refused with HTTP 404, at
+      `v1.0.0-rc.5` and again at `v1.0.0`. The verifier demonstrably refuses a
+      subject it cannot attest, which is what makes its acceptance of the real
+      artifacts mean anything. A verification that has only ever passed is not
+      evidence.
+
 - [x] **POSITIONING.md covers 100% of the named capabilities.** Restated from
       the original wording; see deviation 1.
 - [ ] **GHCR image published on release; tag annotated; CHANGELOG cut.**

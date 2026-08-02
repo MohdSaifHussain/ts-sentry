@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/MohdSaifHussain/ts-sentry/actions/workflows/ci.yml/badge.svg)](https://github.com/MohdSaifHussain/ts-sentry/actions/workflows/ci.yml)
 [![coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20enforced-brightgreen)](pyproject.toml)
+[![tests](https://img.shields.io/badge/tests-1%2C230_passing_%40_v1.0.0-brightgreen)](https://github.com/MohdSaifHussain/ts-sentry/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.12%2B-blue)](pyproject.toml)
 [![release](https://img.shields.io/github/v/release/MohdSaifHussain/ts-sentry?include_prereleases&sort=semver)](https://github.com/MohdSaifHussain/ts-sentry/releases)
@@ -138,7 +139,7 @@ notes.
 
 | | |
 |---|---|
-| Tests | 1,228 passing |
+| Tests | 1,230 passing |
 | Coverage | 93.16% against a 90% floor enforced in CI |
 | Types | `mypy --strict` clean on 164 files |
 | Lint and format | `ruff` clean |
