@@ -215,7 +215,7 @@ Widening the tolerance to fit the observed numbers was the alternative and was
 not taken: it would have hidden a wrong formula behind a looser test.
 
 **This is the third phase-close defect found by Saif reading an artifact rather
-than by any test** (STEP-04's non-traversing pack, STEP-06's ranked queue,
+than by any test** (STEP-04's non-traversing pack, STEP-03's ranked queue,
 this). The pattern is worth naming: the tests check that the arithmetic is
 self-consistent, and a human reading the output checks that it means anything.
 
