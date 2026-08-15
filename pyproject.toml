@@ -21,7 +21,7 @@ dependencies = [
     # See docs/DECISIONS.md for the byte-stable-data / hash-stable-in-env-PNG
     # split, and `measurement.plots` for how determinism is obtained.
     "matplotlib>=3.8",
-    "numpy>=2.0",
+    "numpy>=2.5.2",
     # Used only for the DuckDB bulk-load path (register + INSERT SELECT),
     # which is ~2 orders of magnitude faster than executemany for the
     # tens-of-thousands-of-rows tables this generator produces.
